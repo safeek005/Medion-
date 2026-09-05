@@ -1,0 +1,44 @@
+[
+  {
+    "policy_id": "POL-701",
+    "patient_id": "PAT-1001",
+    "provider_id": "INS-501",
+    "policy_number": "SH-2024-998811",
+    "policy_holder_name": "Arun Kumar",
+    "plan_type": "Comprehensive Health Shield",
+    "coverage_amount": 500000.0,
+    "remaining_coverage": 425000.0,
+    "copay_percentage": 10.0,
+    "status": "ACTIVE",
+    "valid_from": "2024-01-01",
+    "valid_to": "2024-12-31"
+  },
+  {
+    "policy_id": "POL-702",
+    "patient_id": "PAT-1002",
+    "provider_id": "INS-502",
+    "policy_number": "AP-2024-554422",
+    "policy_holder_name": "Sneha Sharma",
+    "plan_type": "Executive Gold Mediclaim",
+    "coverage_amount": 1000000.0,
+    "remaining_coverage": 1000000.0,
+    "copay_percentage": 5.0,
+    "status": "ACTIVE",
+    "valid_from": "2024-01-01",
+    "valid_to": "2024-12-31"
+  },
+  {
+    "policy_id": "POL-703",
+    "patient_id": "PAT-1003",
+    "provider_id": "INS-501",
+    "policy_number": "SH-2024-332211",
+    "policy_holder_name": "Vikram Singh",
+    "plan_type": "Senior Health Care",
+    "coverage_amount": 300000.0,
+    "remaining_coverage": 180000.0,
+    "copay_percentage": 15.0,
+    "status": "ACTIVE",
+    "valid_from": "2024-01-01",
+    "valid_to": "2024-12-31"
+  }
+]

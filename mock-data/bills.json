@@ -1,0 +1,37 @@
+[
+  {
+    "bill_id": "BILL-1001",
+    "patient_id": "PAT-1001",
+    "hospital_id": "HOSP-001",
+    "bill_date": "2024-06-15",
+    "items": [
+      { "description": "Cardiology Consultation Fee", "amount": 1200.0 },
+      { "description": "Comprehensive Lab Panel", "amount": 2800.0 },
+      { "description": "ECG & Diagnostic Screening", "amount": 1500.0 }
+    ],
+    "subtotal": 5500.0,
+    "tax_amount": 275.0,
+    "total_amount": 5775.0,
+    "insurance_covered_amount": 5197.5,
+    "patient_payable_amount": 577.5,
+    "status": "PARTIALLY_PAID",
+    "claim_id": "CLM-1001"
+  },
+  {
+    "bill_id": "BILL-1002",
+    "patient_id": "PAT-1002",
+    "hospital_id": "HOSP-001",
+    "bill_date": "2024-07-20",
+    "items": [
+      { "description": "Endocrinology Consultation", "amount": 1000.0 },
+      { "description": "Thyroid Profile Lab Test", "amount": 1400.0 }
+    ],
+    "subtotal": 2400.0,
+    "tax_amount": 120.0,
+    "total_amount": 2520.0,
+    "insurance_covered_amount": 2394.0,
+    "patient_payable_amount": 126.0,
+    "status": "PENDING_CLAIM",
+    "claim_id": "CLM-1002"
+  }
+]

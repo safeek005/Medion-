@@ -1,0 +1,22 @@
+[
+  {
+    "hospital_id": "HOSP-001",
+    "name": "Medion Central Specialty Hospital",
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "address": "100 Airport Road, HAL 2nd Stage, Bengaluru",
+    "phone": "+91 80 40001000",
+    "email": "contact@medionhealth.org",
+    "accreditation": "NABH Accredited"
+  },
+  {
+    "hospital_id": "HOSP-002",
+    "name": "City Care General Hospital",
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "address": "55 Brigade Road, Shanthala Nagar, Bengaluru",
+    "phone": "+91 80 25002000",
+    "email": "info@cityhospital.org",
+    "accreditation": "NABH Accredited"
+  }
+]

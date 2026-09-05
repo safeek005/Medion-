@@ -1,0 +1,20 @@
+[
+  {
+    "nurse_id": "NUR-201",
+    "first_name": "Kavita",
+    "last_name": "Nair",
+    "department": "Cardiology Outpatient",
+    "hospital_id": "HOSP-001",
+    "phone": "+91 9234567890",
+    "email": "kavita.nair@medionhealth.org"
+  },
+  {
+    "nurse_id": "NUR-202",
+    "first_name": "Sunita",
+    "last_name": "Patil",
+    "department": "Endocrinology Care",
+    "hospital_id": "HOSP-001",
+    "phone": "+91 9234567891",
+    "email": "sunita.patil@medionhealth.org"
+  }
+]

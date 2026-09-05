@@ -1,0 +1,35 @@
+[
+  {
+    "appointment_id": "APT-1001",
+    "patient_id": "PAT-1001",
+    "doctor_id": "DOC-101",
+    "hospital_id": "HOSP-001",
+    "appointment_date": "2024-09-10",
+    "time_slot": "10:00-10:30",
+    "status": "CONFIRMED",
+    "reason_for_visit": "Routine Cardiology Follow-up & Blood Pressure Check",
+    "created_at": "2024-09-01T10:00:00Z"
+  },
+  {
+    "appointment_id": "APT-1002",
+    "patient_id": "PAT-1002",
+    "doctor_id": "DOC-102",
+    "hospital_id": "HOSP-001",
+    "appointment_date": "2024-09-12",
+    "time_slot": "11:30-12:00",
+    "status": "SCHEDULED",
+    "reason_for_visit": "Thyroid Function Test Review",
+    "created_at": "2024-09-02T09:15:00Z"
+  },
+  {
+    "appointment_id": "APT-1003",
+    "patient_id": "PAT-1003",
+    "doctor_id": "DOC-103",
+    "hospital_id": "HOSP-002",
+    "appointment_date": "2024-09-05",
+    "time_slot": "09:30-10:00",
+    "status": "COMPLETED",
+    "reason_for_visit": "Annual Health Checkup",
+    "created_at": "2024-08-28T16:45:00Z"
+  }
+]

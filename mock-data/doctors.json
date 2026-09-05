@@ -1,0 +1,38 @@
+[
+  {
+    "doctor_id": "DOC-101",
+    "first_name": "Rajesh",
+    "last_name": "Mehta",
+    "specialty": "Cardiology",
+    "qualification": "MD, DM (Cardiology)",
+    "hospital_id": "HOSP-001",
+    "phone": "+91 9123456780",
+    "email": "dr.mehta@medionhealth.org",
+    "available_days": ["Monday", "Wednesday", "Friday"],
+    "available_slots": ["09:00-09:30", "10:00-10:30", "11:00-11:30", "14:00-14:30", "15:00-15:30"]
+  },
+  {
+    "doctor_id": "DOC-102",
+    "first_name": "Anita",
+    "last_name": "Deshmukh",
+    "specialty": "Endocrinology",
+    "qualification": "MD, DNB (Endocrinology)",
+    "hospital_id": "HOSP-001",
+    "phone": "+91 9123456781",
+    "email": "dr.anita@medionhealth.org",
+    "available_days": ["Tuesday", "Thursday", "Saturday"],
+    "available_slots": ["09:30-10:00", "10:30-11:00", "11:30-12:00", "14:30-15:00"]
+  },
+  {
+    "doctor_id": "DOC-103",
+    "first_name": "Suresh",
+    "last_name": "Rao",
+    "specialty": "General Medicine",
+    "qualification": "MBBS, MD (Internal Medicine)",
+    "hospital_id": "HOSP-002",
+    "phone": "+91 9123456782",
+    "email": "dr.suresh@cityhospital.org",
+    "available_days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    "available_slots": ["09:00-09:30", "09:30-10:00", "10:00-10:30", "11:00-11:30"]
+  }
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "notification_id": "NOTIF-1001",
+    "recipient_type": "PATIENT",
+    "recipient_id": "PAT-1001",
+    "title": "Appointment Confirmed",
+    "message": "Your cardiology appointment with Dr. Rajesh Mehta is confirmed for 2024-09-10 at 10:00 AM.",
+    "channel": "SMS",
+    "status": "SENT",
+    "sent_at": "2024-09-01T10:05:00Z"
+  },
+  {
+    "notification_id": "NOTIF-1002",
+    "recipient_type": "DOCTOR",
+    "recipient_id": "DOC-101",
+    "title": "Abnormal Lab Value Flagged",
+    "message": "Patient Arun Kumar (PAT-1001) has low Hemoglobin (10.4 g/dL) in report LABR-1001.",
+    "channel": "PORTAL",
+    "status": "DELIVERED",
+    "sent_at": "2024-06-14T16:35:00Z"
+  }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "lab_id": "LAB-001",
+    "name": "Medion Advanced Diagnostic Lab",
+    "hospital_id": "HOSP-001",
+    "address": "Ground Floor, Block B, Medion Central Hospital, Bengaluru",
+    "phone": "+91 80 40001050",
+    "email": "lab@medionhealth.org",
+    "accreditation": "NABL Certified"
+  },
+  {
+    "lab_id": "LAB-002",
+    "name": "Metro Pathology & Diagnostics",
+    "hospital_id": "HOSP-002",
+    "address": "12 Residency Road, Bengaluru",
+    "phone": "+91 80 25002050",
+    "email": "reports@metropathology.org",
+    "accreditation": "NABL Certified"
+  }
+]

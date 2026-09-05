@@ -1,0 +1,18 @@
+[
+  {
+    "provider_id": "INS-501",
+    "name": "Star Healthcare Insurance Ltd",
+    "payer_code": "STAR-IND-01",
+    "support_phone": "1800-425-2255",
+    "support_email": "claims@starhealth.example.com",
+    "portal_url": "https://mock-portal.starhealth.example.com"
+  },
+  {
+    "provider_id": "INS-502",
+    "name": "Apex Shield Mediclaim",
+    "payer_code": "APEX-IND-02",
+    "support_phone": "1800-102-4455",
+    "support_email": "support@apexshield.example.com",
+    "portal_url": "https://mock-portal.apexshield.example.com"
+  }
+]

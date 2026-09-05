@@ -1,0 +1,70 @@
+[
+  {
+    "report_id": "LABR-1001",
+    "patient_id": "PAT-1001",
+    "doctor_id": "DOC-101",
+    "lab_id": "LAB-001",
+    "test_name": "Comprehensive Blood & Lipid Panel",
+    "collection_date": "2024-06-14T08:00:00Z",
+    "result_date": "2024-06-14T16:30:00Z",
+    "status": "COMPLETED",
+    "test_results": [
+      {
+        "test_parameter": "Hemoglobin",
+        "value": 10.4,
+        "unit": "g/dL",
+        "reference_range": "13.5 - 17.5",
+        "status": "LOW",
+        "flagged": true
+      },
+      {
+        "test_parameter": "Total Cholesterol",
+        "value": 215.0,
+        "unit": "mg/dL",
+        "reference_range": "< 200",
+        "status": "HIGH",
+        "flagged": true
+      },
+      {
+        "test_parameter": "Fasting Blood Sugar",
+        "value": 92.0,
+        "unit": "mg/dL",
+        "reference_range": "70 - 99",
+        "status": "NORMAL",
+        "flagged": false
+      }
+    ],
+    "lab_technician_notes": "Sample hemolyzed slightly; repeat CBC if anemia symptoms persist.",
+    "summary": "Low hemoglobin (10.4 g/dL) and mildly elevated Total Cholesterol (215 mg/dL) detected."
+  },
+  {
+    "report_id": "LABR-1002",
+    "patient_id": "PAT-1002",
+    "doctor_id": "DOC-102",
+    "lab_id": "LAB-001",
+    "test_name": "Thyroid Profile (T3, T4, TSH)",
+    "collection_date": "2024-07-19T07:30:00Z",
+    "result_date": "2024-07-19T14:00:00Z",
+    "status": "COMPLETED",
+    "test_results": [
+      {
+        "test_parameter": "TSH",
+        "value": 6.2,
+        "unit": "uIU/mL",
+        "reference_range": "0.4 - 4.2",
+        "status": "HIGH",
+        "flagged": true
+      },
+      {
+        "test_parameter": "Free T4",
+        "value": 1.1,
+        "unit": "ng/dL",
+        "reference_range": "0.8 - 1.8",
+        "status": "NORMAL",
+        "flagged": false
+      }
+    ],
+    "lab_technician_notes": "All control runs within expected range.",
+    "summary": "TSH elevated at 6.2 uIU/mL indicating subclinical hypothyroidism."
+  }
+]

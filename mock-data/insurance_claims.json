@@ -1,0 +1,28 @@
+[
+  {
+    "claim_id": "CLM-1001",
+    "patient_id": "PAT-1001",
+    "policy_id": "POL-701",
+    "provider_id": "INS-501",
+    "bill_id": "BILL-1001",
+    "claim_amount": 5775.0,
+    "approved_amount": 5197.5,
+    "status": "APPROVED",
+    "submitted_date": "2024-06-16T10:00:00Z",
+    "processed_date": "2024-06-18T14:30:00Z",
+    "adjudication_notes": "10% copay applied per policy terms (POL-701)."
+  },
+  {
+    "claim_id": "CLM-1002",
+    "patient_id": "PAT-1002",
+    "policy_id": "POL-702",
+    "provider_id": "INS-502",
+    "bill_id": "BILL-1002",
+    "claim_amount": 2520.0,
+    "approved_amount": 0.0,
+    "status": "UNDER_REVIEW",
+    "submitted_date": "2024-07-21T09:00:00Z",
+    "processed_date": null,
+    "adjudication_notes": "Awaiting initial eligibility & diagnosis validation."
+  }
+]

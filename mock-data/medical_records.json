@@ -1,0 +1,36 @@
+[
+  {
+    "record_id": "MR-1001",
+    "patient_id": "PAT-1001",
+    "doctor_id": "DOC-101",
+    "visit_date": "2024-06-15",
+    "diagnosis": "Essential Hypertension (Mild)",
+    "symptoms": ["Occasional headaches", "Mild dizziness after exercise"],
+    "vital_signs": {
+      "blood_pressure": "138/88 mmHg",
+      "heart_rate": "76 bpm",
+      "temperature_c": 36.8,
+      "spo2_percent": 98
+    },
+    "clinical_notes": "Patient advised dietary sodium restriction and regular moderate cardio. Re-evaluate in 3 months with Lipid profile and CBC.",
+    "lab_report_ids": ["LABR-1001"],
+    "prescription_ids": ["RX-1001"]
+  },
+  {
+    "record_id": "MR-1002",
+    "patient_id": "PAT-1002",
+    "doctor_id": "DOC-102",
+    "visit_date": "2024-07-20",
+    "diagnosis": "Subclinical Hypothyroidism",
+    "symptoms": ["Fatigue", "Mild weight gain"],
+    "vital_signs": {
+      "blood_pressure": "118/76 mmHg",
+      "heart_rate": "68 bpm",
+      "temperature_c": 36.6,
+      "spo2_percent": 99
+    },
+    "clinical_notes": "TSH elevated at 6.2 uIU/mL. Free T4 within normal limits. Initiated low-dose Levothyroxine 25mcg.",
+    "lab_report_ids": ["LABR-1002"],
+    "prescription_ids": ["RX-1002"]
+  }
+]
