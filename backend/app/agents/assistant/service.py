@@ -9,11 +9,11 @@ class AssistantService:
         Action: interpret_request
         Understands natural language request, identifies intent, target agent/action, parameters, and missing fields.
         """
-        message = payload.get("message", "")
-        user_role = payload.get("user_role", "doctor")
+        message = payload.get("message") or payload.get("prompt") or payload.get("query", "")
+        user_role = payload.get("user_role") or payload.get("portal_source", "doctor")
 
         if not message:
-            raise ValueError("Field 'message' is required for interpret_request.")
+            raise ValueError("Field 'message' (or 'prompt') is required for interpret_request.")
 
         result = assistant_ai_provider.parse_intent(message, user_role=user_role)
         result["success"] = True
