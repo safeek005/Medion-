@@ -4,6 +4,7 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { dispatchToWorkbench } from '../../api/workbench';
 import { ExecutionTraceStep } from '../../types';
+import { HumanResponseRenderer } from '../../components/intelligence/HumanResponseRenderer';
 import { MOCK_PATIENT, MOCK_APPOINTMENTS, MOCK_LAB_REPORT, MOCK_PRESCRIPTIONS } from '../../data/mockDatasets';
 import { Calendar, FileText, Sparkles, CheckCircle2, ShieldCheck } from 'lucide-react';
 
@@ -128,9 +129,9 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({ onTraceGener
       {output && (
         <div className="section-panel">
           <SectionHeader title="MEDION Assistant Explanation" />
-          <pre style={{ background: 'var(--bg-app)', padding: '1rem', borderRadius: 8, fontSize: '0.8rem', fontFamily: 'var(--font-mono)', overflowX: 'auto', border: '1px solid var(--border-subtle)' }}>
-            {JSON.stringify(output, null, 2)}
-          </pre>
+          <div style={{ background: 'var(--bg-app)', padding: '1.25rem', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+            <HumanResponseRenderer response={output} />
+          </div>
         </div>
       )}
     </div>

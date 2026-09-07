@@ -4,6 +4,7 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { dispatchToWorkbench } from '../../api/workbench';
 import { ExecutionTraceStep } from '../../types';
+import { HumanResponseRenderer } from '../../components/intelligence/HumanResponseRenderer';
 import { MOCK_APPOINTMENTS } from '../../data/mockDatasets';
 import { Building2, Calendar, Users, FlaskConical } from 'lucide-react';
 
@@ -124,9 +125,9 @@ export const HospitalAdminWorkspace: React.FC<HospitalAdminWorkspaceProps> = ({ 
       {output && (
         <div className="section-panel">
           <SectionHeader title="Appointment Agent Response" />
-          <pre style={{ background: 'var(--bg-app)', padding: '1rem', borderRadius: 8, fontSize: '0.8rem', fontFamily: 'var(--font-mono)', overflowX: 'auto', border: '1px solid var(--border-subtle)' }}>
-            {JSON.stringify(output, null, 2)}
-          </pre>
+          <div style={{ background: 'var(--bg-app)', padding: '1.25rem', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+            <HumanResponseRenderer response={output} />
+          </div>
         </div>
       )}
     </div>

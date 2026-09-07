@@ -5,6 +5,7 @@ import { PatientProfile, ExecutionTraceStep } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { dispatchToWorkbench } from '../../api/workbench';
+import { HumanResponseRenderer } from '../../components/intelligence/HumanResponseRenderer';
 import {
   Search,
   ArrowLeft,
@@ -163,8 +164,8 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
                     </button>
                   )}
                 </div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
-                  {typeof aiOutput.result === 'string' ? aiOutput.result : aiOutput.output?.summary || JSON.stringify(aiOutput.result || aiOutput, null, 2)}
+                <div style={{ marginTop: '0.5rem' }}>
+                  <HumanResponseRenderer response={aiOutput} />
                 </div>
               </div>
             )}

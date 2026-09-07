@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { Sparkles, ArrowRight, Code } from 'lucide-react';
 import { executeAssistantAction } from '../../api/medionApi';
 import { UserRole, WorkbenchResponse, ExecutionTraceStep, WorkbenchRequest } from '../../types';
+import { HumanResponseRenderer } from './HumanResponseRenderer';
 
 interface AskMedionCommandProps {
   role: UserRole;
@@ -100,21 +101,21 @@ export const AskMedionCommand: React.FC<AskMedionCommandProps> = ({ role, onTrac
       {/* MEDION Insight Response Container */}
       {lastResponse && !loading && (
         <div style={{ maxWidth: 1100, margin: '0.75rem auto 0', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '1rem 1.25rem', boxShadow: 'var(--shadow-sm)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: lastResponse.success ? 'var(--forest-green)' : 'var(--danger-red)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              MEDION Insight • {lastResponse.target_agent || 'Assistant Agent'}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-subtle)' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: lastResponse.success ? 'var(--forest-green)' : 'var(--danger-red)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              MEDION Insight • {lastResponse.target_agent ? `${lastResponse.target_agent.charAt(0).toUpperCase() + lastResponse.target_agent.slice(1)} Agent` : 'Assistant Agent'}
             </span>
             <button className="btn-ui btn-ghost-ui" onClick={onOpenTraceDrawer} style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>
               <Code style={{ width: 14, height: 14 }} /> View Execution Architecture ➔
             </button>
           </div>
-          <div style={{ fontSize: '0.88rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
-            {lastResponse.errors && lastResponse.errors.length > 0
-              ? lastResponse.errors[0]
-              : typeof lastResponse.result === 'string'
-              ? lastResponse.result
-              : lastResponse.output?.summary || JSON.stringify(lastResponse.result || lastResponse, null, 2)}
-          </div>
+          {lastResponse.errors && lastResponse.errors.length > 0 ? (
+            <div style={{ fontSize: '0.88rem', color: 'var(--danger-red)', lineHeight: 1.5 }}>
+              {lastResponse.errors[0]}
+            </div>
+          ) : (
+            <HumanResponseRenderer response={lastResponse} />
+          )}
         </div>
       )}
     </div>

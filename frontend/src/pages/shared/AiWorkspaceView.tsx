@@ -3,6 +3,7 @@ import { UserRole, ExecutionTraceStep } from '../../types';
 import { Sparkles, ArrowRight, Code } from 'lucide-react';
 import { dispatchToWorkbench } from '../../api/workbench';
 import { Button } from '../../components/ui/Button';
+import { HumanResponseRenderer } from '../../components/intelligence/HumanResponseRenderer';
 
 interface AiWorkspaceViewProps {
   role: UserRole;
@@ -116,10 +117,10 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
 
       {response && !loading && (
         <div className="section-panel">
-          <div className="section-header">
+          <div className="section-header" style={{ marginBottom: '1rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--border-subtle)' }}>
             <div>
-              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--forest-green)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                MEDION Insight • {response.target_agent || 'Master Orchestrator'}
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--forest-green)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                MEDION Insight • {response.target_agent ? `${response.target_agent.charAt(0).toUpperCase() + response.target_agent.slice(1)} Agent` : 'Clinical Intelligence'}
               </span>
             </div>
             <Button variant="ghost" size="sm" onClick={onOpenTraceDrawer} style={{ fontSize: '0.75rem' }}>
@@ -127,16 +128,7 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
             </Button>
           </div>
 
-          <div style={{ fontSize: '0.9rem', lineHeight: 1.6, color: 'var(--text-primary)', whiteSpace: 'pre-wrap', marginBottom: '1.25rem' }}>
-            {typeof response.result === 'string' ? response.result : response.output?.summary || JSON.stringify(response.result || response, null, 2)}
-          </div>
-
-          <details style={{ background: 'var(--bg-app)', padding: '0.75rem', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
-            <summary style={{ cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>View Raw JSON Payload</summary>
-            <pre style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', marginTop: '0.5rem', overflowX: 'auto' }}>
-              {JSON.stringify(response, null, 2)}
-            </pre>
-          </details>
+          <HumanResponseRenderer response={response} />
         </div>
       )}
     </div>
