@@ -24,7 +24,7 @@ export async function dispatchToWorkbench(request: WorkbenchRequest): Promise<Wo
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout for multi-agent workflow
 
     const response = await fetch(url, {
       method: 'POST',
