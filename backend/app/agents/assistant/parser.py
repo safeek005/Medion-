@@ -131,6 +131,12 @@ class DeterministicParser:
             else:
                 return "analyze_lab_report", 0.90, []
 
+        if "doctor_id" in extracted:
+            if "book" in text_lower or "schedule" in text_lower:
+                return "book_appointment", 0.90, []
+            else:
+                return "get_available_slots", 0.90, []
+
         if "appointment_id" in extracted:
             if "cancel" in text_lower:
                 return "cancel_appointment", 0.90, []

@@ -39,25 +39,25 @@ ACTION_REGISTRY: Dict[str, Dict[str, Any]] = {
         "agent": "medical",
         "action": "extract_lab_report",
         "required_params": ["report_id"],
-        "keywords": ["extract report", "extract lab", "parse lab report", "extract test values"]
+        "keywords": ["extract report", "extract lab", "parse lab report", "extract test values", "extract lab report"]
     },
     "analyze_lab_report": {
         "agent": "medical",
         "action": "analyze_lab_report",
         "required_params": ["report_id"],
-        "keywords": ["analyze report", "analyze lab", "check lab report", "evaluate lab", "review lab"]
+        "keywords": ["analyze report", "analyze lab", "analyze laboratory report", "analyze lab report", "check lab report", "evaluate lab", "review lab", "laboratory report", "lab report", "analyze", "latest lab report"]
     },
     "compare_lab_reports": {
         "agent": "medical",
         "action": "compare_lab_reports",
         "required_params": ["current_report_id", "previous_report_id"],
-        "keywords": ["compare lab", "compare reports", "report trend", "lab comparison"]
+        "keywords": ["compare lab", "compare reports", "report trend", "lab comparison", "compare lab reports"]
     },
     "get_medical_summary": {
         "agent": "medical",
         "action": "get_medical_summary",
         "required_params": ["patient_id"],
-        "keywords": ["medical summary", "clinical summary", "patient medical summary", "doctor summary"]
+        "keywords": ["medical summary", "clinical summary", "patient medical summary", "doctor summary", "summarize patient", "summarize lab", "summarize report"]
     },
     "explain_lab_report": {
         "agent": "medical",
@@ -70,8 +70,8 @@ ACTION_REGISTRY: Dict[str, Dict[str, Any]] = {
     "get_available_slots": {
         "agent": "appointment",
         "action": "get_available_slots",
-        "required_params": ["doctor_id", "date"],
-        "keywords": ["available slots", "doctor availability", "check slots", "free slots", "open slots"]
+        "required_params": ["doctor_id"],
+        "keywords": ["available slots", "doctor availability", "check slots", "free slots", "open slots", "appointments available", "available for", "available appointments", "appointments are available", "slots for", "appointments for"]
     },
     "book_appointment": {
         "agent": "appointment",
