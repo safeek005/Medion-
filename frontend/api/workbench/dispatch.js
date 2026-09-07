@@ -394,8 +394,31 @@ function handleAssistantAgent(action, payload) {
   const message = payload.message || payload.prompt || payload.query || "";
   const lower = message.toLowerCase();
 
+  // Route to Appointment (check appointment before medical to prioritize scheduling terms)
+  if (/\b(slot|slots|appointment|appointments|schedule|scheduling|available|availability|book|booking)\b/i.test(message) || /DOC-\d+/i.test(message)) {
+    const docMatch = message.match(/DOC-\d+/i);
+    const aptResult = handleAppointmentAgent("get_available_slots", {
+      doctor_id: docMatch ? docMatch[0].toUpperCase() : "DOC-101",
+      date: "2024-09-10"
+    });
+    return {
+      agent_id: "AGT-AST-001",
+      agent_name: "Assistant Agent",
+      agent_type: "orchestrator",
+      summary: aptResult.summary,
+      result_data: {
+        success: true,
+        intent: "get_available_slots",
+        target_agent: "appointment",
+        target_action: "get_available_slots",
+        formatted_text: aptResult.summary,
+        result_data: aptResult.result_data
+      }
+    };
+  }
+
   // Route to Medical
-  if (lower.includes("lab") || lower.includes("report") || lower.includes("analyze") || lower.includes("panel") || lower.includes("hemoglobin") || lower.includes("cholesterol") || lower.includes("labr-")) {
+  if (/\b(lab|labs|laboratory|report|reports|analyze|analysis|findings|panel|hemoglobin|cholesterol|tsh|blood)\b/i.test(message) || /LABR-\d+/i.test(message)) {
     const reportMatch = message.match(/LABR-\d+/i);
     const patientMatch = message.match(/PAT-\d+/i);
     const medResult = handleMedicalAgent("analyze_lab_report", {
@@ -419,31 +442,8 @@ function handleAssistantAgent(action, payload) {
     };
   }
 
-  // Route to Appointment
-  if (lower.includes("slot") || lower.includes("appointment") || lower.includes("schedule") || lower.includes("available") || lower.includes("book") || lower.includes("doc-")) {
-    const docMatch = message.match(/DOC-\d+/i);
-    const aptResult = handleAppointmentAgent("get_available_slots", {
-      doctor_id: docMatch ? docMatch[0].toUpperCase() : "DOC-101",
-      date: "2024-09-10"
-    });
-    return {
-      agent_id: "AGT-AST-001",
-      agent_name: "Assistant Agent",
-      agent_type: "orchestrator",
-      summary: aptResult.summary,
-      result_data: {
-        success: true,
-        intent: "get_available_slots",
-        target_agent: "appointment",
-        target_action: "get_available_slots",
-        formatted_text: aptResult.summary,
-        result_data: aptResult.result_data
-      }
-    };
-  }
-
   // Route to Insurance
-  if (lower.includes("insurance") || lower.includes("eligib") || lower.includes("policy") || lower.includes("coverage") || lower.includes("pol-")) {
+  if (/\b(insurance|eligibility|eligible|policy|policies|coverage|copay|claim|claims)\b/i.test(message) || /POL-\d+/i.test(message) || /INS-\d+/i.test(message)) {
     const patMatch = message.match(/PAT-\d+/i);
     const insResult = handleInsuranceAgent("verify_insurance", {
       patient_id: patMatch ? patMatch[0].toUpperCase() : "PAT-1001"
