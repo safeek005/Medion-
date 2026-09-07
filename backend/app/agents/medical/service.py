@@ -119,16 +119,53 @@ class MedicalService:
         }
         expl_data = ai_provider.generate_explanation(report_data, audience=payload.get("audience", "doctor"))
 
+        abnormal_findings = [
+            {
+                "parameter": item["test_name"],
+                "value": f"{item['value']} {item['unit']}",
+                "status": item["status"],
+                "reference_range": item["raw_reference"],
+                "flagged": True
+            }
+            for item in analyzed_items if item["flagged"]
+        ]
+
+        normal_findings = [
+            {
+                "parameter": item["test_name"],
+                "value": f"{item['value']} {item['unit']}",
+                "status": item["status"],
+                "reference_range": item["raw_reference"],
+                "flagged": False
+            }
+            for item in analyzed_items if not item["flagged"]
+        ]
+
+        patient = mock_db.find_one("patients", "patient_id", patient_id) if patient_id else None
+        patient_name = f"{patient.get('first_name')} {patient.get('last_name')}" if patient else "Arun Kumar"
+
+        safety_note = "This analysis is based only on synthetic MEDION backend data and is not a medical diagnosis."
+
         return {
             "success": True,
             "patient_id": patient_id,
+            "patient_name": patient_name,
             "report_id": report_id,
+            "report_summary": {
+                "report_id": report_id,
+                "patient_id": patient_id,
+                "patient_name": patient_name,
+                "test_name": report_data.get("test_name", "Comprehensive Metabolic Panel")
+            },
+            "abnormal_findings": abnormal_findings,
+            "normal_findings": normal_findings,
             "priority": priority,
             "abnormal_count": abnormal_count,
             "total_count": len(analyzed_items),
             "findings": analyzed_items,
             "explanation": expl_data.get("explanation"),
             "summary": expl_data.get("explanation") or f"Analyzed {len(analyzed_items)} parameters. Found {abnormal_count} abnormal value(s). Priority: {priority}.",
+            "safety_note": safety_note,
             "doctor_review_recommended": abnormal_count > 0
         }
 

@@ -263,17 +263,100 @@ function handlePatientAgent(action, payload) {
 
 // 2. Medical Agent Operations
 function handleMedicalAgent(action, payload) {
-  if (action === "analyze_lab_report" || action === "interpret_lab_results" || action === "get_lab_report") {
-    const reportId = payload.report_id || payload.lab_report_id || "LABR-1001";
-    const patientId = payload.patient_id || "PAT-1001";
-    let report = MOCK_DATA.lab_reports.find(r => r.report_id.toLowerCase() === reportId.toLowerCase());
-    if (!report) {
-      report = MOCK_DATA.lab_reports.find(r => r.patient_id.toLowerCase() === patientId.toLowerCase()) || MOCK_DATA.lab_reports[0];
-    }
-    const abnormal = report.test_results.filter(t => t.flagged || t.status !== "NORMAL");
-    const abnormalStr = abnormal.map(a => `* ${a.test_parameter}: ${a.value} ${a.unit} (Status: ${a.status}, Reference: ${a.reference_range})`).join("\n");
-    const explanation = `CLINICAL SUMMARY (${report.report_id}):\nLaboratory Panel '${report.test_name}' for patient ${report.patient_id} contains ${abnormal.length} parameter(s) outside reference bounds.\n\nAbnormal Findings:\n${abnormalStr}\n\nRECOMMENDED ACTION:\nReview flagged laboratory parameters in conjunction with the patient's full clinical history and vital signs.`;
+  const reportId = payload.report_id || payload.lab_report_id || "LABR-1001";
+  const patientId = payload.patient_id || "PAT-1001";
+  const patientName = payload.patient_name || "Arun Kumar";
 
+  let report = MOCK_DATA.lab_reports.find(r => r.report_id.toLowerCase() === reportId.toLowerCase());
+  if (!report) {
+    report = MOCK_DATA.lab_reports.find(r => r.patient_id.toLowerCase() === patientId.toLowerCase()) || MOCK_DATA.lab_reports[0];
+  }
+
+  const patient = MOCK_DATA.patients.find(p => p.patient_id === report.patient_id) || { first_name: "Arun", last_name: "Kumar" };
+  const fullPatientName = `${patient.first_name} ${patient.last_name}`;
+
+  const abnormal = report.test_results.filter(t => t.flagged || t.status !== "NORMAL").map(t => ({
+    parameter: t.test_parameter,
+    value: `${t.value} ${t.unit}`,
+    status: t.status,
+    reference_range: t.reference_range,
+    flagged: true
+  }));
+
+  const normal = report.test_results.filter(t => !t.flagged && t.status === "NORMAL").map(t => ({
+    parameter: t.test_parameter,
+    value: `${t.value} ${t.unit}`,
+    status: t.status,
+    reference_range: t.reference_range,
+    flagged: false
+  }));
+
+  const abnormalStr = abnormal.map(a => `* ${a.parameter}: ${a.value} (Status: ${a.status}, Reference: ${a.reference_range})`).join("\n");
+  const normalStr = normal.map(n => `* ${n.parameter}: ${n.value} (Status: ${n.status}, Reference: ${n.reference_range})`).join("\n");
+
+  const explanation = `CLINICAL SUMMARY (${report.report_id}):\nLaboratory Panel '${report.test_name}' for patient ${fullPatientName} (${report.patient_id}) contains ${abnormal.length} parameter(s) outside reference bounds.\n\nAbnormal Findings:\n${abnormalStr}\n\nNormal Findings:\n${normalStr}\n\nRECOMMENDED ACTION:\nReview flagged laboratory parameters in conjunction with the patient's full clinical history and vital signs.`;
+
+  const safetyNote = "This analysis is based only on synthetic MEDION backend data and is not a medical diagnosis.";
+
+  if (action === "extract_lab_report") {
+    return {
+      agent_id: "AGT-MED-001",
+      agent_name: "Medical Agent",
+      agent_type: "domain_expert",
+      summary: `Extracted ${report.test_results.length} laboratory test parameters for ${report.report_id}.`,
+      result_data: {
+        success: true,
+        report_id: report.report_id,
+        patient_id: report.patient_id,
+        patient_name: fullPatientName,
+        test_name: report.test_name,
+        test_results: report.test_results,
+        count: report.test_results.length,
+        safety_note: safetyNote
+      }
+    };
+  }
+
+  if (action === "compare_lab_reports") {
+    return {
+      agent_id: "AGT-MED-001",
+      agent_name: "Medical Agent",
+      agent_type: "domain_expert",
+      summary: `Compared lab report ${report.report_id} against baseline. Identified ${abnormal.length} flagged parameter(s).`,
+      result_data: {
+        success: true,
+        report_id: report.report_id,
+        patient_id: report.patient_id,
+        patient_name: fullPatientName,
+        abnormal_findings: abnormal,
+        normal_findings: normal,
+        safety_note: safetyNote
+      }
+    };
+  }
+
+  if (action === "get_medical_summary") {
+    const rx = MOCK_DATA.prescriptions.filter(p => p.patient_id === report.patient_id);
+    const records = MOCK_DATA.medical_records.filter(r => r.patient_id === report.patient_id);
+    return {
+      agent_id: "AGT-MED-001",
+      agent_name: "Medical Agent",
+      agent_type: "domain_expert",
+      summary: `Medical summary for ${fullPatientName}: ${records.length} visit record(s), ${rx.length} active prescription(s), ${abnormal.length} abnormal lab finding(s).`,
+      result_data: {
+        success: true,
+        patient_id: report.patient_id,
+        patient_name: fullPatientName,
+        latest_report: report.report_id,
+        abnormal_findings: abnormal,
+        prescriptions: rx,
+        medical_records: records,
+        safety_note: safetyNote
+      }
+    };
+  }
+
+  if (action === "explain_lab_report") {
     return {
       agent_id: "AGT-MED-001",
       agent_name: "Medical Agent",
@@ -283,36 +366,41 @@ function handleMedicalAgent(action, payload) {
         success: true,
         report_id: report.report_id,
         patient_id: report.patient_id,
-        test_name: report.test_name,
-        collection_date: report.collection_date,
-        status: report.status,
-        abnormal_results: abnormal,
-        test_results: report.test_results,
-        priority: abnormal.length > 0 ? "HIGH" : "NORMAL",
-        abnormal_count: abnormal.length,
-        summary: explanation,
-        explanation: explanation
-      },
-      next_recommended_action: "get_patient_medical_history"
+        patient_name: fullPatientName,
+        explanation: explanation,
+        abnormal_findings: abnormal,
+        normal_findings: normal,
+        safety_note: safetyNote
+      }
     };
   }
-  if (action === "get_prescriptions") {
-    const patientId = payload.patient_id || "PAT-1001";
-    const rx = MOCK_DATA.prescriptions.filter(p => p.patient_id === patientId);
-    return {
-      agent_id: "AGT-MED-001",
-      agent_name: "Medical Agent",
-      agent_type: "domain_expert",
-      summary: `Found ${rx.length} active prescription(s) for patient ${patientId}.`,
-      result_data: { success: true, prescriptions: rx }
-    };
-  }
+
+  // Default: analyze_lab_report
   return {
     agent_id: "AGT-MED-001",
     agent_name: "Medical Agent",
     agent_type: "domain_expert",
-    summary: `Executed medical action ${action}.`,
-    result_data: { success: true }
+    summary: explanation,
+    result_data: {
+      success: true,
+      report_summary: {
+        report_id: report.report_id,
+        patient_id: report.patient_id,
+        patient_name: fullPatientName,
+        test_name: report.test_name,
+        collection_date: report.collection_date,
+        result_date: report.result_date,
+        status: report.status
+      },
+      abnormal_findings: abnormal,
+      normal_findings: normal,
+      priority: abnormal.length > 0 ? "HIGH" : "NORMAL",
+      abnormal_count: abnormal.length,
+      explanation: explanation,
+      summary: explanation,
+      safety_note: safetyNote
+    },
+    next_recommended_action: "get_patient_medical_history"
   };
 }
 
