@@ -1,10 +1,10 @@
 import { WorkbenchRequest, WorkbenchResponse } from '../types';
 
-// Centralized Configurable Webhook URL (Read from Environment Variable)
+// Centralized Configurable Webhook URL (Defaults to Vercel Serverless Dispatch API)
 export const WORKBENCH_WEBHOOK_URL =
   (import.meta as any).env?.VITE_WORKBENCH_WEBHOOK_URL ||
   (import.meta as any).env?.VITE_MEDION_WORKBENCH_URL ||
-  'https://api.agents.snsihub.ai/webhook/c52f49ea-9ddb-45bd-ad60-728faebaa8bd';
+  '/api/workbench/dispatch';
 
 // Generate predictable, unique frontend workflow ID: WF-FE-<timestamp>-<random>
 export function generateWorkflowId(portalSource: string = 'app'): string {
@@ -14,7 +14,8 @@ export function generateWorkflowId(portalSource: string = 'app'): string {
 }
 
 export async function dispatchToWorkbench(request: WorkbenchRequest): Promise<WorkbenchResponse> {
-  const url = WORKBENCH_WEBHOOK_URL;
+  const primaryUrl = WORKBENCH_WEBHOOK_URL;
+  const fallbackUrl = '/api/workbench/dispatch';
 
   // Ensure unique workflow ID if not explicitly provided
   const finalPayload: WorkbenchRequest = {
@@ -22,20 +23,42 @@ export async function dispatchToWorkbench(request: WorkbenchRequest): Promise<Wo
     workflow_id: request.workflow_id || generateWorkflowId(request.portal_source || 'app'),
   };
 
-  try {
+  const tryFetch = async (targetUrl: string): Promise<Response> => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout for multi-agent workflow
+    try {
+      const resp = await fetch(targetUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(finalPayload),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      return resp;
+    } catch (e) {
+      clearTimeout(timeoutId);
+      throw e;
+    }
+  };
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(finalPayload),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
+  try {
+    let response: Response;
+    try {
+      response = await tryFetch(primaryUrl);
+      if (!response.ok && primaryUrl !== fallbackUrl && (response.status === 404 || response.status >= 500)) {
+        console.warn(`Primary URL ${primaryUrl} returned HTTP ${response.status}. Retrying via fallback ${fallbackUrl}...`);
+        response = await tryFetch(fallbackUrl);
+      }
+    } catch (networkErr) {
+      if (primaryUrl !== fallbackUrl) {
+        console.warn(`Primary URL ${primaryUrl} failed. Retrying via fallback ${fallbackUrl}...`);
+        response = await tryFetch(fallbackUrl);
+      } else {
+        throw networkErr;
+      }
+    }
 
     if (!response.ok) {
       return {
@@ -84,7 +107,7 @@ export async function dispatchToWorkbench(request: WorkbenchRequest): Promise<Wo
       errors: [
         isTimeout
           ? 'MEDION could not complete this request. (Connection Timed Out)'
-          : `MEDION could not complete this request. (${err.message || 'Unable to reach SNS Workbench'})`,
+          : `MEDION could not complete this request. (${err.message || 'Unable to reach MEDION API'})`,
       ],
       timestamp: new Date().toLocaleTimeString(),
     };
