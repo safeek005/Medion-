@@ -160,10 +160,18 @@ class DeterministicParser:
             entities["audience"] = "doctor"
 
         # 12. Registration Entity Extraction (Name, Phone, Gender, DOB)
-        name_reg = re.search(r'(?:register|add|create|new)\s+(?:a\s+)?(?:new\s+)?patient\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)', text, re.IGNORECASE)
-        if name_reg:
-            entities["full_name"] = name_reg.group(1).strip()
-            entities["first_name"] = name_reg.group(1).strip().split()[0]
+        name_patterns = [
+            r'(?:patient\s*name\s*:\s*)([A-Za-z]+(?:\s+[A-Za-z]+)?)',
+            r'(?:patient\s*named\s+)([A-Za-z]+(?:\s+[A-Za-z]+)?)',
+            r'(?:register|add|create|new)\s+(?:a\s+)?(?:new\s+)?patient\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)',
+            r'(?:patient\s+)([A-Za-z]+)'
+        ]
+        for pat in name_patterns:
+            m = re.search(pat, text, re.IGNORECASE)
+            if m and m.group(1).lower() not in ["a", "new", "patient", "named", "name"]:
+                entities["full_name"] = m.group(1).strip().title()
+                entities["first_name"] = m.group(1).strip().split()[0].title()
+                break
 
         phone_match = re.search(r'\b(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b|\b\d{10}\b', text)
         if phone_match:
@@ -173,10 +181,16 @@ class DeterministicParser:
         if gender_match:
             entities["gender"] = gender_match.group(0).capitalize()
 
-        dob_match = re.search(r'\b\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4}\b|\b\d{4}-\d{2}-\d{2}\b', text, re.IGNORECASE)
+        dob_match = re.search(r'\b(\d{1,2})[./-](\d{1,2})[./-](\d{4})\b|\b(\d{4})[./-](\d{1,2})[./-](\d{1,2})\b|\b\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4}\b', text, re.IGNORECASE)
         if dob_match:
-            entities["dob"] = dob_match.group(0).strip()
-            entities["date_of_birth"] = dob_match.group(0).strip()
+            raw_dob = dob_match.group(0).strip()
+            dmy = re.match(r'^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$', raw_dob)
+            if dmy:
+                iso_dob = f"{dmy.group(3)}-{int(dmy.group(2)):02d}-{int(dmy.group(1)):02d}"
+            else:
+                iso_dob = raw_dob
+            entities["dob"] = iso_dob
+            entities["date_of_birth"] = iso_dob
 
         # 13. Search query fallback
         if "search" in text_lower or "find" in text_lower or "lookup" in text_lower:

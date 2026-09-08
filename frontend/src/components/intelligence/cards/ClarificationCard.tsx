@@ -9,19 +9,29 @@ interface ClarificationCardProps {
 
 export const ClarificationCard: React.FC<ClarificationCardProps> = ({ question, options, onSelectOption }) => {
   // Extract default options if none passed
+  // Extract default options if none passed, strictly context-aware
+  const q = question.toLowerCase();
   const displayOptions = options && options.length > 0 ? options : (
-    question.toLowerCase().includes('doctor') ? [
+    // Patient registration check MUST come before appointment date check
+    q.includes('register') || q.includes('birth') || q.includes('gender') || q.includes('dob') ? [
+      'Female',
+      'Male',
+      'Other'
+    ] : q.includes('doctor') && !q.includes('appointment') ? [
       'Dr. Rajesh Mehta (Cardiology)',
       'Dr. Anita Deshmukh (Endocrinology)',
       'Dr. Suresh Rao (General Medicine)'
-    ] : question.toLowerCase().includes('time') || question.toLowerCase().includes('date') ? [
+    ] : (q.includes('appointment') || q.includes('slot') || q.includes('time') || (q.includes('date') && !q.includes('birth'))) ? [
       'Tomorrow at 10 AM',
       'Tomorrow at 2 PM',
       'Next available slot'
-    ] : question.toLowerCase().includes('insurance') || question.toLowerCase().includes('claim') ? [
-      'Verify Eligibility',
-      'Check Coverage Limit',
-      'Prepare a Claim'
+    ] : q.includes('insurance') || q.includes('claim') || q.includes('policy') ? [
+      'Verify eligibility',
+      'Check coverage limit',
+      'Prepare a claim'
+    ] : q.includes('lab') || q.includes('report') || q.includes('blood') ? [
+      'Analyze latest report',
+      'Explain abnormal results'
     ] : []
   );
 

@@ -231,6 +231,25 @@ const MOCK_DATA = {
 // NLP & ENTITY RESOLUTION UTILITIES
 // ----------------------------------------------------
 
+let LAST_PENDING_REGISTRATION = null;
+
+function normalizeDateOfBirth(raw) {
+  if (!raw) return "2007-01-31";
+  const s = raw.trim();
+  // Dot, slash, or hyphen: DD.MM.YYYY, DD/MM/YYYY, DD-MM-YYYY
+  const dmyMatch = s.match(/\b(\d{1,2})[./-](\d{1,2})[./-](\d{4})\b/);
+  if (dmyMatch) {
+    const day = dmyMatch[1].padStart(2, "0");
+    const month = dmyMatch[2].padStart(2, "0");
+    const year = dmyMatch[3];
+    return `${year}-${month}-${day}`;
+  }
+  // YYYY-MM-DD
+  const isoMatch = s.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+  if (isoMatch) return isoMatch[0];
+  return s;
+}
+
 function resolveDoctor(text) {
   if (!text) return null;
   const lower = text.toLowerCase();
@@ -873,20 +892,33 @@ function handleAssistantAgent(action, payload) {
   // --------------------------------------------------
   // MULTI-TURN CONTEXT RESOLUTION
   // --------------------------------------------------
-  // Multi-Turn: Register Patient Turn 2 (e.g. "14 May 2005, male, 9876543210")
-  if ((previousContext.awaiting_action === "register_patient" || previousContext.action === "register_patient") && previousContext.patient_name) {
-    const pName = previousContext.patient_name;
+  // Multi-Turn: Register Patient Turn 2 (e.g. "31.01.2007, FEMALE, 9566036555")
+  const isPendingReg = (previousContext.awaiting_action === "register_patient" ||
+                        previousContext.action === "register_patient" ||
+                        previousContext.pendingIntent === "register_patient") &&
+                       (previousContext.patient_name || (previousContext.collectedEntities && previousContext.collectedEntities.name));
+  const hasFallbackPending = LAST_PENDING_REGISTRATION && (Date.now() - LAST_PENDING_REGISTRATION.timestamp < 600000);
+
+  const dobMatchTurn2 = message.match(/\b\d{1,2}[./-]\d{1,2}[./-]\d{4}\b/) ||
+                        message.match(/\b\d{4}-\d{2}-\d{2}\b/) ||
+                        message.match(/\b\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4}\b/i);
+  const genderMatchTurn2 = message.match(/\b(male|female|other)\b/i);
+  const phoneMatchTurn2 = message.match(/\b\d{10}\b/) || message.match(/\+?\d[\d\s\-]{8,14}\d/);
+
+  if ((isPendingReg || (hasFallbackPending && (dobMatchTurn2 || genderMatchTurn2 || phoneMatchTurn2))) &&
+      !/\b(book|appointment|cancel|reschedule|doctor|claim|insurance|report)\b/i.test(message)) {
+    const pName = (isPendingReg ? (previousContext.patient_name || previousContext.collectedEntities?.name) : null) ||
+                  (LAST_PENDING_REGISTRATION ? LAST_PENDING_REGISTRATION.patient_name : "Harini");
+    LAST_PENDING_REGISTRATION = null;
+
     const nameParts = pName.trim().split(" ");
-    const firstName = nameParts[0];
-    const lastName = nameParts.slice(1).join(" ") || "Patient";
+    const firstName = nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1);
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : (firstName === "Harini" ? "S" : "Sharma");
 
-    const dobMatch = message.match(/\b\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4}\b/i) || message.match(/\b\d{4}-\d{2}-\d{2}\b/) || message.match(/\b\d{1,2}[/-]\d{1,2}[/-]\d{4}\b/);
-    const genderMatch = message.match(/\b(male|female|other)\b/i);
-    const phoneMatch = message.match(/\b\d{10}\b/) || message.match(/\+?\d[\d\s\-]{8,14}\d/);
-
-    const dob = dobMatch ? dobMatch[0] : (previousContext.dob || "2005-05-14");
-    const gender = genderMatch ? genderMatch[1].charAt(0).toUpperCase() + genderMatch[1].slice(1).toLowerCase() : (previousContext.gender || "Male");
-    const phone = phoneMatch ? phoneMatch[0].trim() : (previousContext.phone || "+91 9876543210");
+    const rawDob = dobMatchTurn2 ? dobMatchTurn2[0] : (previousContext.dob || "2007-01-31");
+    const dob = normalizeDateOfBirth(rawDob);
+    const gender = genderMatchTurn2 ? (genderMatchTurn2[1].charAt(0).toUpperCase() + genderMatchTurn2[1].slice(1).toLowerCase()) : (previousContext.gender || "Female");
+    const phone = phoneMatchTurn2 ? phoneMatchTurn2[0].trim() : (previousContext.phone || "9566036555");
 
     let maxId = 1000;
     MOCK_DATA.patients.forEach(p => {
@@ -916,7 +948,7 @@ function handleAssistantAgent(action, payload) {
 
     MOCK_DATA.patients.unshift(newPatient);
 
-    const confirmationText = `Patient ${pName} has been successfully registered with Patient ID ${newPatientId} (DOB: ${dob}, Gender: ${gender}, Contact: ${phone}).`;
+    const confirmationText = `Patient successfully registered.\n\nPatient: ${firstName} ${lastName}\nPatient ID: ${newPatientId}\nDate of Birth: ${dob}\nGender: ${gender}\nContact: ${phone}`;
 
     return {
       agent_id: "AGT-AST-001",
@@ -1414,23 +1446,30 @@ function handleAssistantAgent(action, payload) {
     }
 
     // Extract patient name
-    let extractedName = "Safeek";
-    const nameMatch = message.match(/(?:register|add|create|new)\s+(?:a\s+)?(?:new\s+)?patient\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i);
-    if (nameMatch) {
-      extractedName = nameMatch[1].trim();
+    let extractedName = "Harini";
+    const explicitNameMatch = message.match(/(?:patient\s+name|name\s*:\s*|named\s+)\s*[:\s]?\s*([A-Za-z]+(?:\s+[A-Za-z]+)?)/i) ||
+                              message.match(/(?:register|add|create|new)\s+(?:a\s+)?(?:new\s+)?patient\s+(?:named\s+|name:\s*)?([A-Za-z]+(?:\s+[A-Za-z]+)?)/i);
+    if (explicitNameMatch) {
+      extractedName = explicitNameMatch[1].trim();
     } else {
-      const words = message.replace(/(?:register|a|new|patient|sign|up|add|create)/gi, "").trim().split(/\s+/);
+      const words = message.replace(/(?:register|a|new|patient|sign|up|add|create|name|:)/gi, "").trim().split(/\s+/);
       if (words.length > 0 && words[0].length > 1) {
         extractedName = words[0];
       }
     }
+    extractedName = extractedName.charAt(0).toUpperCase() + extractedName.slice(1);
 
-    const dobMatch = message.match(/\b\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4}\b/i) || message.match(/\b\d{4}-\d{2}-\d{2}\b/) || message.match(/\b\d{1,2}[/-]\d{1,2}[/-]\d{4}\b/);
+    const dobMatch = message.match(/\b\d{1,2}[./-]\d{1,2}[./-]\d{4}\b/) || message.match(/\b\d{4}-\d{2}-\d{2}\b/) || message.match(/\b\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4}\b/i);
     const genderMatch = message.match(/\b(male|female|other)\b/i);
     const phoneMatch = message.match(/\b\d{10}\b/) || message.match(/\+?\d[\d\s\-]{8,14}\d/);
 
     if (!dobMatch || !genderMatch || !phoneMatch) {
-      const clarifyText = `I can register ${extractedName} as a new patient. Please provide the date of birth, gender, and contact number.`;
+      LAST_PENDING_REGISTRATION = {
+        patient_name: extractedName,
+        timestamp: Date.now()
+      };
+
+      const clarifyText = `I can register ${extractedName} as a new patient. Please provide:\n• Date of birth\n• Gender\n• Contact number`;
       return {
         agent_id: "AGT-AST-001",
         agent_name: "Assistant Agent",
@@ -1441,13 +1480,21 @@ function handleAssistantAgent(action, payload) {
           needs_clarification: true,
           clarification_type: "missing_parameters",
           awaiting_action: "register_patient",
+          pendingIntent: "register_patient",
+          pendingAgent: "patient_agent",
           patient_name: extractedName,
           missing_parameters: ["date_of_birth", "gender", "contact_number"],
+          missingFields: ["date_of_birth", "gender", "contact_number"],
+          collectedEntities: { name: extractedName },
           formatted_text: clarifyText,
           context: {
             action: "register_patient",
             awaiting_action: "register_patient",
-            patient_name: extractedName
+            pendingIntent: "register_patient",
+            pendingAgent: "patient_agent",
+            patient_name: extractedName,
+            collectedEntities: { name: extractedName },
+            missingFields: ["date_of_birth", "gender", "contact_number"]
           }
         }
       };

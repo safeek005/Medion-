@@ -152,10 +152,31 @@ export const AppointmentResultCard: React.FC<AppointmentResultCardProps> = ({ da
         </div>
 
         {summary && (
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'var(--bg-muted, rgba(0,0,0,0.02))', padding: '0.65rem 0.85rem', borderRadius: '8px' }}>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'var(--bg-muted, rgba(0,0,0,0.02))', padding: '0.65rem 0.85rem', borderRadius: '8px', marginBottom: '0.75rem' }}>
             {summary}
           </div>
         )}
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+          <button
+            onClick={() => {
+              const role = window.location.pathname.split('/')[1] || 'doctor';
+              window.location.href = `/${role}/appointments`;
+            }}
+            className="btn-ui btn-primary-ui"
+            style={{
+              fontSize: '0.82rem',
+              padding: '0.4rem 0.85rem',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem'
+            }}
+          >
+            <Calendar style={{ width: 14, height: 14 }} />
+            <span>View Appointments</span>
+          </button>
+        </div>
       </div>
     );
   }
