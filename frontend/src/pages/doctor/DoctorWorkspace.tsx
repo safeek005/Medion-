@@ -144,7 +144,16 @@ export const DoctorWorkspace: React.FC<DoctorWorkspaceProps> = ({ onTraceGenerat
                 <tbody>
                   <tr><td className="text-muted">Full Address</td><td>{activePatient.address}</td></tr>
                   <tr><td className="text-muted">Contact Phone</td><td>{activePatient.phone}</td></tr>
-                  <tr><td className="text-muted">Emergency Contact</td><td>{activePatient.emergency_contact.name} ({activePatient.emergency_contact.relationship} • {activePatient.emergency_contact.phone})</td></tr>
+                  <tr>
+                    <td className="text-muted">Emergency Contact</td>
+                    <td>
+                      {activePatient.emergency_contact
+                        ? (typeof activePatient.emergency_contact === 'object' && 'name' in activePatient.emergency_contact
+                            ? `${(activePatient.emergency_contact as any).name} (${(activePatient.emergency_contact as any).relationship || 'Contact'} • ${(activePatient.emergency_contact as any).phone || '—'})`
+                            : String(activePatient.emergency_contact))
+                        : 'Not provided'}
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>

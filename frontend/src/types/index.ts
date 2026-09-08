@@ -6,19 +6,21 @@ export interface PatientProfile {
   patient_id: string;
   first_name: string;
   last_name: string;
-  date_of_birth: string;
-  gender: string;
-  blood_group: string;
-  phone: string;
-  email: string;
-  address: string;
-  emergency_contact: {
+  date_of_birth?: string;
+  dob?: string;
+  gender?: string;
+  blood_group?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  emergency_contact?: {
     name: string;
     relationship: string;
     phone: string;
-  };
-  primary_doctor_id: string;
-  insurance_policy_id: string;
+  } | string | null;
+  primary_doctor_id?: string | null;
+  insurance_policy_id?: string | null;
+  created_at?: string;
 }
 
 export interface LabReportItem {

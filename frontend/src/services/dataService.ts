@@ -12,6 +12,9 @@ import {
 import { getSupabaseClient, isSupabaseConfigured } from './supabaseClient';
 
 // Keys for browser persistent storage
+const DB_VERSION_KEY = 'medion_db_version';
+const CURRENT_DB_VERSION = '2.3.0';
+
 const STORAGE_KEYS = {
   PATIENTS: 'medion_db_patients',
   APPOINTMENTS: 'medion_db_appointments',
@@ -182,8 +185,53 @@ function emitDbChange(event: DBChangeEvent) {
  */
 class SharedDataService {
   constructor() {
+    this.sanitizeAndMigrate();
     this.initializeIfEmpty();
     this.syncFromSupabase();
+  }
+
+  private sanitizeAndMigrate() {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) return;
+      const storedVersion = window.localStorage.getItem(DB_VERSION_KEY);
+      if (storedVersion !== CURRENT_DB_VERSION) {
+        console.info(`[MEDION DataLayer] Migrating storage from ${storedVersion || 'legacy'} to ${CURRENT_DB_VERSION}. Purging stale cache.`);
+        // Purge old patient and context cache contaminated with mock defaults
+        window.localStorage.removeItem(STORAGE_KEYS.PATIENTS);
+        window.localStorage.removeItem(STORAGE_KEYS.APPOINTMENTS);
+        window.localStorage.removeItem(STORAGE_KEYS.CONTEXT);
+        window.localStorage.setItem(DB_VERSION_KEY, CURRENT_DB_VERSION);
+      } else {
+        // Surgical purge of any phantom patient records containing hallucinated defaults
+        const rawPatients = window.localStorage.getItem(STORAGE_KEYS.PATIENTS);
+        if (rawPatients) {
+          const list: PatientProfile[] = JSON.parse(rawPatients);
+          let modified = false;
+          const cleaned = list.map((p) => {
+            const isBaseSeed = p.patient_id === 'PAT-1001' || p.patient_id === 'PAT-1002' || p.patient_id === 'PAT-1003';
+            if (!isBaseSeed) {
+              if (p.primary_doctor_id === 'DOC-101') { p.primary_doctor_id = null; modified = true; }
+              if (p.insurance_policy_id === 'POL-701') { p.insurance_policy_id = null; modified = true; }
+              if (p.blood_group === 'O+') { p.blood_group = null; modified = true; }
+              if (p.emergency_contact && typeof p.emergency_contact === 'string' && (p.emergency_contact.includes('Family') || p.emergency_contact.includes('Contact'))) {
+                p.emergency_contact = null;
+                modified = true;
+              }
+              if (p.emergency_contact && typeof p.emergency_contact === 'object' && (p.emergency_contact as any).name === 'Family Emergency Contact') {
+                p.emergency_contact = null;
+                modified = true;
+              }
+            }
+            return p;
+          });
+          if (modified) {
+            window.localStorage.setItem(STORAGE_KEYS.PATIENTS, JSON.stringify(cleaned));
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[MEDION DataLayer] Migration error:', e);
+    }
   }
 
   public isFallbackAllowed(): boolean {
@@ -215,7 +263,7 @@ class SharedDataService {
           date_of_birth: p.date_of_birth || p.dob || '',
           dob: p.dob || p.date_of_birth || '',
           gender: p.gender || '',
-          blood_group: p.blood_group || '',
+          blood_group: p.blood_group || null,
           phone: p.phone || '',
           email: p.email || null,
           address: p.address || null,
@@ -372,7 +420,7 @@ class SharedDataService {
     let updatedList: PatientProfile[];
     if (existingIdx >= 0) {
       updatedList = [...list];
-      updatedList[existingIdx] = { ...updatedList[existingIdx], ...newPatient };
+      updatedList[existingIdx] = newPatient;
     } else {
       updatedList = [newPatient, ...list];
     }
@@ -393,7 +441,7 @@ class SharedDataService {
         phone: newPatient.phone || null,
         email: newPatient.email || null,
         address: newPatient.address || null,
-        emergency_contact: newPatient.emergency_contact?.name ? newPatient.emergency_contact : null,
+        emergency_contact: newPatient.emergency_contact || null,
         primary_doctor_id: newPatient.primary_doctor_id || null,
         insurance_policy_id: newPatient.insurance_policy_id || null,
       }).then(({ error }) => {

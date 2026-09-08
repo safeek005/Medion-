@@ -235,9 +235,9 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
                   <h4 className="h4" style={{ marginBottom: '0.85rem' }}>Emergency Contact & Attending Care</h4>
                   <table className="table-ui">
                     <tbody>
-                      <tr><td className="text-muted">Emergency Contact Name</td><td style={{ fontWeight: 600 }}>{selectedPatient.emergency_contact?.name || 'Not provided'}</td></tr>
-                      <tr><td className="text-muted">Relationship</td><td>{selectedPatient.emergency_contact?.relationship || '—'}</td></tr>
-                      <tr><td className="text-muted">Emergency Phone</td><td>{selectedPatient.emergency_contact?.phone || (typeof selectedPatient.emergency_contact === 'string' ? selectedPatient.emergency_contact : '—')}</td></tr>
+                      <tr><td className="text-muted">Emergency Contact Name</td><td style={{ fontWeight: 600 }}>{(selectedPatient.emergency_contact && typeof selectedPatient.emergency_contact === 'object' && 'name' in selectedPatient.emergency_contact) ? (selectedPatient.emergency_contact as any).name : (typeof selectedPatient.emergency_contact === 'string' && selectedPatient.emergency_contact.trim() ? selectedPatient.emergency_contact : 'Not provided')}</td></tr>
+                      <tr><td className="text-muted">Relationship</td><td>{(selectedPatient.emergency_contact && typeof selectedPatient.emergency_contact === 'object' && 'relationship' in selectedPatient.emergency_contact) ? (selectedPatient.emergency_contact as any).relationship : '—'}</td></tr>
+                      <tr><td className="text-muted">Emergency Phone</td><td>{(selectedPatient.emergency_contact && typeof selectedPatient.emergency_contact === 'object' && 'phone' in selectedPatient.emergency_contact) ? (selectedPatient.emergency_contact as any).phone : (typeof selectedPatient.emergency_contact === 'string' ? selectedPatient.emergency_contact : '—')}</td></tr>
                       <tr><td className="text-muted">Primary Physician</td><td>{selectedPatient.primary_doctor_id ? `Doctor (${selectedPatient.primary_doctor_id})` : 'Not assigned'}</td></tr>
                       <tr><td className="text-muted">Insurance Policy ID</td><td>{selectedPatient.insurance_policy_id || 'Not assigned'}</td></tr>
                     </tbody>
