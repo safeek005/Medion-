@@ -331,25 +331,24 @@ function resolveDoctor(text) {
   return null;
 }
 
-function resolvePatient(text, defaultPatientId = "PAT-1001") {
+function resolvePatient(text, defaultPatientId = null) {
   if (text) {
     const lower = text.toLowerCase();
-    if (lower.includes("pat-1001") || lower.includes("arun")) {
-      return MOCK_DATA.patients.find(p => p.patient_id === "PAT-1001");
-    }
-    if (lower.includes("pat-1002") || lower.includes("sneha") || lower.includes("snesha")) {
-      return MOCK_DATA.patients.find(p => p.patient_id === "PAT-1002");
-    }
-    if (lower.includes("pat-1003") || lower.includes("vikram")) {
-      return MOCK_DATA.patients.find(p => p.patient_id === "PAT-1003");
-    }
     const patIdMatch = text.match(/PAT-\d+/i);
     if (patIdMatch) {
-      const match = MOCK_DATA.patients.find(p => p.patient_id.toLowerCase() === patIdMatch[0].toLowerCase());
+      const match = MOCK_DATA.patients.find(p => p.patient_id.toUpperCase() === patIdMatch[0].toUpperCase());
       if (match) return match;
     }
+    const matchByName = MOCK_DATA.patients.find(p =>
+      lower.includes(p.first_name.toLowerCase()) ||
+      (p.last_name && lower.includes(p.last_name.toLowerCase()))
+    );
+    if (matchByName) return matchByName;
   }
-  return MOCK_DATA.patients.find(p => p.patient_id === defaultPatientId) || MOCK_DATA.patients[0];
+  if (defaultPatientId) {
+    return MOCK_DATA.patients.find(p => p.patient_id.toUpperCase() === defaultPatientId.toUpperCase()) || null;
+  }
+  return null;
 }
 
 function parseRelativeDate(text) {
@@ -847,20 +846,43 @@ async function handlePatientAgent(action, payload) {
   const query = (payload.query || payload.search || payload.name || payload.message || "").toLowerCase();
 
   if (action === "search_patient" || action === "search_patients") {
-    const matches = MOCK_DATA.patients.filter(p =>
-      p.patient_id.toLowerCase().includes(query) ||
-      p.first_name.toLowerCase().includes(query) ||
-      p.last_name.toLowerCase().includes(query) ||
-      query.includes(p.first_name.toLowerCase()) ||
-      query.includes(p.last_name.toLowerCase())
-    );
-    const results = matches.length > 0 ? matches : [MOCK_DATA.patients[0]];
+    let allPatients = MOCK_DATA.patients;
+    try {
+      const sbPatients = await supabaseRequest("patients?select=*&order=created_at.desc", "GET");
+      if (Array.isArray(sbPatients) && sbPatients.length > 0) {
+        allPatients = sbPatients;
+      }
+    } catch (e) {}
+
+    const cleanQ = query.replace(/\b(search|find|lookup|who is|patients?|for)\b/gi, "").trim();
+    const results = allPatients.filter(p => {
+      if (!cleanQ) return true;
+      const fullName = `${p.first_name} ${p.last_name || ''}`.toLowerCase().trim();
+      return (
+        p.patient_id.toLowerCase().includes(cleanQ) ||
+        fullName.includes(cleanQ) ||
+        cleanQ.includes(p.first_name.toLowerCase()) ||
+        p.first_name.toLowerCase().includes(cleanQ) ||
+        (p.last_name && p.last_name.toLowerCase().includes(cleanQ)) ||
+        (p.phone && p.phone.includes(cleanQ))
+      );
+    });
+
+    if (results.length === 0) {
+      return {
+        agent_id: "AGT-PAT-001",
+        agent_name: "Patient Agent",
+        agent_type: "domain_expert",
+        summary: `No patient profiles found matching '${cleanQ || query}'.`,
+        result_data: { success: false, count: 0, patients: [] }
+      };
+    }
 
     return {
       agent_id: "AGT-PAT-001",
       agent_name: "Patient Agent",
       agent_type: "domain_expert",
-      summary: `Found ${results.length} patient profile(s) matching '${query || "all"}': ${results.map(p => `${p.first_name} ${p.last_name} (${p.patient_id})`).join(", ")}.`,
+      summary: `Found ${results.length} patient profile(s) matching '${cleanQ || "all"}': ${results.map(p => `${p.first_name} ${p.last_name || ''} (${p.patient_id})`).join(", ")}.`,
       result_data: { success: true, count: results.length, patients: results },
       next_recommended_action: "get_patient"
     };
@@ -932,12 +954,46 @@ async function handlePatientAgent(action, payload) {
   }
 
   // Default: get_patient
-  const patient = resolvePatient(payload.patient_name || payload.patient_id || query);
+  let patient = null;
+  const targetIdOrName = payload.patient_id || payload.patient_name || query;
+  if (targetIdOrName) {
+    const patIdMatch = String(targetIdOrName).match(/PAT-\d+/i);
+    if (patIdMatch) {
+      const id = patIdMatch[0].toUpperCase();
+      try {
+        const sbRes = await supabaseRequest(`patients?patient_id=eq.${id}&select=*`, 'GET');
+        if (Array.isArray(sbRes) && sbRes.length > 0) patient = sbRes[0];
+      } catch (e) {}
+      if (!patient) patient = MOCK_DATA.patients.find(p => p.patient_id.toUpperCase() === id);
+    } else {
+      const lower = String(targetIdOrName).toLowerCase();
+      try {
+        const sbRes = await supabaseRequest(`patients?select=*`, 'GET');
+        if (Array.isArray(sbRes) && sbRes.length > 0) {
+          patient = sbRes.find(p => lower.includes(p.first_name.toLowerCase()) || (p.last_name && lower.includes(p.last_name.toLowerCase())));
+        }
+      } catch (e) {}
+      if (!patient) {
+        patient = MOCK_DATA.patients.find(p => lower.includes(p.first_name.toLowerCase()) || (p.last_name && lower.includes(p.last_name.toLowerCase())));
+      }
+    }
+  }
+
+  if (!patient) {
+    return {
+      agent_id: "AGT-PAT-001",
+      agent_name: "Patient Agent",
+      agent_type: "domain_expert",
+      summary: `Patient profile '${targetIdOrName || 'unknown'}' could not be found.`,
+      result_data: { success: false, error: "Patient Not Found", patient: null }
+    };
+  }
+
   return {
     agent_id: "AGT-PAT-001",
     agent_name: "Patient Agent",
     agent_type: "domain_expert",
-    summary: `Profile for ${patient.first_name} ${patient.last_name} (${patient.patient_id}): DOB: ${patient.dob || 'Not provided'}, Gender: ${patient.gender || 'Not provided'}, Blood Group: ${patient.blood_group || 'Not provided'}, Primary Doctor: ${patient.primary_doctor_id || 'Not assigned'}, Insurance: ${patient.insurance_policy_id || 'None'}, Emergency Contact: ${patient.emergency_contact?.name ? `${patient.emergency_contact.name} (${patient.emergency_contact.phone || ''})` : 'None'}.`,
+    summary: `Profile for ${patient.first_name} ${patient.last_name || ''} (${patient.patient_id}): DOB: ${patient.dob || 'Not provided'}, Gender: ${patient.gender || 'Not specified'}, Blood Group: ${patient.blood_group || 'Not provided'}, Primary Doctor: ${patient.primary_doctor_id || 'Not assigned'}, Insurance: ${patient.insurance_policy_id || 'Not assigned'}, Emergency Contact: ${patient.emergency_contact?.name ? `${patient.emergency_contact.name} (${patient.emergency_contact.phone || ''})` : (typeof patient.emergency_contact === 'string' && patient.emergency_contact.trim() ? patient.emergency_contact : 'Not provided')}.`,
     result_data: { success: true, patient: patient },
     next_recommended_action: "get_patient_history"
   };
@@ -1673,7 +1729,7 @@ async function handleAssistantAgent(action, payload) {
 
   // Patient Medical / Full History
   if (/\b(history|medical history|full history|clinical records)\b/i.test(message)) {
-    const patRes = handlePatientAgent("get_patient_history", {
+    const patRes = await handlePatientAgent("get_patient_history", {
       patient_id: patient.patient_id
     });
     return {
@@ -1687,15 +1743,16 @@ async function handleAssistantAgent(action, payload) {
         target_agent: "patient",
         target_action: "get_patient_history",
         formatted_text: patRes.summary,
-        result_data: patRes.result_data
+        ...patRes.result_data
       }
     };
   }
 
   // Find / Search Patient
-  if (/\b(find|search|lookup|who is)\b/i.test(message) && (lower.includes("patient") || lower.includes("arun") || lower.includes("sneha") || lower.includes("vikram") || lower.includes("safeek"))) {
-    const patRes = handlePatientAgent("search_patient", {
-      query: message
+  if (/\b(find|search|lookup|who is)\b/i.test(message) && (lower.includes("patient") || lower.includes("arun") || lower.includes("sneha") || lower.includes("vikram") || lower.includes("safeek") || lower.includes("harini") || lower.includes("ananya") || lower.includes("production") || lower.includes("pooja"))) {
+    const cleanQuery = message.replace(/\b(find|search|lookup|who is|patients?|for)\b/gi, "").trim();
+    const patRes = await handlePatientAgent("search_patient", {
+      query: cleanQuery || message
     });
     return {
       agent_id: "AGT-AST-001",
@@ -1708,16 +1765,22 @@ async function handleAssistantAgent(action, payload) {
         target_agent: "patient",
         target_action: "search_patient",
         formatted_text: patRes.summary,
-        result_data: patRes.result_data
+        patients: patRes.result_data.patients,
+        patient: patRes.result_data.patients && patRes.result_data.patients[0],
+        ...patRes.result_data
       }
     };
   }
 
   // Patient Profile
-  if (/\b(profile|patient|pat-\d+)\b/i.test(message) || lower.includes("arun kumar") || lower.includes("sneha sharma") || lower.includes("vikram singh") || lower.includes("safeek")) {
-    const targetPatient = MOCK_DATA.patients.find(p => lower.includes(p.first_name.toLowerCase()) || lower.includes(p.patient_id.toLowerCase())) || patient;
-    const patRes = handlePatientAgent("get_patient", {
-      patient_id: targetPatient.patient_id
+  if (/\b(profile|patient|pat-\d+)\b/i.test(message) || lower.includes("arun kumar") || lower.includes("sneha sharma") || lower.includes("vikram singh") || lower.includes("safeek") || lower.includes("harini") || lower.includes("ananya") || lower.includes("production") || lower.includes("pooja")) {
+    const patIdMatch = message.match(/\bPAT-\d+\b/i);
+    const targetPatientId = patIdMatch
+      ? patIdMatch[0].toUpperCase()
+      : (MOCK_DATA.patients.find(p => lower.includes(p.first_name.toLowerCase()) || lower.includes(p.patient_id.toLowerCase()))?.patient_id || (patient ? patient.patient_id : "PAT-1001"));
+    const patRes = await handlePatientAgent("get_patient", {
+      patient_id: targetPatientId,
+      query: message
     });
     return {
       agent_id: "AGT-AST-001",
@@ -1725,12 +1788,13 @@ async function handleAssistantAgent(action, payload) {
       agent_type: "orchestrator",
       summary: patRes.summary,
       result_data: {
-        success: true,
+        success: patRes.result_data.success !== false,
         intent: "get_patient",
         target_agent: "patient",
         target_action: "get_patient",
         formatted_text: patRes.summary,
-        result_data: patRes.result_data
+        patient: patRes.result_data.patient,
+        ...patRes.result_data
       }
     };
   }
