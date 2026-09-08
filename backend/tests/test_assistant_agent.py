@@ -190,3 +190,125 @@ def test_workbench_dispatch_assistant_agent():
     assert data["output"]["agent_id"] == "AGENT-ASSISTANT-05"
     assert data["output"]["result_data"]["target_agent"] == "medical"
     assert data["output"]["result_data"]["target_action"] == "analyze_lab_report"
+
+# =========================================================================
+# COMPREHENSIVE NATURAL LANGUAGE INTENT & ACTION TEST GROUPS
+# =========================================================================
+
+def test_natural_language_group_1_appointments():
+    agent = AssistantAgent()
+
+    # 1. "When is Dr Rajesh available?"
+    r1 = agent.execute("interpret_request", {"message": "When is Dr Rajesh available?", "user_role": "patient"})
+    assert r1["success"] is True
+    assert r1["target_agent"] == "appointment"
+    assert r1["target_action"] == "get_available_slots"
+    assert r1["required_parameters"]["doctor_id"] == "DOC-101"
+
+    # 2. "Show Dr Rajesh's available slots"
+    r2 = agent.execute("interpret_request", {"message": "Show Dr Rajesh's available slots", "user_role": "patient"})
+    assert r2["target_action"] == "get_available_slots"
+
+    # 3. "Book me with Dr Rajesh tomorrow at 10 AM"
+    r3 = agent.execute("interpret_request", {"message": "Book me with Dr Rajesh tomorrow at 10 AM", "user_role": "patient"})
+    assert r3["target_action"] == "book_appointment"
+    assert r3["required_parameters"]["doctor_id"] == "DOC-101"
+    assert "10:00" in r3["required_parameters"]["time_slot"]
+
+    # 4. "Cancel appointment APT-1001"
+    r4 = agent.execute("interpret_request", {"message": "Cancel appointment APT-1001", "user_role": "patient"})
+    assert r4["target_action"] == "cancel_appointment"
+    assert r4["required_parameters"]["appointment_id"] == "APT-1001"
+
+    # 5. "Move my appointment to Friday"
+    r5 = agent.execute("interpret_request", {"message": "Move my appointment to Friday", "user_role": "patient"})
+    assert r5["target_action"] == "reschedule_appointment"
+    assert "date" in r5["required_parameters"] or "new_date" in r5["required_parameters"]
+
+
+def test_natural_language_group_2_lab_reports():
+    agent = AssistantAgent()
+
+    # 1. "Analyze my latest lab report"
+    r1 = agent.execute("interpret_request", {"message": "Analyze my latest lab report", "user_role": "patient"})
+    assert r1["target_agent"] == "medical"
+    assert r1["target_action"] == "analyze_lab_report"
+
+    # 2. "Explain LABR-1001 simply"
+    r2 = agent.execute("interpret_request", {"message": "Explain LABR-1001 simply", "user_role": "patient"})
+    assert r2["target_action"] == "explain_lab_report"
+    assert r2["required_parameters"]["report_id"] == "LABR-1001"
+
+    # 3. "Compare LABR-1001 and LABR-1002"
+    r3 = agent.execute("interpret_request", {"message": "Compare LABR-1001 and LABR-1002", "user_role": "doctor"})
+    assert r3["target_action"] == "compare_lab_reports"
+    assert r3["required_parameters"]["current_report_id"] == "LABR-1001"
+    assert r3["required_parameters"]["previous_report_id"] == "LABR-1002"
+
+    # 4. "What is abnormal in my blood report?"
+    r4 = agent.execute("interpret_request", {"message": "What is abnormal in my blood report?", "user_role": "patient"})
+    assert r4["target_action"] == "analyze_lab_report"
+
+
+def test_natural_language_group_3_insurance():
+    agent = AssistantAgent()
+
+    # 1. "Is my insurance active?"
+    r1 = agent.execute("interpret_request", {"message": "Is my insurance active?", "user_role": "patient"})
+    assert r1["target_agent"] == "insurance"
+    assert r1["target_action"] == "verify_insurance"
+
+    # 2. "How much coverage do I have?"
+    r2 = agent.execute("interpret_request", {"message": "How much coverage do I have?", "user_role": "patient"})
+    assert r2["target_action"] == "get_coverage"
+
+    # 3. "Prepare a claim"
+    r3 = agent.execute("interpret_request", {"message": "Prepare a claim", "user_role": "nurse"})
+    assert r3["target_action"] == "prepare_claim"
+
+    # 4. "Submit claim CLM-1001"
+    r4 = agent.execute("interpret_request", {"message": "Submit claim CLM-1001", "user_role": "nurse"})
+    assert r4["target_action"] == "submit_claim"
+    assert r4["required_parameters"]["claim_id"] == "CLM-1001"
+
+    # 5. "What is my claim status?"
+    r5 = agent.execute("interpret_request", {"message": "What is my claim status?", "user_role": "patient"})
+    assert r5["target_action"] == "get_claim_status"
+
+
+def test_natural_language_group_4_patients():
+    agent = AssistantAgent()
+
+    # 1. "Find Arun Kumar"
+    r1 = agent.execute("interpret_request", {"message": "Find Arun Kumar", "user_role": "doctor"})
+    assert r1["target_agent"] == "patient"
+    assert r1["target_action"] in ["search_patient", "get_patient"]
+    assert r1["required_parameters"]["patient_id"] == "PAT-1001"
+
+    # 2. "Show patient PAT-1001"
+    r2 = agent.execute("interpret_request", {"message": "Show patient PAT-1001", "user_role": "doctor"})
+    assert r2["target_action"] == "get_patient"
+    assert r2["required_parameters"]["patient_id"] == "PAT-1001"
+
+    # 3. "Show Arun Kumar's medical history"
+    r3 = agent.execute("interpret_request", {"message": "Show Arun Kumar's medical history", "user_role": "doctor"})
+    assert r3["target_action"] == "get_patient_history"
+    assert r3["required_parameters"]["patient_id"] == "PAT-1001"
+
+
+def test_natural_language_group_5_ambiguous():
+    agent = AssistantAgent()
+
+    # 1. "Apply insurance for Sneha Sharma"
+    r1 = agent.execute("interpret_request", {"message": "Apply insurance for Sneha Sharma", "user_role": "patient"})
+    assert r1["is_ambiguous"] is True
+    assert len(r1["ambiguous_options"]) > 1
+
+    # Clarification generation for ambiguous insurance request
+    clarification = agent.execute("handle_clarification", {
+        "ambiguous_options": r1["ambiguous_options"],
+        "target_action": "insurance_actions"
+    })
+    assert clarification["needs_clarification"] is True
+    assert "verify" in clarification["clarification_question"].lower() or "claim" in clarification["clarification_question"].lower()
+

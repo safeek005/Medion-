@@ -33,18 +33,18 @@ export const AskMedionCommand: React.FC<AskMedionCommandProps> = ({ role, onTrac
     return context;
   };
 
-  const handleCommandSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!query.trim()) return;
+  const executePrompt = async (textToSend: string) => {
+    if (!textToSend.trim()) return;
 
+    setQuery(textToSend);
     setLoading(true);
-    setCurrentStep('MEDION is processing...');
+    setCurrentStep('Understanding your request and preparing response...');
     setLastResponse(null);
 
     const routeContext = getRouteContext();
     const startTime = performance.now();
 
-    const response = await executeAssistantAction(query, role, routeContext);
+    const response = await executeAssistantAction(textToSend, role, routeContext);
     const durationMs = Math.round(performance.now() - startTime);
 
     setLoading(false);
@@ -64,12 +64,17 @@ export const AskMedionCommand: React.FC<AskMedionCommandProps> = ({ role, onTrac
         agent_target: 'assistant',
         action: 'interpret_request',
         portal_source: role,
-        payload: { message: query, ...routeContext },
+        payload: { message: textToSend, ...routeContext },
       },
       response: response,
     };
 
     onTraceGenerated(traceStep);
+  };
+
+  const handleCommandSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    executePrompt(query);
   };
 
   return (
@@ -80,7 +85,7 @@ export const AskMedionCommand: React.FC<AskMedionCommandProps> = ({ role, onTrac
           <input
             type="text"
             className="command-input"
-            placeholder='Ask MEDION... (e.g. "Summarize patient&apos;s latest lab report" or "Check insurance coverage")'
+            placeholder='Ask MEDION... (e.g. "Book with Dr Rajesh tomorrow at 10 AM" or "Check my insurance coverage")'
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -114,7 +119,11 @@ export const AskMedionCommand: React.FC<AskMedionCommandProps> = ({ role, onTrac
               {lastResponse.errors[0]}
             </div>
           ) : (
-            <HumanResponseRenderer response={lastResponse} />
+            <HumanResponseRenderer
+              response={lastResponse}
+              onSelectPrompt={(selectedPrompt) => executePrompt(selectedPrompt)}
+              onRetry={() => executePrompt(query)}
+            />
           )}
         </div>
       )}
