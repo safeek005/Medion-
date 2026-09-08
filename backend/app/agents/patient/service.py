@@ -20,7 +20,7 @@ class PatientService:
         dob = payload.get("date_of_birth") or payload.get("dob") or "2000-01-01"
         gender = payload.get("gender")
         phone = payload.get("phone")
-        email = payload.get("email")
+        email = payload.get("email") or f"{first_name.lower()}@example.com"
         address = payload.get("address", "")
         blood_group = payload.get("blood_group", "O+")
 
@@ -29,8 +29,6 @@ class PatientService:
             raise ValueError("Patient name (first_name or full_name) is required.")
         if not phone:
             raise ValueError("Patient phone number is required.")
-        if not email:
-            raise ValueError("Patient email address is required.")
         if not gender:
             raise ValueError("Patient gender is required.")
 

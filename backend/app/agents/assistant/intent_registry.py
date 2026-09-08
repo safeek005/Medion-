@@ -6,8 +6,8 @@ ACTION_REGISTRY: Dict[str, Dict[str, Any]] = {
     "register_patient": {
         "agent": "patient",
         "action": "register_patient",
-        "required_params": ["full_name", "phone", "email", "gender"],
-        "keywords": ["register patient", "new patient", "create patient", "sign up patient", "patient registration"]
+        "required_params": ["full_name", "gender", "phone"],
+        "keywords": ["register patient", "new patient", "create patient", "sign up patient", "patient registration", "register a new patient"]
     },
     "get_patient": {
         "agent": "patient",

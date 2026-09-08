@@ -159,7 +159,26 @@ class DeterministicParser:
         elif "doctor" in text_lower:
             entities["audience"] = "doctor"
 
-        # 12. Search query fallback
+        # 12. Registration Entity Extraction (Name, Phone, Gender, DOB)
+        name_reg = re.search(r'(?:register|add|create|new)\s+(?:a\s+)?(?:new\s+)?patient\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)', text, re.IGNORECASE)
+        if name_reg:
+            entities["full_name"] = name_reg.group(1).strip()
+            entities["first_name"] = name_reg.group(1).strip().split()[0]
+
+        phone_match = re.search(r'\b(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b|\b\d{10}\b', text)
+        if phone_match:
+            entities["phone"] = phone_match.group(0).strip()
+
+        gender_match = re.search(r'\b(male|female|other)\b', text, re.IGNORECASE)
+        if gender_match:
+            entities["gender"] = gender_match.group(0).capitalize()
+
+        dob_match = re.search(r'\b\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4}\b|\b\d{4}-\d{2}-\d{2}\b', text, re.IGNORECASE)
+        if dob_match:
+            entities["dob"] = dob_match.group(0).strip()
+            entities["date_of_birth"] = dob_match.group(0).strip()
+
+        # 13. Search query fallback
         if "search" in text_lower or "find" in text_lower or "lookup" in text_lower:
             if "patient_id" not in entities:
                 parts = text.split("for ") if "for " in text else text.split("find ")

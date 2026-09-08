@@ -1,7 +1,4 @@
 import {
-  MOCK_PATIENTS_LIST,
-  MOCK_LAB_REPORT,
-  MOCK_APPOINTMENTS,
   MOCK_PRESCRIPTIONS,
   MOCK_NOTIFICATIONS,
   PrescriptionItem,
@@ -9,30 +6,23 @@ import {
 } from '../data/mockDatasets';
 import { PatientProfile, LabReportItem, AppointmentItem, WorkbenchRequest, WorkbenchResponse } from '../types';
 import { dispatchToWorkbench, generateWorkflowId } from './workbench';
+import { dataService } from '../services/dataService';
 
-// Centralized API & Service Layer for MEDION Frontend
+// Centralized API & Service Layer for MEDION Frontend powered by Persistent Data Layer
 export async function searchPatients(query: string): Promise<PatientProfile[]> {
-  const q = query.toLowerCase();
-  return MOCK_PATIENTS_LIST.filter(
-    (p) =>
-      `${p.first_name} ${p.last_name}`.toLowerCase().includes(q) ||
-      p.patient_id.toLowerCase().includes(q) ||
-      p.phone.includes(q) ||
-      p.email.toLowerCase().includes(q)
-  );
+  return dataService.searchPatients(query);
 }
 
 export async function getPatientById(patientId: string): Promise<PatientProfile | null> {
-  return MOCK_PATIENTS_LIST.find((p) => p.patient_id === patientId) || null;
+  return dataService.getPatientById(patientId);
 }
 
 export async function getLabReportById(reportId: string): Promise<LabReportItem | null> {
-  if (reportId === 'LABR-1001') return MOCK_LAB_REPORT;
-  return null;
+  return dataService.getLabReportById(reportId);
 }
 
 export async function getAppointments(): Promise<AppointmentItem[]> {
-  return MOCK_APPOINTMENTS;
+  return dataService.getAppointments();
 }
 
 export async function getPrescriptions(): Promise<PrescriptionItem[]> {
@@ -43,9 +33,66 @@ export async function getNotifications(): Promise<NotificationItem[]> {
   return MOCK_NOTIFICATIONS;
 }
 
+/**
+ * Synchronizes confirmed database entities returned by MEDION Agent actions
+ * into the client-side shared database.
+ */
+function syncAgentResultWithDatabase(response: WorkbenchResponse) {
+  if (!response || !response.success || !response.output) return;
+
+  const resData = response.output.result_data || {};
+  const action = response.action_performed || resData.target_action || resData.intent || '';
+
+  // 1. Patient Registration / Updates
+  if (action === 'register_patient' || resData.patient?.created_at || (resData.patient && !dataService.getPatientById(resData.patient.patient_id))) {
+    if (resData.patient) {
+      dataService.createPatient(resData.patient);
+    }
+  } else if (action === 'update_patient' && resData.patient) {
+    dataService.updatePatient(resData.patient.patient_id, resData.patient);
+  }
+
+  // 2. Appointment Booking / Rescheduling / Cancellation
+  if (action === 'book_appointment' && resData.appointment) {
+    dataService.bookAppointment(resData.appointment);
+  } else if (action === 'cancel_appointment' && resData.appointment_id) {
+    dataService.cancelAppointment(resData.appointment_id);
+  } else if (action === 'reschedule_appointment' && resData.appointment) {
+    dataService.bookAppointment(resData.appointment); // bookAppointment updates if ID exists
+  }
+
+  // 3. Claims
+  if (action === 'submit_claim' && resData.claim) {
+    dataService.submitClaim(resData.claim);
+  }
+
+  // 4. Conversation Context Tracking for Multi-turn
+  if (resData.needs_clarification && resData.context) {
+    dataService.setConversationContext(resData.context);
+  } else if (resData.needs_clarification && resData.awaiting_action) {
+    dataService.setConversationContext({
+      action: resData.awaiting_action,
+      patient_name: resData.patient_name,
+      doctor_id: resData.doctor_id,
+      patient_id: resData.patient_id,
+    });
+  } else if (response.success && !resData.needs_clarification) {
+    // Operation completed successfully, clear active multi-turn context
+    dataService.clearConversationContext();
+  }
+}
+
 // Centralized Workbench Dispatcher
 export async function dispatchWorkbench(request: WorkbenchRequest): Promise<WorkbenchResponse> {
-  return await dispatchToWorkbench(request);
+  // Attach active conversation context if present
+  const activeCtx = dataService.getConversationContext();
+  if (activeCtx && request.payload && !request.payload.conversation_context) {
+    request.payload.conversation_context = activeCtx;
+  }
+
+  const res = await dispatchToWorkbench(request);
+  syncAgentResultWithDatabase(res);
+  return res;
 }
 
 // Domain Action Workbench Dispatchers (Structured Requests)
@@ -61,7 +108,7 @@ export async function executePatientAction(
     portal_source: portalSource,
     payload,
   };
-  return await dispatchToWorkbench(req);
+  return await dispatchWorkbench(req);
 }
 
 export async function executeMedicalAction(
@@ -76,7 +123,7 @@ export async function executeMedicalAction(
     portal_source: portalSource,
     payload,
   };
-  return await dispatchToWorkbench(req);
+  return await dispatchWorkbench(req);
 }
 
 export async function executeAppointmentAction(
@@ -91,7 +138,7 @@ export async function executeAppointmentAction(
     portal_source: portalSource,
     payload,
   };
-  return await dispatchToWorkbench(req);
+  return await dispatchWorkbench(req);
 }
 
 export async function executeInsuranceAction(
@@ -106,7 +153,7 @@ export async function executeInsuranceAction(
     portal_source: portalSource,
     payload,
   };
-  return await dispatchToWorkbench(req);
+  return await dispatchWorkbench(req);
 }
 
 export async function executeAssistantAction(
@@ -114,12 +161,21 @@ export async function executeAssistantAction(
   portalSource: string = 'doctor',
   contextPayload: Record<string, any> = {}
 ): Promise<WorkbenchResponse> {
+  const activeCtx = dataService.getConversationContext();
   const req: WorkbenchRequest = {
     workflow_id: generateWorkflowId(portalSource),
     agent_target: 'assistant',
     action: 'interpret_request',
     portal_source: portalSource,
-    payload: { message, ...contextPayload },
+    user_role: portalSource,
+    payload: {
+      message,
+      portal_source: portalSource,
+      user_role: portalSource,
+      conversation_context: activeCtx,
+      ...contextPayload,
+    },
   };
-  return await dispatchToWorkbench(req);
+  return await dispatchWorkbench(req);
 }
+

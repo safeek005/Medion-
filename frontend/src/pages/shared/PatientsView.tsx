@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { dispatchToWorkbench } from '../../api/workbench';
 import { HumanResponseRenderer } from '../../components/intelligence/HumanResponseRenderer';
+import { useSharedPatients, useSharedAppointments, dataService } from '../../services/dataService';
 import {
   Search,
   ArrowLeft,
@@ -19,6 +20,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   User,
+  Plus,
 } from 'lucide-react';
 
 interface PatientsViewProps {
@@ -30,6 +32,9 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
   const { patientId } = useParams<{ patientId?: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const patientsList = useSharedPatients();
+  const sharedAppointments = useSharedAppointments();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<'all' | 'active' | 'recent'>('all');
@@ -51,17 +56,17 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
 
   const rolePrefix = getRolePrefix();
 
-  // Find active patient from route or fallback to selected
+  // Find active patient from route or fallback to selected from dynamic shared storage
   const activePatientId = patientId || 'PAT-1001';
-  const selectedPatient = MOCK_PATIENTS_LIST.find(p => p.patient_id === activePatientId) || MOCK_PATIENTS_LIST[0];
+  const selectedPatient = patientsList.find(p => p.patient_id.toUpperCase() === activePatientId.toUpperCase()) || patientsList[0] || MOCK_PATIENTS_LIST[0];
 
   // Filter patients list
-  const filteredPatients = MOCK_PATIENTS_LIST.filter(p => {
+  const filteredPatients = patientsList.filter(p => {
     const matchesSearch =
       `${p.first_name} ${p.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.patient_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.phone.includes(searchQuery) ||
-      p.email.toLowerCase().includes(searchQuery.toLowerCase());
+      (p.phone && p.phone.includes(searchQuery)) ||
+      (p.email && p.email.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesSearch;
   });
 
@@ -386,28 +391,40 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
             {activeTab === 'appointments' && (
               <div>
                 <h4 className="h4" style={{ marginBottom: '1rem' }}>Scheduled Appointments</h4>
-                <table className="table-ui">
-                  <thead>
-                    <tr>
-                      <th>Appointment ID</th>
-                      <th>Attending Doctor</th>
-                      <th>Date & Slot</th>
-                      <th>Reason for Visit</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {MOCK_APPOINTMENTS.map((apt, i) => (
-                      <tr key={i}>
-                        <td style={{ fontWeight: 600 }}>{apt.appointment_id}</td>
-                        <td>{apt.doctor_id}</td>
-                        <td>{apt.date} ({apt.time_slot})</td>
-                        <td>{apt.reason}</td>
-                        <td><Badge variant="green">{apt.status}</Badge></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                {(() => {
+                  const patientApts = sharedAppointments.filter(
+                    (a) => a.patient_id.toUpperCase() === selectedPatient.patient_id.toUpperCase()
+                  );
+                  const displayApts = patientApts.length > 0 ? patientApts : sharedAppointments;
+                  return (
+                    <table className="table-ui">
+                      <thead>
+                        <tr>
+                          <th>Appointment ID</th>
+                          <th>Attending Doctor</th>
+                          <th>Date & Slot</th>
+                          <th>Reason for Visit</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {displayApts.map((apt, i) => (
+                          <tr key={apt.appointment_id || i}>
+                            <td style={{ fontWeight: 600 }}>{apt.appointment_id}</td>
+                            <td>{apt.doctor_id}</td>
+                            <td>{apt.date} ({apt.time_slot})</td>
+                            <td>{apt.reason}</td>
+                            <td>
+                              <Badge variant={apt.status === 'CANCELLED' ? 'red' : apt.status === 'RESCHEDULED' ? 'amber' : 'green'}>
+                                {apt.status}
+                              </Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  );
+                })()}
               </div>
             )}
 

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { MOCK_APPOINTMENTS } from '../../data/mockDatasets';
 import { AppointmentItem } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { PageHeader, SectionHeader } from '../../components/common/SharedComponents';
 import { Calendar, Clock, Plus, X, CheckCircle2 } from 'lucide-react';
+import { useSharedAppointments, dataService } from '../../services/dataService';
 
 export const AppointmentsView: React.FC = () => {
-  const [appointments, setAppointments] = useState<AppointmentItem[]>(MOCK_APPOINTMENTS);
+  const appointments = useSharedAppointments();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
@@ -15,14 +15,13 @@ export const AppointmentsView: React.FC = () => {
   // New Appointment Form State
   const [newPatientId, setNewPatientId] = useState('PAT-1001');
   const [newDoctorId, setNewDoctorId] = useState('DOC-101');
-  const [newDate, setNewDate] = useState('2024-09-15');
+  const [newDate, setNewDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [newTimeSlot, setNewTimeSlot] = useState('14:00-14:30');
   const [newReason, setNewReason] = useState('Routine Cardiology Consultation');
 
   const handleBookSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newApt: AppointmentItem = {
-      appointment_id: `APT-${1000 + appointments.length + 1}`,
+    const newApt = dataService.bookAppointment({
       patient_id: newPatientId,
       doctor_id: newDoctorId,
       hospital_id: 'HOSP-001',
@@ -30,16 +29,15 @@ export const AppointmentsView: React.FC = () => {
       time_slot: newTimeSlot,
       status: 'SCHEDULED',
       reason: newReason,
-    };
+    });
 
-    setAppointments([newApt, ...appointments]);
     setIsModalOpen(false);
     setNotificationMsg(`Appointment ${newApt.appointment_id} scheduled successfully for ${newDate}!`);
     setTimeout(() => setNotificationMsg(null), 4000);
   };
 
   const handleCancelApt = (id: string) => {
-    setAppointments(appointments.map(a => a.appointment_id === id ? { ...a, status: 'CANCELLED' } : a));
+    dataService.cancelAppointment(id);
     setNotificationMsg(`Appointment ${id} has been cancelled.`);
     setTimeout(() => setNotificationMsg(null), 4000);
   };
@@ -99,11 +97,9 @@ export const AppointmentsView: React.FC = () => {
                   <td>{apt.date} ({apt.time_slot})</td>
                   <td>{apt.reason}</td>
                   <td>
-                    {apt.status === 'SCHEDULED' ? (
-                      <Badge variant="green">{apt.status}</Badge>
-                    ) : (
-                      <Badge variant="red">{apt.status}</Badge>
-                    )}
+                    <Badge variant={apt.status === 'CANCELLED' ? 'red' : apt.status === 'RESCHEDULED' ? 'amber' : 'green'}>
+                      {apt.status}
+                    </Badge>
                   </td>
                   <td>
                     {apt.status !== 'CANCELLED' && (
@@ -119,14 +115,19 @@ export const AppointmentsView: React.FC = () => {
         </div>
       ) : (
         <div className="section-panel">
-          <SectionHeader title="September 2024 Clinical Calendar" />
+          <SectionHeader title="Clinical Calendar & Availability" />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.5rem', textAlign: 'center' }}>
             {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
               <div key={day} style={{ fontWeight: 600, fontSize: '0.8rem', padding: '0.5rem', background: 'var(--bg-surface-secondary)' }}>{day}</div>
             ))}
             {Array.from({ length: 30 }).map((_, i) => {
               const dayNum = i + 1;
-              const hasApt = dayNum === 10 || dayNum === 12 || dayNum === 15;
+              const activeApts = appointments.filter(a => {
+                if (!a.date || a.status === 'CANCELLED') return false;
+                const d = parseInt(a.date.split('-')[2], 10);
+                return d === dayNum;
+              });
+              const hasApt = activeApts.length > 0;
               return (
                 <div
                   key={i}
@@ -141,8 +142,8 @@ export const AppointmentsView: React.FC = () => {
                 >
                   <div style={{ fontWeight: 600, fontSize: '0.75rem' }}>{dayNum}</div>
                   {hasApt && (
-                    <div style={{ fontSize: '0.7rem', color: 'var(--forest-green)', marginTop: '0.25rem', fontWeight: 600 }}>
-                      ● Scheduled
+                    <div style={{ fontSize: '0.68rem', color: 'var(--forest-green)', marginTop: '0.25rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      ● {activeApts[0].appointment_id}
                     </div>
                   )}
                 </div>

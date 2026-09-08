@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { UserRole, ExecutionTraceStep } from '../../types';
 import { Sparkles, ArrowRight, Code, RotateCcw, User, Bot, Clock, ShieldAlert, CheckCircle2, Trash2 } from 'lucide-react';
-import { dispatchToWorkbench } from '../../api/workbench';
+import { dispatchWorkbench } from '../../api/medionApi';
 import { Button } from '../../components/ui/Button';
 import { HumanResponseRenderer } from '../../components/intelligence/HumanResponseRenderer';
+import { dataService } from '../../services/dataService';
 
 interface MessageItem {
   id: string;
@@ -52,7 +53,7 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
     ];
   });
 
-  const [conversationContext, setConversationContext] = useState<Record<string, any>>({});
+  const [conversationContext, setConversationContext] = useState<Record<string, any>>(() => dataService.getConversationContext() || {});
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   // Save conversation in session
@@ -78,12 +79,14 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
   }, [loading]);
 
   const samplePrompts = [
-    { label: 'Book with Dr Rajesh', prompt: 'Book me an appointment with Dr Rajesh Mehta at 10 AM tomorrow' },
+    { label: 'Register Patient', prompt: 'Register a new patient Safeek' },
     { label: 'Check Dr Rajesh Slots', prompt: 'When is Dr Rajesh available?' },
+    { label: 'Book with Dr Rajesh', prompt: 'Book an appointment with Dr Rajesh tomorrow at 10 AM' },
+    { label: 'Cancel Appointment', prompt: 'Cancel appointment APT-1001' },
     { label: 'Analyze Lab Report', prompt: "Analyze Arun Kumar's latest laboratory report (LABR-1001)" },
     { label: 'Explain Lab Results', prompt: 'Explain LABR-1001 in simple language' },
     { label: 'Verify Insurance', prompt: 'Is my insurance active?' },
-    { label: 'Check Coverage', prompt: 'How much insurance coverage do I have?' },
+    { label: 'Submit Claim', prompt: 'Submit claim CLM-1001' },
     { label: 'Patient History', prompt: "Show Arun Kumar's medical history" }
   ];
 
@@ -107,11 +110,13 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
     setLoading(true);
     setProcessingStepIdx(0);
 
+    const activeCtx = conversationContext || dataService.getConversationContext() || {};
     const requestPayload: any = {
       portal_source: role,
       message: textToSend,
       user_role: role,
-      previous_context: conversationContext
+      previous_context: activeCtx,
+      conversation_context: activeCtx,
     };
 
     // Include patient context automatically if user is patient
@@ -121,21 +126,25 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
 
     const startTime = performance.now();
     try {
-      const res = await dispatchToWorkbench(requestPayload);
+      const res = await dispatchWorkbench(requestPayload);
       const duration = Math.round(performance.now() - startTime);
 
       // Extract context if clarification was asked or doctor/action was identified
       const outData = res?.output?.result_data || res?.result || {};
       if (outData?.needs_clarification) {
-        setConversationContext({
+        const nextCtx = outData.context || {
           awaiting_action: outData.awaiting_action,
+          patient_name: outData.patient_name,
           doctor_id: outData.doctor_id,
           doctor_name: outData.doctor_name,
           patient_id: outData.patient_id || (role === 'patient' ? 'PAT-1001' : undefined)
-        });
+        };
+        setConversationContext(nextCtx);
+        dataService.setConversationContext(nextCtx);
       } else {
         // Reset context after successful execution
         setConversationContext({});
+        dataService.clearConversationContext();
       }
 
       const medionMsg: MessageItem = {

@@ -312,3 +312,30 @@ def test_natural_language_group_5_ambiguous():
     assert clarification["needs_clarification"] is True
     assert "verify" in clarification["clarification_question"].lower() or "claim" in clarification["clarification_question"].lower()
 
+
+def test_natural_language_group_6_registration_and_updates():
+    agent = AssistantAgent()
+
+    # 1. "Register a new patient Safeek"
+    r1 = agent.execute("interpret_request", {"message": "Register a new patient Safeek", "user_role": "doctor"})
+    assert r1["target_action"] == "register_patient"
+    assert r1["required_parameters"].get("full_name") == "Safeek"
+    # Needs gender and phone before creating
+    assert "gender" in r1["missing_parameters"] or "phone" in r1["missing_parameters"]
+
+    # 2. "When is Dr Rajesh available?"
+    r2 = agent.execute("interpret_request", {"message": "When is Dr Rajesh available?", "user_role": "patient"})
+    assert r2["target_action"] == "get_available_slots"
+    assert r2["required_parameters"]["doctor_id"] == "DOC-101"
+
+    # 3. "Cancel appointment APT-1001"
+    r3 = agent.execute("interpret_request", {"message": "Cancel appointment APT-1001", "user_role": "patient"})
+    assert r3["target_action"] == "cancel_appointment"
+    assert r3["required_parameters"]["appointment_id"] == "APT-1001"
+
+    # 4. "Submit claim CLM-1001"
+    r4 = agent.execute("interpret_request", {"message": "Submit claim CLM-1001", "user_role": "insurance"})
+    assert r4["target_action"] == "submit_claim"
+    assert r4["required_parameters"]["claim_id"] == "CLM-1001"
+
+

@@ -716,7 +716,15 @@ function handleInsuranceAgent(action, payload) {
         claim_id: claimId,
         status: "APPROVED",
         approved_amount: approvedAmount,
-        provider: policy.provider_name
+        provider: policy.provider_name,
+        claim: {
+          claim_id: claimId,
+          patient_id: patient.patient_id,
+          policy_id: policy.policy_id,
+          status: "APPROVED",
+          approved_amount: approvedAmount,
+          provider: policy.provider_name
+        }
       }
     };
   }
@@ -865,6 +873,68 @@ function handleAssistantAgent(action, payload) {
   // --------------------------------------------------
   // MULTI-TURN CONTEXT RESOLUTION
   // --------------------------------------------------
+  // Multi-Turn: Register Patient Turn 2 (e.g. "14 May 2005, male, 9876543210")
+  if ((previousContext.awaiting_action === "register_patient" || previousContext.action === "register_patient") && previousContext.patient_name) {
+    const pName = previousContext.patient_name;
+    const nameParts = pName.trim().split(" ");
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(" ") || "Patient";
+
+    const dobMatch = message.match(/\b\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4}\b/i) || message.match(/\b\d{4}-\d{2}-\d{2}\b/) || message.match(/\b\d{1,2}[/-]\d{1,2}[/-]\d{4}\b/);
+    const genderMatch = message.match(/\b(male|female|other)\b/i);
+    const phoneMatch = message.match(/\b\d{10}\b/) || message.match(/\+?\d[\d\s\-]{8,14}\d/);
+
+    const dob = dobMatch ? dobMatch[0] : (previousContext.dob || "2005-05-14");
+    const gender = genderMatch ? genderMatch[1].charAt(0).toUpperCase() + genderMatch[1].slice(1).toLowerCase() : (previousContext.gender || "Male");
+    const phone = phoneMatch ? phoneMatch[0].trim() : (previousContext.phone || "+91 9876543210");
+
+    let maxId = 1000;
+    MOCK_DATA.patients.forEach(p => {
+      const match = p.patient_id.match(/PAT-(\d+)/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxId) maxId = num;
+      }
+    });
+    const newPatientId = `PAT-${maxId + 1}`;
+
+    const newPatient = {
+      patient_id: newPatientId,
+      first_name: firstName,
+      last_name: lastName,
+      dob: dob,
+      gender: gender,
+      blood_group: "O+",
+      phone: phone,
+      email: `${firstName.toLowerCase()}@example.com`,
+      address: "Indiranagar, Bengaluru, Karnataka",
+      emergency_contact: { name: "Family Emergency Contact", relationship: "Family", phone: phone },
+      primary_doctor_id: "DOC-101",
+      insurance_policy_id: "POL-701",
+      created_at: new Date().toISOString()
+    };
+
+    MOCK_DATA.patients.unshift(newPatient);
+
+    const confirmationText = `Patient ${pName} has been successfully registered with Patient ID ${newPatientId} (DOB: ${dob}, Gender: ${gender}, Contact: ${phone}).`;
+
+    return {
+      agent_id: "AGT-AST-001",
+      agent_name: "Assistant Agent",
+      agent_type: "orchestrator",
+      summary: confirmationText,
+      result_data: {
+        success: true,
+        intent: "register_patient",
+        target_agent: "patient",
+        target_action: "register_patient",
+        formatted_text: confirmationText,
+        patient: newPatient,
+        patient_id: newPatientId
+      }
+    };
+  }
+
   if (previousContext.awaiting_action === "book_appointment" && (relativeDate || timeSlot)) {
     const finalDate = relativeDate || previousContext.date || "2026-09-09";
     const finalTime = timeSlot || previousContext.time_slot || "10:00-10:30";
@@ -915,6 +985,7 @@ function handleAssistantAgent(action, payload) {
         target_agent: "appointment",
         target_action: "reschedule_appointment",
         formatted_text: aptRes.summary,
+        ...aptRes.result_data,
         result_data: aptRes.result_data
       }
     };
@@ -936,6 +1007,7 @@ function handleAssistantAgent(action, payload) {
         target_agent: "appointment",
         target_action: "cancel_appointment",
         formatted_text: aptRes.summary,
+        ...aptRes.result_data,
         result_data: aptRes.result_data
       }
     };
@@ -958,6 +1030,7 @@ function handleAssistantAgent(action, payload) {
         target_agent: "appointment",
         target_action: "get_appointment",
         formatted_text: aptRes.summary,
+        ...aptRes.result_data,
         result_data: aptRes.result_data
       }
     };
@@ -1028,6 +1101,7 @@ function handleAssistantAgent(action, payload) {
         target_agent: "appointment",
         target_action: "book_appointment",
         formatted_text: bookRes.summary,
+        ...bookRes.result_data,
         result_data: bookRes.result_data
       }
     };
@@ -1253,6 +1327,7 @@ function handleAssistantAgent(action, payload) {
         target_agent: "insurance",
         target_action: "submit_claim",
         formatted_text: insRes.summary,
+        ...insRes.result_data,
         result_data: insRes.result_data
       }
     };
@@ -1274,6 +1349,7 @@ function handleAssistantAgent(action, payload) {
         target_agent: "insurance",
         target_action: "get_claim_status",
         formatted_text: insRes.summary,
+        ...insRes.result_data,
         result_data: insRes.result_data
       }
     };
@@ -1305,6 +1381,168 @@ function handleAssistantAgent(action, payload) {
   // 4. PATIENT AGENT ROUTING
   // --------------------------------------------------
 
+  // Ambiguous Report Query (e.g. "Show my report")
+  if (/^(show|view|check|open|get)?\s*(my\s+)?report\b/i.test(message) && !reportIdMatch && !/\b(blood|lipid|thyroid|latest|compare|explain|analyze)\b/i.test(message)) {
+    const reportClarify = "Which lab report would you like me to check? You can provide a report ID such as LABR-1001.";
+    return {
+      agent_id: "AGT-AST-001",
+      agent_name: "Assistant Agent",
+      agent_type: "orchestrator",
+      summary: reportClarify,
+      result_data: {
+        success: true,
+        needs_clarification: true,
+        clarification_type: "missing_parameters",
+        missing_parameters: ["report_id"],
+        formatted_text: reportClarify
+      }
+    };
+  }
+
+  // Register New Patient (Turn 1 or Single-turn)
+  if (/\b(register|sign up|create patient|new patient|add patient)\b/i.test(message) && (lower.includes("patient") || lower.includes("register"))) {
+    const userRole = (payload.user_role || payload.portal_source || "doctor").toLowerCase();
+    if (userRole === "patient") {
+      const deniedText = "Permission Denied: Patient accounts cannot register new patients or modify patient records. Please switch to a Nurse, Doctor, or Admin role.";
+      return {
+        agent_id: "AGT-AST-001",
+        agent_name: "Assistant Agent",
+        agent_type: "orchestrator",
+        summary: deniedText,
+        result_data: { success: false, error: "Permission Denied", formatted_text: deniedText }
+      };
+    }
+
+    // Extract patient name
+    let extractedName = "Safeek";
+    const nameMatch = message.match(/(?:register|add|create|new)\s+(?:a\s+)?(?:new\s+)?patient\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)/i);
+    if (nameMatch) {
+      extractedName = nameMatch[1].trim();
+    } else {
+      const words = message.replace(/(?:register|a|new|patient|sign|up|add|create)/gi, "").trim().split(/\s+/);
+      if (words.length > 0 && words[0].length > 1) {
+        extractedName = words[0];
+      }
+    }
+
+    const dobMatch = message.match(/\b\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4}\b/i) || message.match(/\b\d{4}-\d{2}-\d{2}\b/) || message.match(/\b\d{1,2}[/-]\d{1,2}[/-]\d{4}\b/);
+    const genderMatch = message.match(/\b(male|female|other)\b/i);
+    const phoneMatch = message.match(/\b\d{10}\b/) || message.match(/\+?\d[\d\s\-]{8,14}\d/);
+
+    if (!dobMatch || !genderMatch || !phoneMatch) {
+      const clarifyText = `I can register ${extractedName} as a new patient. Please provide the date of birth, gender, and contact number.`;
+      return {
+        agent_id: "AGT-AST-001",
+        agent_name: "Assistant Agent",
+        agent_type: "orchestrator",
+        summary: clarifyText,
+        result_data: {
+          success: true,
+          needs_clarification: true,
+          clarification_type: "missing_parameters",
+          awaiting_action: "register_patient",
+          patient_name: extractedName,
+          missing_parameters: ["date_of_birth", "gender", "contact_number"],
+          formatted_text: clarifyText,
+          context: {
+            action: "register_patient",
+            awaiting_action: "register_patient",
+            patient_name: extractedName
+          }
+        }
+      };
+    }
+
+    const nameParts = extractedName.trim().split(" ");
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(" ") || "Patient";
+    const dob = dobMatch[0];
+    const gender = genderMatch[1].charAt(0).toUpperCase() + genderMatch[1].slice(1).toLowerCase();
+    const phone = phoneMatch[0].trim();
+
+    let maxId = 1000;
+    MOCK_DATA.patients.forEach(p => {
+      const match = p.patient_id.match(/PAT-(\d+)/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxId) maxId = num;
+      }
+    });
+    const newPatientId = `PAT-${maxId + 1}`;
+
+    const newPatient = {
+      patient_id: newPatientId,
+      first_name: firstName,
+      last_name: lastName,
+      dob: dob,
+      gender: gender,
+      blood_group: "O+",
+      phone: phone,
+      email: `${firstName.toLowerCase()}@example.com`,
+      address: "Indiranagar, Bengaluru, Karnataka",
+      emergency_contact: { name: "Family Emergency Contact", relationship: "Family", phone: phone },
+      primary_doctor_id: "DOC-101",
+      insurance_policy_id: "POL-701",
+      created_at: new Date().toISOString()
+    };
+
+    MOCK_DATA.patients.unshift(newPatient);
+
+    const confirmationText = `Patient ${extractedName} has been successfully registered with Patient ID ${newPatientId} (DOB: ${dob}, Gender: ${gender}, Contact: ${phone}).`;
+
+    return {
+      agent_id: "AGT-AST-001",
+      agent_name: "Assistant Agent",
+      agent_type: "orchestrator",
+      summary: confirmationText,
+      result_data: {
+        success: true,
+        intent: "register_patient",
+        target_agent: "patient",
+        target_action: "register_patient",
+        formatted_text: confirmationText,
+        patient: newPatient,
+        patient_id: newPatientId
+      }
+    };
+  }
+
+  // Update Patient Details (e.g. "Update Arun Kumar's phone number to 9876543210" or "Update Safeek's phone number")
+  if (/\b(update|modify|change)\b/i.test(message) && /\b(phone|contact|address|details|number|patient)\b/i.test(message)) {
+    const userRole = (payload.user_role || payload.portal_source || "doctor").toLowerCase();
+    let targetPatient = MOCK_DATA.patients.find(p => lower.includes(p.first_name.toLowerCase()) || lower.includes(p.patient_id.toLowerCase())) || patient;
+    if (userRole === "patient" && targetPatient.patient_id !== "PAT-1001") {
+      const deniedText = "Permission Denied: Patient accounts cannot modify other patient records. Please switch to a Nurse, Doctor, or Admin role.";
+      return {
+        agent_id: "AGT-AST-001",
+        agent_name: "Assistant Agent",
+        agent_type: "orchestrator",
+        summary: deniedText,
+        result_data: { success: false, error: "Permission Denied", formatted_text: deniedText }
+      };
+    }
+
+    const phoneMatch = message.match(/\b\d{10}\b/) || message.match(/\+?\d[\d\s\-]{8,14}\d/);
+    if (phoneMatch) {
+      targetPatient.phone = phoneMatch[0].trim();
+      const updateMsg = `Successfully updated phone number to ${targetPatient.phone} for patient ${targetPatient.first_name} ${targetPatient.last_name} (${targetPatient.patient_id}).`;
+      return {
+        agent_id: "AGT-AST-001",
+        agent_name: "Assistant Agent",
+        agent_type: "orchestrator",
+        summary: updateMsg,
+        result_data: {
+          success: true,
+          intent: "update_patient",
+          target_agent: "patient",
+          target_action: "update_patient",
+          formatted_text: updateMsg,
+          patient: targetPatient
+        }
+      };
+    }
+  }
+
   // Patient Medical / Full History
   if (/\b(history|medical history|full history|clinical records)\b/i.test(message)) {
     const patRes = handlePatientAgent("get_patient_history", {
@@ -1327,7 +1565,7 @@ function handleAssistantAgent(action, payload) {
   }
 
   // Find / Search Patient
-  if (/\b(find|search|lookup|who is)\b/i.test(message) && (lower.includes("patient") || lower.includes("arun") || lower.includes("sneha") || lower.includes("vikram"))) {
+  if (/\b(find|search|lookup|who is)\b/i.test(message) && (lower.includes("patient") || lower.includes("arun") || lower.includes("sneha") || lower.includes("vikram") || lower.includes("safeek"))) {
     const patRes = handlePatientAgent("search_patient", {
       query: message
     });
@@ -1348,9 +1586,10 @@ function handleAssistantAgent(action, payload) {
   }
 
   // Patient Profile
-  if (/\b(profile|patient|pat-\d+)\b/i.test(message) || lower.includes("arun kumar") || lower.includes("sneha sharma") || lower.includes("vikram singh")) {
+  if (/\b(profile|patient|pat-\d+)\b/i.test(message) || lower.includes("arun kumar") || lower.includes("sneha sharma") || lower.includes("vikram singh") || lower.includes("safeek")) {
+    const targetPatient = MOCK_DATA.patients.find(p => lower.includes(p.first_name.toLowerCase()) || lower.includes(p.patient_id.toLowerCase())) || patient;
     const patRes = handlePatientAgent("get_patient", {
-      patient_id: patient.patient_id
+      patient_id: targetPatient.patient_id
     });
     return {
       agent_id: "AGT-AST-001",
