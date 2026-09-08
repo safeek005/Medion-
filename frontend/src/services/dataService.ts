@@ -9,6 +9,7 @@ import {
   PrescriptionItem,
   NotificationItem,
 } from '../data/mockDatasets';
+import { getSupabaseClient, isSupabaseConfigured } from './supabaseClient';
 
 // Keys for browser persistent storage
 const STORAGE_KEYS = {
@@ -182,6 +183,95 @@ function emitDbChange(event: DBChangeEvent) {
 class SharedDataService {
   constructor() {
     this.initializeIfEmpty();
+    this.syncFromSupabase();
+  }
+
+  public isFallbackAllowed(): boolean {
+    const envVal = (import.meta as any).env?.VITE_ENABLE_MOCK_FALLBACK;
+    return envVal === 'true' || envVal === true || envVal === '1';
+  }
+
+  public async syncFromSupabase(): Promise<void> {
+    const sb = getSupabaseClient();
+    if (!sb) {
+      if (!this.isFallbackAllowed()) {
+        console.warn('[MEDION DataLayer] Supabase is not configured and mock fallback is disabled.');
+      }
+      return;
+    }
+
+    try {
+      // 1. Fetch Patients
+      const { data: patients, error: pErr } = await sb.from('patients').select('*').order('created_at', { ascending: false });
+      if (pErr) {
+        if (!this.isFallbackAllowed()) {
+          console.error('[MEDION Supabase Sync Error] Failed to fetch patients:', pErr.message);
+        }
+      } else if (patients && patients.length > 0) {
+        const normalized: PatientProfile[] = patients.map((p: any) => ({
+          patient_id: p.patient_id,
+          first_name: p.first_name,
+          last_name: p.last_name,
+          date_of_birth: p.date_of_birth || p.dob || '',
+          dob: p.dob || p.date_of_birth || '',
+          gender: p.gender || '',
+          blood_group: p.blood_group || '',
+          phone: p.phone || '',
+          email: p.email || null,
+          address: p.address || null,
+          emergency_contact: p.emergency_contact?.name ? p.emergency_contact : (typeof p.emergency_contact === 'string' && p.emergency_contact.trim() ? p.emergency_contact : null),
+          primary_doctor_id: p.primary_doctor_id || null,
+          insurance_policy_id: p.insurance_policy_id || null,
+        }));
+        setStorageItem(STORAGE_KEYS.PATIENTS, normalized);
+        emitDbChange({ table: 'patients', action: 'create' });
+      }
+
+      // 2. Fetch Appointments
+      const { data: appointments, error: aErr } = await sb.from('appointments').select('*').order('created_at', { ascending: false });
+      if (!aErr && appointments && appointments.length > 0) {
+        const normalizedApts: AppointmentItem[] = appointments.map((a: any) => ({
+          appointment_id: a.appointment_id,
+          patient_id: a.patient_id,
+          doctor_id: a.doctor_id,
+          hospital_id: a.hospital_id,
+          date: a.date || a.appointment_date || '',
+          time_slot: a.time_slot || '',
+          status: a.status || 'SCHEDULED',
+          reason: a.reason || a.reason_for_visit || '',
+        }));
+        setStorageItem(STORAGE_KEYS.APPOINTMENTS, normalizedApts);
+        emitDbChange({ table: 'appointments', action: 'create' });
+      }
+
+      // 3. Fetch Doctors
+      const { data: doctors, error: dErr } = await sb.from('doctors').select('*');
+      if (!dErr && doctors && doctors.length > 0) {
+        setStorageItem(STORAGE_KEYS.DOCTORS, doctors);
+      }
+
+      // 4. Fetch Lab Reports
+      const { data: labReports, error: lErr } = await sb.from('lab_reports').select('*');
+      if (!lErr && labReports && labReports.length > 0) {
+        setStorageItem(STORAGE_KEYS.LAB_REPORTS, labReports);
+        emitDbChange({ table: 'lab_reports', action: 'create' });
+      }
+
+      // 5. Fetch Policies
+      const { data: policies, error: polErr } = await sb.from('insurance_policies').select('*');
+      if (!polErr && policies && policies.length > 0) {
+        setStorageItem(STORAGE_KEYS.POLICIES, policies);
+      }
+
+      // 6. Fetch Claims
+      const { data: claims, error: cErr } = await sb.from('insurance_claims').select('*');
+      if (!cErr && claims && claims.length > 0) {
+        setStorageItem(STORAGE_KEYS.CLAIMS, claims);
+        emitDbChange({ table: 'claims', action: 'create' });
+      }
+    } catch (err) {
+      console.warn('[MEDION DataLayer] Supabase sync caught:', err);
+    }
   }
 
   private initializeIfEmpty() {
@@ -248,7 +338,7 @@ class SharedDataService {
     return `PAT-${maxId + 1}`;
   }
 
-  createPatient(patientData: Partial<PatientProfile> & { first_name?: string; last_name?: string; full_name?: string }): PatientProfile {
+  createPatient(patientData: Partial<PatientProfile> & { first_name?: string; last_name?: string; full_name?: string; dob?: string }): PatientProfile {
     const list = this.getPatients();
     
     // Parse names if provided as full_name
@@ -257,28 +347,24 @@ class SharedDataService {
     if (!firstName && patientData.full_name) {
       const parts = patientData.full_name.trim().split(' ');
       firstName = parts[0];
-      lastName = parts.slice(1).join(' ') || 'Patient';
+      lastName = parts.slice(1).join(' ');
     }
-    if (!firstName) firstName = 'New';
-    if (!lastName) lastName = 'Patient';
 
     const newPatient: PatientProfile = {
       patient_id: patientData.patient_id || this.generatePatientId(),
       first_name: firstName,
       last_name: lastName,
-      date_of_birth: (patientData as any).dob || patientData.date_of_birth || '2000-01-01',
-      gender: patientData.gender || 'Not specified',
-      blood_group: patientData.blood_group || 'O+',
-      phone: patientData.phone || '+91 9000000000',
-      email: patientData.email || `${firstName.toLowerCase()}@example.com`,
-      address: patientData.address || 'Bengaluru, Karnataka',
-      emergency_contact: patientData.emergency_contact || {
-        name: 'Primary Contact',
-        relationship: 'Family',
-        phone: patientData.phone || '+91 9000000001',
-      },
-      primary_doctor_id: patientData.primary_doctor_id || 'DOC-101',
-      insurance_policy_id: patientData.insurance_policy_id || 'POL-701',
+      date_of_birth: patientData.dob || patientData.date_of_birth || '',
+      gender: patientData.gender || '',
+      blood_group: patientData.blood_group || null as any,
+      phone: patientData.phone || '',
+      email: patientData.email || null as any,
+      address: patientData.address || null as any,
+      emergency_contact: (patientData.emergency_contact && typeof patientData.emergency_contact === 'object' && (patientData.emergency_contact as any).name)
+        ? patientData.emergency_contact
+        : (typeof patientData.emergency_contact === 'string' && (patientData.emergency_contact as string).trim() ? patientData.emergency_contact : null as any),
+      primary_doctor_id: patientData.primary_doctor_id || null as any,
+      insurance_policy_id: patientData.insurance_policy_id || null as any,
     };
 
     // Avoid duplicate IDs if already registered
@@ -293,6 +379,35 @@ class SharedDataService {
 
     setStorageItem(STORAGE_KEYS.PATIENTS, updatedList);
     emitDbChange({ table: 'patients', action: 'create', data: newPatient });
+
+    // Persist to Supabase PostgreSQL
+    const sb = getSupabaseClient();
+    if (sb) {
+      sb.from('patients').upsert({
+        patient_id: newPatient.patient_id,
+        first_name: newPatient.first_name,
+        last_name: newPatient.last_name,
+        dob: newPatient.date_of_birth || null,
+        gender: newPatient.gender || null,
+        blood_group: newPatient.blood_group || null,
+        phone: newPatient.phone || null,
+        email: newPatient.email || null,
+        address: newPatient.address || null,
+        emergency_contact: newPatient.emergency_contact?.name ? newPatient.emergency_contact : null,
+        primary_doctor_id: newPatient.primary_doctor_id || null,
+        insurance_policy_id: newPatient.insurance_policy_id || null,
+      }).then(({ error }) => {
+        if (error) {
+          console.error('[MEDION Supabase] Patient upsert failed:', error.message);
+          if (!this.isFallbackAllowed()) {
+            throw new Error(`Database error: ${error.message}`);
+          }
+        }
+      });
+    } else if (!this.isFallbackAllowed()) {
+      throw new Error("Supabase database is not configured and mock fallback is disabled.");
+    }
+
     return newPatient;
   }
 
@@ -305,6 +420,19 @@ class SharedDataService {
     list[idx] = updated;
     setStorageItem(STORAGE_KEYS.PATIENTS, list);
     emitDbChange({ table: 'patients', action: 'update', data: updated });
+
+    // Persist to Supabase PostgreSQL
+    const sb = getSupabaseClient();
+    if (sb) {
+      sb.from('patients').update({
+        ...updates,
+        dob: (updates as any).dob || updates.date_of_birth,
+        updated_at: new Date().toISOString(),
+      }).eq('patient_id', patientId).then(({ error }) => {
+        if (error) console.warn('[MEDION Supabase] Patient update failed:', error.message);
+      });
+    }
+
     return updated;
   }
 
@@ -359,6 +487,19 @@ class SharedDataService {
 
     setStorageItem(STORAGE_KEYS.APPOINTMENTS, updatedList);
     emitDbChange({ table: 'appointments', action: 'create', data: newApt });
+
+    // Persist to Supabase PostgreSQL
+    const sb = getSupabaseClient();
+    if (sb) {
+      sb.from('appointments').upsert({
+        ...newApt,
+        appointment_date: newApt.date,
+        reason_for_visit: newApt.reason,
+      }).then(({ error }) => {
+        if (error) console.warn('[MEDION Supabase] Appointment booking failed:', error.message);
+      });
+    }
+
     return newApt;
   }
 
@@ -370,6 +511,18 @@ class SharedDataService {
     list[idx] = { ...list[idx], status: 'CANCELLED' };
     setStorageItem(STORAGE_KEYS.APPOINTMENTS, list);
     emitDbChange({ table: 'appointments', action: 'update', data: list[idx] });
+
+    // Persist to Supabase PostgreSQL
+    const sb = getSupabaseClient();
+    if (sb) {
+      sb.from('appointments').update({
+        status: 'CANCELLED',
+        updated_at: new Date().toISOString(),
+      }).eq('appointment_id', appointmentId).then(({ error }) => {
+        if (error) console.warn('[MEDION Supabase] Appointment cancel failed:', error.message);
+      });
+    }
+
     return list[idx];
   }
 
@@ -386,6 +539,21 @@ class SharedDataService {
     };
     setStorageItem(STORAGE_KEYS.APPOINTMENTS, list);
     emitDbChange({ table: 'appointments', action: 'update', data: list[idx] });
+
+    // Persist to Supabase PostgreSQL
+    const sb = getSupabaseClient();
+    if (sb) {
+      sb.from('appointments').update({
+        appointment_date: newDate,
+        date: newDate,
+        time_slot: newTimeSlot,
+        status: 'RESCHEDULED',
+        updated_at: new Date().toISOString(),
+      }).eq('appointment_id', appointmentId).then(({ error }) => {
+        if (error) console.warn('[MEDION Supabase] Appointment reschedule failed:', error.message);
+      });
+    }
+
     return list[idx];
   }
 

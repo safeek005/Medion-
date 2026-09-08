@@ -17,38 +17,34 @@ class PatientService:
             first_name = parts[0]
             last_name = parts[1] if len(parts) > 1 else ""
 
-        dob = payload.get("date_of_birth") or payload.get("dob") or "2000-01-01"
+        if not first_name and full_name:
+            first_name = full_name.strip()
+            last_name = ""
+
+        dob = payload.get("date_of_birth") or payload.get("dob")
         gender = payload.get("gender")
-        phone = payload.get("phone")
-        email = payload.get("email") or f"{first_name.lower()}@example.com"
-        address = payload.get("address", "")
-        blood_group = payload.get("blood_group", "O+")
+        phone = payload.get("phone") or payload.get("contact_number")
+        blood_group = payload.get("blood_group")
+        address = payload.get("address")
+        email = payload.get("email")
+        emergency_contact = payload.get("emergency_contact")
+        primary_doctor_id = payload.get("primary_doctor_id")
+        insurance_policy_id = payload.get("insurance_policy_id")
 
         # Validation
         if not first_name:
             raise ValueError("Patient name (first_name or full_name) is required.")
         if not phone:
             raise ValueError("Patient phone number is required.")
-        if not gender:
-            raise ValueError("Patient gender is required.")
 
-        # Duplicate check by email or phone
-        existing_email = mock_db.find_one("patients", "email", email)
-        if existing_email:
-            raise ValueError(f"Patient with email '{email}' already exists (ID: {existing_email['patient_id']}).")
-
-        existing_phone = mock_db.find_one("patients", "phone", phone)
-        if existing_phone:
-            raise ValueError(f"Patient with phone '{phone}' already exists (ID: {existing_phone['patient_id']}).")
+        # Duplicate check if explicit email provided
+        if email:
+            existing_email = mock_db.find_one("patients", "email", email)
+            if existing_email:
+                raise ValueError(f"Patient with email '{email}' already exists (ID: {existing_email['patient_id']}).")
 
         # Generate unique ID
         patient_id = mock_db.generate_patient_id()
-
-        emergency_contact = payload.get("emergency_contact") or {
-            "name": "N/A",
-            "relationship": "N/A",
-            "phone": "N/A"
-        }
 
         patient_record = {
             "patient_id": patient_id,
@@ -61,8 +57,8 @@ class PatientService:
             "email": email,
             "address": address,
             "emergency_contact": emergency_contact,
-            "primary_doctor_id": payload.get("primary_doctor_id", "DOC-101"),
-            "insurance_policy_id": payload.get("insurance_policy_id", "POL-701"),
+            "primary_doctor_id": primary_doctor_id,
+            "insurance_policy_id": insurance_policy_id,
             "created_at": datetime.now(timezone.utc).isoformat()
         }
 
@@ -71,7 +67,7 @@ class PatientService:
         return {
             "success": True,
             "patient_id": patient_id,
-            "message": f"Patient {first_name} {last_name} registered successfully.",
+            "message": f"Patient {first_name} {last_name} registered successfully with ID {patient_id}.",
             "patient": patient_record,
             "summary": f"Registered new patient {patient_id} ({first_name} {last_name})."
         }
@@ -79,13 +75,31 @@ class PatientService:
     def get_patient(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """
         Action: get_patient
-        Retrieves a single patient profile by patient_id.
+        Retrieves a single patient profile by patient_id or patient name.
         """
         patient_id = payload.get("patient_id")
         if not patient_id:
+            name_cand = payload.get("full_name") or payload.get("name") or payload.get("query")
+            if name_cand:
+                res = self.search_patient({"query": name_cand})
+                if res.get("results"):
+                    return {
+                        "success": True,
+                        "patient_id": res["results"][0]["patient_id"],
+                        "patient": res["results"][0],
+                        "summary": f"Retrieved profile for patient {res['results'][0]['patient_id']} ({res['results'][0].get('first_name')} {res['results'][0].get('last_name')})."
+                    }
             raise ValueError("Field 'patient_id' is required for get_patient.")
 
         patient = mock_db.find_one("patients", "patient_id", patient_id)
+        if not patient:
+            # Fallback search by patient name
+            for p in mock_db.get_collection("patients"):
+                if patient_id.lower() in f"{p.get('first_name')} {p.get('last_name')}".lower():
+                    patient = p
+                    patient_id = p["patient_id"]
+                    break
+
         if not patient:
             raise ValueError(f"Patient with ID '{patient_id}' not found.")
 
@@ -102,7 +116,7 @@ class PatientService:
         Deterministic, rule/data based search by ID, name, phone, or email.
         """
         patient_id = payload.get("patient_id")
-        name = payload.get("name")
+        name = payload.get("name") or payload.get("full_name")
         phone = payload.get("phone")
         email = payload.get("email")
         query = payload.get("query")
@@ -112,23 +126,23 @@ class PatientService:
 
         for p in patients:
             matched = False
-            if patient_id and patient_id.lower() in p.get("patient_id", "").lower():
+            if patient_id and patient_id.lower() in (p.get("patient_id") or "").lower():
                 matched = True
             if name:
-                full = f"{p.get('first_name', '')} {p.get('last_name', '')}".lower()
-                if name.lower() in full:
+                full = f"{p.get('first_name') or ''} {p.get('last_name') or ''}".lower()
+                if name.lower() in full or name.lower() in (p.get("first_name") or "").lower():
                     matched = True
-            if phone and phone in p.get("phone", ""):
+            if phone and phone in (p.get("phone") or ""):
                 matched = True
-            if email and email.lower() in p.get("email", "").lower():
+            if email and email.lower() in (p.get("email") or "").lower():
                 matched = True
             if query:
                 q_lower = query.lower()
-                full = f"{p.get('first_name', '')} {p.get('last_name', '')}".lower()
-                if (q_lower in p.get("patient_id", "").lower() or
+                full = f"{p.get('first_name') or ''} {p.get('last_name') or ''}".lower()
+                if (q_lower in (p.get("patient_id") or "").lower() or
                     q_lower in full or
-                    q_lower in p.get("phone", "").lower() or
-                    q_lower in p.get("email", "").lower()):
+                    q_lower in (p.get("phone") or "").lower() or
+                    q_lower in (p.get("email") or "").lower()):
                     matched = True
 
             if matched and p not in results:
@@ -138,6 +152,7 @@ class PatientService:
             "success": True,
             "count": len(results),
             "results": results,
+            "patient": results[0] if len(results) == 1 else None,
             "summary": f"Search returned {len(results)} matching patient record(s)."
         }
 
@@ -150,19 +165,32 @@ class PatientService:
         """
         patient_id = payload.get("patient_id")
         if not patient_id:
+            name_cand = payload.get("full_name") or payload.get("name") or payload.get("first_name")
+            if name_cand:
+                p_res = self.search_patient({"query": name_cand})
+                if p_res.get("results"):
+                    patient_id = p_res["results"][0]["patient_id"]
+
+        if not patient_id:
             raise ValueError("Field 'patient_id' is required for update_patient.")
-
-        updates = payload.get("updates", {})
-        if not updates:
-            # Extract direct top-level update fields if not wrapped in 'updates'
-            updates = {k: v for k, v in payload.items() if k != "patient_id"}
-
-        if not updates:
-            raise ValueError("No update fields provided.")
 
         patient = mock_db.find_one("patients", "patient_id", patient_id)
         if not patient:
-            raise ValueError(f"Patient with ID '{patient_id}' not found.")
+            # Fallback search by patient name in mock_db
+            p_res = self.search_patient({"query": patient_id})
+            if p_res.get("results"):
+                patient = p_res["results"][0]
+                patient_id = patient["patient_id"]
+
+        if not patient:
+            raise ValueError(f"Patient with ID/Name '{patient_id}' not found.")
+
+        updates = payload.get("updates", {})
+        if not updates:
+            updates = {k: v for k, v in payload.items() if k not in ["patient_id", "full_name", "name", "first_name"]}
+
+        if not updates:
+            raise ValueError("No update fields provided.")
 
         # Reject any attempt to modify prohibited keys or cross-domain collections
         prohibited = {"patient_id", "medical_records", "lab_reports", "prescriptions", "insurance", "appointments", "bills", "claims", "notifications"}

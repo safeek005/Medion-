@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { MOCK_PATIENTS_LIST, MOCK_LAB_REPORT, MOCK_PRESCRIPTIONS, MOCK_APPOINTMENTS } from '../../data/mockDatasets';
 import { PatientProfile, ExecutionTraceStep } from '../../types';
@@ -32,6 +32,10 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
   const { patientId } = useParams<{ patientId?: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    dataService.syncFromSupabase();
+  }, []);
 
   const patientsList = useSharedPatients();
   const sharedAppointments = useSharedAppointments();
@@ -139,7 +143,7 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
                   <span className="badge-ui badge-neutral">{selectedPatient.gender} • DOB {selectedPatient.date_of_birth}</span>
                 </div>
                 <div className="text-secondary" style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>
-                  Primary Doctor: <strong>Dr. Rajesh Mehta ({selectedPatient.primary_doctor_id})</strong> • Policy: <strong>{selectedPatient.insurance_policy_id}</strong> • Blood Group: <strong>{selectedPatient.blood_group}</strong>
+                  Primary Doctor: <strong>{selectedPatient.primary_doctor_id ? `Doctor (${selectedPatient.primary_doctor_id})` : 'Not assigned'}</strong> • Policy: <strong>{selectedPatient.insurance_policy_id || 'None'}</strong> • Blood Group: <strong>{selectedPatient.blood_group || 'Not provided'}</strong>
                 </div>
               </div>
 
@@ -218,11 +222,11 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
                     <tbody>
                       <tr><td className="text-muted">Full Name</td><td style={{ fontWeight: 600 }}>{selectedPatient.first_name} {selectedPatient.last_name}</td></tr>
                       <tr><td className="text-muted">Patient ID</td><td>{selectedPatient.patient_id}</td></tr>
-                      <tr><td className="text-muted">Date of Birth</td><td>{selectedPatient.date_of_birth}</td></tr>
-                      <tr><td className="text-muted">Gender & Blood Group</td><td>{selectedPatient.gender} ({selectedPatient.blood_group})</td></tr>
-                      <tr><td className="text-muted">Phone Number</td><td>{selectedPatient.phone}</td></tr>
-                      <tr><td className="text-muted">Email Address</td><td>{selectedPatient.email}</td></tr>
-                      <tr><td className="text-muted">Residential Address</td><td>{selectedPatient.address}</td></tr>
+                      <tr><td className="text-muted">Date of Birth</td><td>{selectedPatient.date_of_birth || (selectedPatient as any).dob || 'Not provided'}</td></tr>
+                      <tr><td className="text-muted">Gender & Blood Group</td><td>{selectedPatient.gender || 'Not specified'} ({selectedPatient.blood_group || 'Not provided'})</td></tr>
+                      <tr><td className="text-muted">Phone Number</td><td>{selectedPatient.phone || 'Not provided'}</td></tr>
+                      <tr><td className="text-muted">Email Address</td><td>{selectedPatient.email || 'Not provided'}</td></tr>
+                      <tr><td className="text-muted">Residential Address</td><td>{selectedPatient.address || 'Not provided'}</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -231,11 +235,11 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
                   <h4 className="h4" style={{ marginBottom: '0.85rem' }}>Emergency Contact & Attending Care</h4>
                   <table className="table-ui">
                     <tbody>
-                      <tr><td className="text-muted">Emergency Contact Name</td><td style={{ fontWeight: 600 }}>{selectedPatient.emergency_contact.name}</td></tr>
-                      <tr><td className="text-muted">Relationship</td><td>{selectedPatient.emergency_contact.relationship}</td></tr>
-                      <tr><td className="text-muted">Emergency Phone</td><td>{selectedPatient.emergency_contact.phone}</td></tr>
-                      <tr><td className="text-muted">Primary Physician</td><td>Dr. Rajesh Mehta ({selectedPatient.primary_doctor_id})</td></tr>
-                      <tr><td className="text-muted">Insurance Policy ID</td><td>{selectedPatient.insurance_policy_id}</td></tr>
+                      <tr><td className="text-muted">Emergency Contact Name</td><td style={{ fontWeight: 600 }}>{selectedPatient.emergency_contact?.name || 'Not provided'}</td></tr>
+                      <tr><td className="text-muted">Relationship</td><td>{selectedPatient.emergency_contact?.relationship || '—'}</td></tr>
+                      <tr><td className="text-muted">Emergency Phone</td><td>{selectedPatient.emergency_contact?.phone || (typeof selectedPatient.emergency_contact === 'string' ? selectedPatient.emergency_contact : '—')}</td></tr>
+                      <tr><td className="text-muted">Primary Physician</td><td>{selectedPatient.primary_doctor_id ? `Doctor (${selectedPatient.primary_doctor_id})` : 'Not assigned'}</td></tr>
+                      <tr><td className="text-muted">Insurance Policy ID</td><td>{selectedPatient.insurance_policy_id || 'Not assigned'}</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -246,144 +250,174 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
             {activeTab === 'medical' && (
               <div>
                 <h4 className="h4" style={{ marginBottom: '1rem' }}>Clinical Encounter History</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '1.1rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                      <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Routine Cardiology Follow-up & Hypertension Assessment</span>
-                      <span className="text-muted" style={{ fontSize: '0.78rem' }}>2024-06-14</span>
+                {selectedPatient.patient_id === 'PAT-1001' ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div style={{ background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '1.1rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                        <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Routine Cardiology Follow-up & Hypertension Assessment</span>
+                        <span className="text-muted" style={{ fontSize: '0.78rem' }}>2024-06-14</span>
+                      </div>
+                      <div className="text-muted" style={{ fontSize: '0.8rem', marginBottom: '0.5rem' }}>Physician: Dr. Rajesh Mehta (DOC-101)</div>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                        Patient presents for 3-month cardiology follow-up. Blood pressure recorded at 132/84 mmHg. Reported slight lethargy. Diagnostic blood panel (LABR-1001) ordered to evaluate hemoglobin and lipid levels.
+                      </p>
                     </div>
-                    <div className="text-muted" style={{ fontSize: '0.8rem', marginBottom: '0.5rem' }}>Physician: Dr. Rajesh Mehta (DOC-101)</div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                      Patient presents for 3-month cardiology follow-up. Blood pressure recorded at 132/84 mmHg. Reported slight lethargy. Diagnostic blood panel (LABR-1001) ordered to evaluate hemoglobin and lipid levels.
-                    </p>
                   </div>
-                </div>
+                ) : (
+                  <div className="text-muted" style={{ padding: '2.5rem 1rem', textAlign: 'center', background: 'var(--bg-app)', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                    No clinical encounter history recorded for this patient.
+                  </div>
+                )}
               </div>
             )}
 
             {/* TAB 3: LAB REPORTS & DETAIL VIEW */}
             {activeTab === 'lab' && (
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <div>
-                    <h4 className="h4">{MOCK_LAB_REPORT.test_type} ({MOCK_LAB_REPORT.report_id})</h4>
-                    <span className="text-muted" style={{ fontSize: '0.78rem' }}>Collection Date: {MOCK_LAB_REPORT.test_date} • Laboratory: {MOCK_LAB_REPORT.laboratory_id}</span>
-                  </div>
-                  <Button variant="secondary" size="sm" onClick={() => setActiveTab('comparison')}>
-                    <TrendingDown style={{ width: 14, height: 14 }} /> Compare with Previous LABR-1002
-                  </Button>
-                </div>
+                {selectedPatient.patient_id === 'PAT-1001' ? (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                      <div>
+                        <h4 className="h4">{MOCK_LAB_REPORT.test_type} ({MOCK_LAB_REPORT.report_id})</h4>
+                        <span className="text-muted" style={{ fontSize: '0.78rem' }}>Collection Date: {MOCK_LAB_REPORT.test_date} • Laboratory: {MOCK_LAB_REPORT.laboratory_id}</span>
+                      </div>
+                      <Button variant="secondary" size="sm" onClick={() => setActiveTab('comparison')}>
+                        <TrendingDown style={{ width: 14, height: 14 }} /> Compare with Previous LABR-1002
+                      </Button>
+                    </div>
 
-                <table className="table-ui" style={{ marginBottom: '1.5rem' }}>
-                  <thead>
-                    <tr>
-                      <th>Diagnostic Parameter</th>
-                      <th>Measured Result</th>
-                      <th>Reference Bounds</th>
-                      <th>Clinical Indicator</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {MOCK_LAB_REPORT.results.map((r, i) => (
-                      <tr key={i}>
-                        <td style={{ fontWeight: 500 }}>{r.parameter}</td>
-                        <td>{r.value} {r.unit}</td>
-                        <td className="text-muted">{r.reference_range}</td>
-                        <td>
-                          {r.is_abnormal ? (
-                            <Badge variant="amber">{r.abnormality_direction}</Badge>
-                          ) : (
-                            <Badge variant="green">NORMAL</Badge>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    <table className="table-ui" style={{ marginBottom: '1.5rem' }}>
+                      <thead>
+                        <tr>
+                          <th>Diagnostic Parameter</th>
+                          <th>Measured Result</th>
+                          <th>Reference Bounds</th>
+                          <th>Clinical Indicator</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {MOCK_LAB_REPORT.results.map((r, i) => (
+                          <tr key={i}>
+                            <td style={{ fontWeight: 500 }}>{r.parameter}</td>
+                            <td>{r.value} {r.unit}</td>
+                            <td className="text-muted">{r.reference_range}</td>
+                            <td>
+                              {r.is_abnormal ? (
+                                <Badge variant="amber">{r.abnormality_direction}</Badge>
+                              ) : (
+                                <Badge variant="green">NORMAL</Badge>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
 
-                {/* Structured MEDION Insight Section */}
-                <div style={{ background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '1rem' }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--forest-green)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.25rem' }}>
-                    MEDION-Generated Clinical Insight
+                    {/* Structured MEDION Insight Section */}
+                    <div style={{ background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '1rem' }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--forest-green)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.25rem' }}>
+                        MEDION-Generated Clinical Insight
+                      </div>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                        Low Hemoglobin (10.4 g/dL vs ref 13.5–17.5) and mildly elevated Total Cholesterol (215 mg/dL vs ref &lt;200) detected. Recommend iron supplementation and dietary lipid evaluation.
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-muted" style={{ padding: '2.5rem 1rem', textAlign: 'center', background: 'var(--bg-app)', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                    No lab reports recorded for this patient.
                   </div>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                    Low Hemoglobin (10.4 g/dL vs ref 13.5–17.5) and mildly elevated Total Cholesterol (215 mg/dL vs ref &lt;200) detected. Recommend iron supplementation and dietary lipid evaluation.
-                  </p>
-                </div>
+                )}
               </div>
             )}
 
             {/* TAB 4: LAB COMPARISON (LABR-1002 vs LABR-1001) */}
             {activeTab === 'comparison' && (
               <div>
-                <h4 className="h4" style={{ marginBottom: '0.5rem' }}>Laboratory Trend Comparison (LABR-1002 vs LABR-1001)</h4>
-                <p className="text-muted" style={{ fontSize: '0.8rem', marginBottom: '1.25rem' }}>
-                  Comparing previous baseline diagnostic results with current panel
-                </p>
+                {selectedPatient.patient_id === 'PAT-1001' ? (
+                  <>
+                    <h4 className="h4" style={{ marginBottom: '0.5rem' }}>Laboratory Trend Comparison (LABR-1002 vs LABR-1001)</h4>
+                    <p className="text-muted" style={{ fontSize: '0.8rem', marginBottom: '1.25rem' }}>
+                      Comparing previous baseline diagnostic results with current panel
+                    </p>
 
-                <table className="table-ui">
-                  <thead>
-                    <tr>
-                      <th>Parameter</th>
-                      <th>Previous Value (LABR-1002)</th>
-                      <th>Current Value (LABR-1001)</th>
-                      <th>Reference Bounds</th>
-                      <th>Clinical Trend</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td style={{ fontWeight: 500 }}>Hemoglobin</td>
-                      <td>11.8 g/dL</td>
-                      <td>10.4 g/dL</td>
-                      <td className="text-muted">13.5 - 17.5</td>
-                      <td><Badge variant="amber">↓ Decreasing (Low)</Badge></td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: 500 }}>Total Cholesterol</td>
-                      <td>230.0 mg/dL</td>
-                      <td>215.0 mg/dL</td>
-                      <td className="text-muted">&lt; 200</td>
-                      <td><Badge variant="green">↓ Improving (High)</Badge></td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: 500 }}>Fasting Blood Sugar</td>
-                      <td>95.0 mg/dL</td>
-                      <td>92.0 mg/dL</td>
-                      <td className="text-muted">70 - 99</td>
-                      <td><Badge variant="green">→ Stable (Normal)</Badge></td>
-                    </tr>
-                  </tbody>
-                </table>
+                    <table className="table-ui">
+                      <thead>
+                        <tr>
+                          <th>Parameter</th>
+                          <th>Previous Value (LABR-1002)</th>
+                          <th>Current Value (LABR-1001)</th>
+                          <th>Reference Bounds</th>
+                          <th>Clinical Trend</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td style={{ fontWeight: 500 }}>Hemoglobin</td>
+                          <td>11.8 g/dL</td>
+                          <td>10.4 g/dL</td>
+                          <td className="text-muted">13.5 - 17.5</td>
+                          <td><Badge variant="amber">↓ Decreasing (Low)</Badge></td>
+                        </tr>
+                        <tr>
+                          <td style={{ fontWeight: 500 }}>Total Cholesterol</td>
+                          <td>230.0 mg/dL</td>
+                          <td>215.0 mg/dL</td>
+                          <td className="text-muted">&lt; 200</td>
+                          <td><Badge variant="green">↓ Improving (High)</Badge></td>
+                        </tr>
+                        <tr>
+                          <td style={{ fontWeight: 500 }}>Fasting Blood Sugar</td>
+                          <td>95.0 mg/dL</td>
+                          <td>92.0 mg/dL</td>
+                          <td className="text-muted">70 - 99</td>
+                          <td><Badge variant="green">→ Stable (Normal)</Badge></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </>
+                ) : (
+                  <div className="text-muted" style={{ padding: '2.5rem 1rem', textAlign: 'center', background: 'var(--bg-app)', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                    No laboratory trend comparison available for this patient.
+                  </div>
+                )}
               </div>
             )}
 
             {/* TAB 5: PRESCRIPTIONS */}
             {activeTab === 'prescriptions' && (
               <div>
-                <h4 className="h4" style={{ marginBottom: '1rem' }}>Active Prescriptions (RX-1001)</h4>
-                <table className="table-ui">
-                  <thead>
-                    <tr>
-                      <th>Medication Name</th>
-                      <th>Dosage</th>
-                      <th>Frequency</th>
-                      <th>Duration</th>
-                      <th>Physician Instructions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {MOCK_PRESCRIPTIONS[0].medications.map((m, i) => (
-                      <tr key={i}>
-                        <td style={{ fontWeight: 600 }}>{m.name}</td>
-                        <td>{m.dosage}</td>
-                        <td>{m.frequency}</td>
-                        <td>{m.duration_days} days</td>
-                        <td className="text-muted">{m.instructions}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                {selectedPatient.patient_id === 'PAT-1001' ? (
+                  <>
+                    <h4 className="h4" style={{ marginBottom: '1rem' }}>Active Prescriptions (RX-1001)</h4>
+                    <table className="table-ui">
+                      <thead>
+                        <tr>
+                          <th>Medication Name</th>
+                          <th>Dosage</th>
+                          <th>Frequency</th>
+                          <th>Duration</th>
+                          <th>Physician Instructions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {MOCK_PRESCRIPTIONS[0].medications.map((m, i) => (
+                          <tr key={i}>
+                            <td style={{ fontWeight: 600 }}>{m.name}</td>
+                            <td>{m.dosage}</td>
+                            <td>{m.frequency}</td>
+                            <td>{m.duration_days} days</td>
+                            <td className="text-muted">{m.instructions}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </>
+                ) : (
+                  <div className="text-muted" style={{ padding: '2.5rem 1rem', textAlign: 'center', background: 'var(--bg-app)', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                    No active prescriptions on file for this patient.
+                  </div>
+                )}
               </div>
             )}
 
@@ -395,7 +429,13 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
                   const patientApts = sharedAppointments.filter(
                     (a) => a.patient_id.toUpperCase() === selectedPatient.patient_id.toUpperCase()
                   );
-                  const displayApts = patientApts.length > 0 ? patientApts : sharedAppointments;
+                  if (patientApts.length === 0) {
+                    return (
+                      <div className="text-muted" style={{ padding: '2.5rem 1rem', textAlign: 'center', background: 'var(--bg-app)', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                        No scheduled appointments recorded for this patient.
+                      </div>
+                    );
+                  }
                   return (
                     <table className="table-ui">
                       <thead>
@@ -408,7 +448,7 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
                         </tr>
                       </thead>
                       <tbody>
-                        {displayApts.map((apt, i) => (
+                        {patientApts.map((apt, i) => (
                           <tr key={apt.appointment_id || i}>
                             <td style={{ fontWeight: 600 }}>{apt.appointment_id}</td>
                             <td>{apt.doctor_id}</td>
@@ -431,61 +471,77 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
             {/* TAB 7: INSURANCE */}
             {activeTab === 'insurance' && (
               <div>
-                <h4 className="h4" style={{ marginBottom: '1rem' }}>Active Policy (POL-701)</h4>
-                <table className="table-ui">
-                  <tbody>
-                    <tr><td className="text-muted">Policy ID</td><td style={{ fontWeight: 600 }}>POL-701</td></tr>
-                    <tr><td className="text-muted">Policy Number</td><td>SH-2024-998811</td></tr>
-                    <tr><td className="text-muted">Plan Type</td><td>Comprehensive Health Shield</td></tr>
-                    <tr><td className="text-muted">Coverage Amount</td><td>₹500,000</td></tr>
-                    <tr><td className="text-muted">Remaining Coverage</td><td>₹425,000</td></tr>
-                    <tr><td className="text-muted">Copay Percentage</td><td>10%</td></tr>
-                    <tr><td className="text-muted">Policy Status</td><td><Badge variant="green">ACTIVE</Badge></td></tr>
-                  </tbody>
-                </table>
+                {selectedPatient.insurance_policy_id ? (
+                  <>
+                    <h4 className="h4" style={{ marginBottom: '1rem' }}>Active Policy ({selectedPatient.insurance_policy_id})</h4>
+                    <table className="table-ui">
+                      <tbody>
+                        <tr><td className="text-muted">Policy ID</td><td style={{ fontWeight: 600 }}>{selectedPatient.insurance_policy_id}</td></tr>
+                        <tr><td className="text-muted">Policy Number</td><td>SH-2024-998811</td></tr>
+                        <tr><td className="text-muted">Plan Type</td><td>Comprehensive Health Shield</td></tr>
+                        <tr><td className="text-muted">Coverage Amount</td><td>₹500,000</td></tr>
+                        <tr><td className="text-muted">Remaining Coverage</td><td>₹425,000</td></tr>
+                        <tr><td className="text-muted">Copay Percentage</td><td>10%</td></tr>
+                        <tr><td className="text-muted">Policy Status</td><td><Badge variant="green">ACTIVE</Badge></td></tr>
+                      </tbody>
+                    </table>
+                  </>
+                ) : (
+                  <div className="text-muted" style={{ padding: '2.5rem 1rem', textAlign: 'center', background: 'var(--bg-app)', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                    No active insurance policy assigned for this patient.
+                  </div>
+                )}
               </div>
             )}
 
             {/* TAB 8: BILLS & CLAIMS */}
             {activeTab === 'claims' && (
               <div>
-                <h4 className="h4" style={{ marginBottom: '1rem' }}>Submitted Claims & Adjudication Status</h4>
-                <table className="table-ui" style={{ marginBottom: '1.5rem' }}>
-                  <thead>
-                    <tr>
-                      <th>Claim ID</th>
-                      <th>Bill ID</th>
-                      <th>Service Type</th>
-                      <th>Claim Amount</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td style={{ fontWeight: 600 }}>CLM-1001</td>
-                      <td>BILL-1001</td>
-                      <td>Cardiology Consultation & Diagnostic Panel</td>
-                      <td>₹4,500</td>
-                      <td><Badge variant="amber">UNDER REVIEW</Badge></td>
-                    </tr>
-                  </tbody>
-                </table>
+                {selectedPatient.patient_id === 'PAT-1001' ? (
+                  <>
+                    <h4 className="h4" style={{ marginBottom: '1rem' }}>Submitted Claims & Adjudication Status</h4>
+                    <table className="table-ui" style={{ marginBottom: '1.5rem' }}>
+                      <thead>
+                        <tr>
+                          <th>Claim ID</th>
+                          <th>Bill ID</th>
+                          <th>Service Type</th>
+                          <th>Claim Amount</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td style={{ fontWeight: 600 }}>CLM-1001</td>
+                          <td>BILL-1001</td>
+                          <td>Cardiology Consultation & Diagnostic Panel</td>
+                          <td>₹4,500</td>
+                          <td><Badge variant="amber">UNDER REVIEW</Badge></td>
+                        </tr>
+                      </tbody>
+                    </table>
 
-                {/* Refined Claim Timeline */}
-                <div style={{ background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '1.25rem' }}>
-                  <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Claim Adjudication Lifecycle
+                    {/* Refined Claim Timeline */}
+                    <div style={{ background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '1.25rem' }}>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Claim Adjudication Lifecycle
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ textAlign: 'center' }}><span style={{ fontWeight: 700, color: 'var(--forest-green)' }}>✓</span> <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Prepared</span></div>
+                        <div style={{ flex: 1, height: 2, background: 'var(--forest-green)', margin: '0 0.5rem' }}></div>
+                        <div style={{ textAlign: 'center' }}><span style={{ fontWeight: 700, color: 'var(--forest-green)' }}>✓</span> <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Submitted</span></div>
+                        <div style={{ flex: 1, height: 2, background: 'var(--forest-green)', margin: '0 0.5rem' }}></div>
+                        <div style={{ textAlign: 'center' }}><span style={{ fontWeight: 700, color: 'var(--forest-green)' }}>●</span> <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--forest-green)' }}>Under Review</span></div>
+                        <div style={{ flex: 1, height: 2, background: 'var(--border-subtle)', margin: '0 0.5rem' }}></div>
+                        <div style={{ textAlign: 'center' }}><span style={{ color: 'var(--text-muted)' }}>○</span> <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Approved</span></div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-muted" style={{ padding: '2.5rem 1rem', textAlign: 'center', background: 'var(--bg-app)', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                    No claims recorded for this patient.
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ textAlign: 'center' }}><span style={{ fontWeight: 700, color: 'var(--forest-green)' }}>✓</span> <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Prepared</span></div>
-                    <div style={{ flex: 1, height: 2, background: 'var(--forest-green)', margin: '0 0.5rem' }}></div>
-                    <div style={{ textAlign: 'center' }}><span style={{ fontWeight: 700, color: 'var(--forest-green)' }}>✓</span> <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Submitted</span></div>
-                    <div style={{ flex: 1, height: 2, background: 'var(--forest-green)', margin: '0 0.5rem' }}></div>
-                    <div style={{ textAlign: 'center' }}><span style={{ fontWeight: 700, color: 'var(--forest-green)' }}>●</span> <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--forest-green)' }}>Under Review</span></div>
-                    <div style={{ flex: 1, height: 2, background: 'var(--border-subtle)', margin: '0 0.5rem' }}></div>
-                    <div style={{ textAlign: 'center' }}><span style={{ color: 'var(--text-muted)' }}>○</span> <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Approved</span></div>
-                  </div>
-                </div>
+                )}
               </div>
             )}
           </div>
@@ -557,10 +613,10 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
                     >
                       <td style={{ fontWeight: 600 }}>{p.first_name} {p.last_name}</td>
                       <td><Badge variant="green">{p.patient_id}</Badge></td>
-                      <td className="text-muted">{p.date_of_birth} ({p.gender})</td>
-                      <td className="text-muted">{p.phone}</td>
-                      <td>{p.primary_doctor_id}</td>
-                      <td>{p.insurance_policy_id}</td>
+                      <td className="text-muted">{(p.date_of_birth || (p as any).dob) ? `${p.date_of_birth || (p as any).dob}` : '—'} {p.gender ? `(${p.gender})` : ''}</td>
+                      <td className="text-muted">{p.phone || '—'}</td>
+                      <td>{p.primary_doctor_id || '—'}</td>
+                      <td>{p.insurance_policy_id || '—'}</td>
                       <td><Badge variant="green">Active</Badge></td>
                       <td>
                         <Button

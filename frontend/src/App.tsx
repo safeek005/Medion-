@@ -8,6 +8,8 @@ import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { AskMedionCommand } from './components/intelligence/AskMedionCommand';
 import { ExecutionTraceDrawer } from './components/intelligence/ExecutionTraceDrawer';
+import { dataService } from './services/dataService';
+import { useEffect } from 'react';
 
 import { DoctorWorkspace } from './pages/doctor/DoctorWorkspace';
 import { NurseWorkspace } from './pages/nurse/NurseWorkspace';
@@ -43,6 +45,10 @@ function AppLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isTraceDrawerOpen, setIsTraceDrawerOpen] = useState(false);
   const [executionTraces, setExecutionTraces] = useState<ExecutionTraceStep[]>([]);
+
+  useEffect(() => {
+    dataService.syncFromSupabase();
+  }, []);
 
   const handleTraceGenerated = (step: ExecutionTraceStep) => {
     setExecutionTraces((prev) => [step, ...prev]);

@@ -231,6 +231,72 @@ const MOCK_DATA = {
 // NLP & ENTITY RESOLUTION UTILITIES
 // ----------------------------------------------------
 
+// ----------------------------------------------------
+// SUPABASE LIVE REST CLIENT
+// ----------------------------------------------------
+
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://cvjjumwflwjwqyqgymqs.supabase.co";
+const SUPABASE_KEY = (
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.SUPABASE_KEY ||
+  process.env.SUPABASE_ANON_KEY ||
+  process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN2amp1bXdmbHdqd3F5cWd5bXFzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4ODg1NDI3NiwiZXhwIjoyMTA0NDMwMjc2fQ.ac0p78LzU3fZ3aobyEeaYEW9m1DNJdkvl7869Gwm3KI"
+).trim();
+
+async function supabaseRequest(endpoint, method = "GET", data = null) {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return null;
+  try {
+    const url = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${endpoint}`;
+    const headers = {
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${SUPABASE_KEY}`,
+      "Content-Type": "application/json",
+      "Prefer": "return=representation"
+    };
+    const options = { method, headers };
+    if (data) options.body = JSON.stringify(data);
+    const res = await fetch(url, options);
+    if (res.ok) {
+      const text = await res.text();
+      return text ? JSON.parse(text) : null;
+    } else {
+      const errText = await res.text();
+      console.warn(`[Supabase REST Error] ${res.status}: ${errText}`);
+      return null;
+    }
+  } catch (err) {
+    console.warn(`[Supabase Fetch Exception]`, err.message);
+    return null;
+  }
+}
+
+async function getNextPatientId() {
+  try {
+    const remote = await supabaseRequest("patients?select=patient_id&order=created_at.desc&limit=50");
+    let maxId = 1000;
+    if (Array.isArray(remote)) {
+      remote.forEach(r => {
+        const m = (r.patient_id || "").match(/PAT-(\d+)/i);
+        if (m) {
+          const num = parseInt(m[1], 10);
+          if (num > maxId) maxId = num;
+        }
+      });
+    }
+    MOCK_DATA.patients.forEach(p => {
+      const m = (p.patient_id || "").match(/PAT-(\d+)/i);
+      if (m) {
+        const num = parseInt(m[1], 10);
+        if (num > maxId) maxId = num;
+      }
+    });
+    return `PAT-${maxId + 1}`;
+  } catch (e) {
+    return `PAT-${1000 + MOCK_DATA.patients.length + 1}`;
+  }
+}
+
 let LAST_PENDING_REGISTRATION = null;
 
 function normalizeDateOfBirth(raw) {
@@ -253,13 +319,13 @@ function normalizeDateOfBirth(raw) {
 function resolveDoctor(text) {
   if (!text) return null;
   const lower = text.toLowerCase();
-  if (lower.includes("doc-101") || lower.includes("rajesh") || lower.includes("mehta") || lower.includes("cardio")) {
+  if (lower.includes("doc-101") || lower.includes("dr. rajesh") || lower.includes("dr rajesh") || lower.includes("dr. mehta") || lower.includes("dr mehta") || lower.includes("rajesh mehta") || lower.includes("cardio")) {
     return MOCK_DATA.doctors.find(d => d.doctor_id === "DOC-101");
   }
-  if (lower.includes("doc-102") || lower.includes("anita") || lower.includes("deshmukh") || lower.includes("endo")) {
+  if (lower.includes("doc-102") || lower.includes("dr. anita") || lower.includes("dr anita") || lower.includes("dr. deshmukh") || lower.includes("dr deshmukh") || lower.includes("anita deshmukh") || lower.includes("endo")) {
     return MOCK_DATA.doctors.find(d => d.doctor_id === "DOC-102");
   }
-  if (lower.includes("doc-103") || lower.includes("suresh") || lower.includes("rao") || lower.includes("general")) {
+  if (lower.includes("doc-103") || lower.includes("dr. suresh") || lower.includes("dr suresh") || lower.includes("dr. rao") || lower.includes("dr rao") || lower.includes("suresh rao") || lower.includes("general")) {
     return MOCK_DATA.doctors.find(d => d.doctor_id === "DOC-103");
   }
   return null;
@@ -777,7 +843,7 @@ function handleInsuranceAgent(action, payload) {
 // 4. PATIENT AGENT HANDLER
 // ----------------------------------------------------
 
-function handlePatientAgent(action, payload) {
+async function handlePatientAgent(action, payload) {
   const query = (payload.query || payload.search || payload.name || payload.message || "").toLowerCase();
 
   if (action === "search_patient" || action === "search_patients") {
@@ -826,16 +892,24 @@ function handlePatientAgent(action, payload) {
   }
 
   if (action === "register_patient") {
-    const newId = `PAT-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newId = await getNextPatientId();
     const newPatient = {
       patient_id: newId,
       first_name: payload.first_name || "New",
       last_name: payload.last_name || "Patient",
-      gender: payload.gender || "Not specified",
-      phone: payload.phone || "+91 9000000000",
-      email: payload.email || "patient@example.com"
+      dob: payload.dob || payload.date_of_birth || null,
+      gender: payload.gender || null,
+      blood_group: payload.blood_group || null,
+      phone: payload.phone || null,
+      email: payload.email || null,
+      address: payload.address || null,
+      emergency_contact: payload.emergency_contact || null,
+      primary_doctor_id: payload.primary_doctor_id || null,
+      insurance_policy_id: payload.insurance_policy_id || null,
+      created_at: new Date().toISOString()
     };
-    MOCK_DATA.patients.push(newPatient);
+    await supabaseRequest("patients", "POST", newPatient);
+    MOCK_DATA.patients.unshift(newPatient);
 
     return {
       agent_id: "AGT-PAT-001",
@@ -863,7 +937,7 @@ function handlePatientAgent(action, payload) {
     agent_id: "AGT-PAT-001",
     agent_name: "Patient Agent",
     agent_type: "domain_expert",
-    summary: `Profile for ${patient.first_name} ${patient.last_name} (${patient.patient_id}): DOB: ${patient.dob}, Gender: ${patient.gender}, Blood Group: ${patient.blood_group}, Primary Doctor: ${patient.primary_doctor_id}, Insurance: ${patient.insurance_policy_id}, Emergency Contact: ${patient.emergency_contact?.name} (${patient.emergency_contact?.phone}).`,
+    summary: `Profile for ${patient.first_name} ${patient.last_name} (${patient.patient_id}): DOB: ${patient.dob || 'Not provided'}, Gender: ${patient.gender || 'Not provided'}, Blood Group: ${patient.blood_group || 'Not provided'}, Primary Doctor: ${patient.primary_doctor_id || 'Not assigned'}, Insurance: ${patient.insurance_policy_id || 'None'}, Emergency Contact: ${patient.emergency_contact?.name ? `${patient.emergency_contact.name} (${patient.emergency_contact.phone || ''})` : 'None'}.`,
     result_data: { success: true, patient: patient },
     next_recommended_action: "get_patient_history"
   };
@@ -873,7 +947,7 @@ function handlePatientAgent(action, payload) {
 // 5. MASTER ORCHESTRATOR & INTENT DISPATCHER
 // ----------------------------------------------------
 
-function handleAssistantAgent(action, payload) {
+async function handleAssistantAgent(action, payload) {
   const message = (payload.message || payload.prompt || payload.query || "").trim();
   const lower = message.toLowerCase();
   const previousContext = payload.previous_context || payload.conversation_state || {};
@@ -911,41 +985,37 @@ function handleAssistantAgent(action, payload) {
                   (LAST_PENDING_REGISTRATION ? LAST_PENDING_REGISTRATION.patient_name : "Harini");
     LAST_PENDING_REGISTRATION = null;
 
-    const nameParts = pName.trim().split(" ");
-    const firstName = nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1);
-    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : (firstName === "Harini" ? "S" : "Sharma");
+    const nameParts = pName.trim().split(/\s+/);
+    const firstName = nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ") : "";
 
     const rawDob = dobMatchTurn2 ? dobMatchTurn2[0] : (previousContext.dob || "2007-01-31");
     const dob = normalizeDateOfBirth(rawDob);
     const gender = genderMatchTurn2 ? (genderMatchTurn2[1].charAt(0).toUpperCase() + genderMatchTurn2[1].slice(1).toLowerCase()) : (previousContext.gender || "Female");
     const phone = phoneMatchTurn2 ? phoneMatchTurn2[0].trim() : (previousContext.phone || "9566036555");
 
-    let maxId = 1000;
-    MOCK_DATA.patients.forEach(p => {
-      const match = p.patient_id.match(/PAT-(\d+)/i);
-      if (match) {
-        const num = parseInt(match[1], 10);
-        if (num > maxId) maxId = num;
-      }
-    });
-    const newPatientId = `PAT-${maxId + 1}`;
+    const newPatientId = await getNextPatientId();
 
     const newPatient = {
       patient_id: newPatientId,
       first_name: firstName,
       last_name: lastName,
-      dob: dob,
-      gender: gender,
-      blood_group: "O+",
-      phone: phone,
-      email: `${firstName.toLowerCase()}@example.com`,
-      address: "Indiranagar, Bengaluru, Karnataka",
-      emergency_contact: { name: "Family Emergency Contact", relationship: "Family", phone: phone },
-      primary_doctor_id: "DOC-101",
-      insurance_policy_id: "POL-701",
+      dob: dob || null,
+      gender: gender || null,
+      blood_group: null,
+      phone: phone || null,
+      email: null,
+      address: null,
+      emergency_contact: null,
+      primary_doctor_id: null,
+      insurance_policy_id: null,
       created_at: new Date().toISOString()
     };
 
+    // 1. Authoritative write to Supabase PostgreSQL table public.patients
+    await supabaseRequest("patients", "POST", newPatient);
+
+    // 2. Mirror into in-memory store
     MOCK_DATA.patients.unshift(newPatient);
 
     const confirmationText = `Patient successfully registered.\n\nPatient: ${firstName} ${lastName}\nPatient ID: ${newPatientId}\nDate of Birth: ${dob}\nGender: ${gender}\nContact: ${phone}`;
@@ -967,14 +1037,29 @@ function handleAssistantAgent(action, payload) {
     };
   }
 
-  if (previousContext.awaiting_action === "book_appointment" && (relativeDate || timeSlot)) {
-    const finalDate = relativeDate || previousContext.date || "2026-09-09";
-    const finalTime = timeSlot || previousContext.time_slot || "10:00-10:30";
-    const finalDoctor = doctor || MOCK_DATA.doctors[0];
+  const pendingBookingAction = (
+    previousContext.awaiting_action === "book_appointment" ||
+    previousContext.pending_action === "book_appointment" ||
+    previousContext.action === "book_appointment" ||
+    previousContext.target_action === "book_appointment" ||
+    previousContext.pendingIntent === "book_appointment" ||
+    (previousContext.collected_entities && previousContext.collected_entities.doctor_id) ||
+    (previousContext.collectedEntities && previousContext.collectedEntities.doctor_id)
+  );
+
+  if (pendingBookingAction && (relativeDate || timeSlot || /\b(tomorrow|today|monday|tuesday|wednesday|thursday|friday|saturday|sunday|am|pm|\d{1,2}:\d{2})\b/i.test(message))) {
+    const docId = previousContext.doctor_id || previousContext.collected_entities?.doctor_id || previousContext.collectedEntities?.doctor_id;
+    const finalDoctor = doctor || (docId ? MOCK_DATA.doctors.find(d => d.doctor_id === docId) : null) || MOCK_DATA.doctors[0];
+
+    const patId = previousContext.patient_id || previousContext.collected_entities?.patient_id || previousContext.collectedEntities?.patient_id || (payload.user_role === "patient" ? "PAT-1001" : null);
+    const finalPatient = (patId ? resolvePatient(patId) : patient) || MOCK_DATA.patients[0];
+
+    const finalDate = relativeDate || previousContext.date || previousContext.collected_entities?.date || previousContext.collectedEntities?.date || "2026-09-09";
+    const finalTime = timeSlot || previousContext.time_slot || previousContext.collected_entities?.time_slot || previousContext.collectedEntities?.time_slot || "14:00-14:30";
 
     const bookRes = handleAppointmentAgent("book_appointment", {
       doctor_id: finalDoctor.doctor_id,
-      patient_id: patient.patient_id,
+      patient_id: finalPatient.patient_id,
       date: finalDate,
       time_slot: finalTime
     });
@@ -990,7 +1075,10 @@ function handleAssistantAgent(action, payload) {
         target_agent: "appointment",
         target_action: "book_appointment",
         formatted_text: bookRes.summary,
-        result_data: bookRes.result_data
+        appointment: bookRes.result_data.appointment,
+        doctor: bookRes.result_data.doctor,
+        patient: bookRes.result_data.patient,
+        ...bookRes.result_data
       }
     };
   }
@@ -1500,39 +1588,32 @@ function handleAssistantAgent(action, payload) {
       };
     }
 
-    const nameParts = extractedName.trim().split(" ");
-    const firstName = nameParts[0];
-    const lastName = nameParts.slice(1).join(" ") || "Patient";
+    const nameParts = extractedName.trim().split(/\s+/);
+    const firstName = nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ") : "";
     const dob = dobMatch[0];
     const gender = genderMatch[1].charAt(0).toUpperCase() + genderMatch[1].slice(1).toLowerCase();
     const phone = phoneMatch[0].trim();
 
-    let maxId = 1000;
-    MOCK_DATA.patients.forEach(p => {
-      const match = p.patient_id.match(/PAT-(\d+)/i);
-      if (match) {
-        const num = parseInt(match[1], 10);
-        if (num > maxId) maxId = num;
-      }
-    });
-    const newPatientId = `PAT-${maxId + 1}`;
+    const newPatientId = await getNextPatientId();
 
     const newPatient = {
       patient_id: newPatientId,
       first_name: firstName,
       last_name: lastName,
-      dob: dob,
-      gender: gender,
-      blood_group: "O+",
-      phone: phone,
-      email: `${firstName.toLowerCase()}@example.com`,
-      address: "Indiranagar, Bengaluru, Karnataka",
-      emergency_contact: { name: "Family Emergency Contact", relationship: "Family", phone: phone },
-      primary_doctor_id: "DOC-101",
-      insurance_policy_id: "POL-701",
+      dob: dob || null,
+      gender: gender || null,
+      blood_group: null,
+      phone: phone || null,
+      email: null,
+      address: null,
+      emergency_contact: null,
+      primary_doctor_id: null,
+      insurance_policy_id: null,
       created_at: new Date().toISOString()
     };
 
+    await supabaseRequest("patients", "POST", newPatient);
     MOCK_DATA.patients.unshift(newPatient);
 
     const confirmationText = `Patient ${extractedName} has been successfully registered with Patient ID ${newPatientId} (DOB: ${dob}, Gender: ${gender}, Contact: ${phone}).`;
@@ -1711,7 +1792,7 @@ export default async function handler(req, res) {
     let output;
     switch (targetAgent) {
       case "patient":
-        output = handlePatientAgent(action, payload);
+        output = await handlePatientAgent(action, payload);
         break;
       case "medical":
         output = handleMedicalAgent(action, payload);
@@ -1724,8 +1805,20 @@ export default async function handler(req, res) {
         break;
       case "assistant":
       default:
-        output = handleAssistantAgent(action, payload);
+        output = await handleAssistantAgent(action, payload);
         break;
+    }
+
+    const providerInfo = {
+      provider_name: "MEDION Deterministic Multi-Agent Engine (Serverless)",
+      is_fallback: true,
+      fallback_reason: "Offline deterministic multi-agent parser active",
+      endpoint_used: "/api/workbench/dispatch",
+      model: "Rule-based Slot Matcher & Domain Specialist"
+    };
+
+    if (output && output.result_data) {
+      output.result_data.provider_info = providerInfo;
     }
 
     const response = {
@@ -1734,6 +1827,7 @@ export default async function handler(req, res) {
       target_agent: output.agent_name ? output.agent_name.replace(" Agent", "").toLowerCase() : targetAgent,
       action_performed: action,
       output: output,
+      provider_info: providerInfo,
       timestamp: new Date().toISOString()
     };
 

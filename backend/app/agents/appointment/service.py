@@ -9,11 +9,20 @@ class AppointmentService:
         Retrieves available doctor slots for a specified date.
         """
         doctor_id = payload.get("doctor_id") or "DOC-101"
-        date = payload.get("date") or payload.get("appointment_date") or "2024-09-10"
+        date = payload.get("date") or payload.get("appointment_date") or datetime.now(timezone.utc).date().isoformat()
 
         doctor = mock_db.find_one("doctors", "doctor_id", doctor_id)
         if not doctor:
-            raise ValueError(f"Doctor with ID '{doctor_id}' not found.")
+            # Try finding doctor by name
+            for d in mock_db.get_collection("doctors"):
+                if doctor_id.lower() in f"{d.get('first_name')} {d.get('last_name')}".lower():
+                    doctor = d
+                    doctor_id = d["doctor_id"]
+                    break
+
+        if not doctor:
+            doctor = mock_db.find_one("doctors", "doctor_id", "DOC-101")
+            doctor_id = "DOC-101"
 
         slots = mock_db.find_available_slots(doctor_id, date)
 
@@ -38,28 +47,70 @@ class AppointmentService:
         hospital_id = payload.get("hospital_id", "HOSP-001")
         date = payload.get("date") or payload.get("appointment_date")
         time_slot = payload.get("time_slot") or payload.get("start_time")
-        reason = payload.get("reason") or payload.get("reason_for_visit") or "General Consultation"
+        reason = payload.get("reason") or payload.get("reason_for_visit") or "General Clinical Consultation"
 
+        # Patient resolution: if patient_id missing or given as name
         if not patient_id:
-            raise ValueError("Field 'patient_id' is required for booking.")
-        if not doctor_id:
-            raise ValueError("Field 'doctor_id' is required for booking.")
-        if not date:
-            raise ValueError("Field 'date' is required for booking.")
-        if not time_slot:
-            raise ValueError("Field 'time_slot' (or start_time) is required for booking.")
+            name_cand = payload.get("full_name") or payload.get("patient_name") or payload.get("name")
+            if name_cand:
+                patients = mock_db.search_patients(name_cand)
+                if patients:
+                    patient_id = patients[0]["patient_id"]
+                else:
+                    # Default demo patient
+                    patient_id = "PAT-1001"
+            else:
+                patient_id = "PAT-1001"
 
         patient = mock_db.find_one("patients", "patient_id", patient_id)
         if not patient:
-            raise ValueError(f"Patient with ID '{patient_id}' not found.")
+            # Search by name in patient collection
+            for p in mock_db.get_collection("patients"):
+                if patient_id.lower() in f"{p.get('first_name')} {p.get('last_name')}".lower():
+                    patient = p
+                    patient_id = p["patient_id"]
+                    break
+
+        if not patient:
+            patient = mock_db.find_one("patients", "patient_id", "PAT-1001")
+            patient_id = "PAT-1001"
+
+        if not doctor_id:
+            doctor_id = "DOC-101"
 
         doctor = mock_db.find_one("doctors", "doctor_id", doctor_id)
         if not doctor:
-            raise ValueError(f"Doctor with ID '{doctor_id}' not found.")
+            for d in mock_db.get_collection("doctors"):
+                if doctor_id.lower() in f"{d.get('first_name')} {d.get('last_name')}".lower():
+                    doctor = d
+                    doctor_id = d["doctor_id"]
+                    break
 
-        hospital = mock_db.find_one("hospitals", "hospital_id", hospital_id)
-        if not hospital:
-            raise ValueError(f"Hospital with ID '{hospital_id}' not found.")
+        if not doctor:
+            raise ValueError(f"Doctor with ID/Name '{doctor_id}' not found.")
+
+        if not date:
+            raise ValueError("Field 'date' is required for booking.")
+        if not time_slot:
+            raise ValueError("Field 'time_slot' is required for booking.")
+
+        hospital = mock_db.find_one("hospitals", "hospital_id", hospital_id) or {
+            "hospital_id": "HOSP-001",
+            "hospital_name": "Apollo Hospitals Greams Road"
+        }
+
+        # Normalize time_slot if only start_time was provided
+        if "-" not in time_slot:
+            parts = time_slot.split(":")
+            if len(parts) == 2:
+                hr = int(parts[0])
+                mn = int(parts[1]) + 30
+                if mn >= 60:
+                    hr += 1
+                    mn -= 60
+                time_slot = f"{time_slot}-{hr:02d}:{mn:02d}"
+            else:
+                time_slot = f"{time_slot}-10:30"
 
         # Check for slot conflict
         existing_apts = mock_db.find_many("appointments", "doctor_id", doctor_id)
@@ -69,18 +120,22 @@ class AppointmentService:
                 apt.get("status") in ["BOOKED", "CONFIRMED", "SCHEDULED"]):
                 raise ValueError(f"Slot '{time_slot}' on {date} is already booked for Dr. {doctor.get('last_name')}.")
 
-        # Normalize time_slot if only start_time was provided
-        if "-" not in time_slot:
-            time_slot = f"{time_slot}-10:30" if "10:00" in time_slot else f"{time_slot}-11:30"
-
         appointment_id = mock_db.generate_appointment_id()
+
+        doctor_full_name = f"Dr. {doctor.get('first_name')} {doctor.get('last_name')}"
+        patient_full_name = f"{patient.get('first_name')} {patient.get('last_name')}"
 
         apt_record = {
             "appointment_id": appointment_id,
             "patient_id": patient_id,
+            "patient_name": patient_full_name,
             "doctor_id": doctor_id,
+            "doctor_name": doctor_full_name,
+            "specialty": doctor.get("specialty"),
             "hospital_id": hospital_id,
+            "hospital_name": hospital.get("hospital_name"),
             "appointment_date": date,
+            "date": date,
             "time_slot": time_slot,
             "status": "CONFIRMED",
             "reason_for_visit": reason,
@@ -94,7 +149,7 @@ class AppointmentService:
             "appointment_id": appointment_id,
             "status": "CONFIRMED",
             "appointment": apt_record,
-            "summary": f"Booked appointment {appointment_id} with Dr. {doctor.get('last_name')} for patient {patient_id} on {date} at {time_slot}."
+            "summary": f"Appointment {appointment_id} successfully confirmed with {doctor_full_name} for {patient_full_name} on {date} at {time_slot}."
         }
 
     def get_appointment(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -136,7 +191,8 @@ class AppointmentService:
                 "appointment_id": appointment_id,
                 "status": "CANCELLED",
                 "message": f"Appointment {appointment_id} was already cancelled.",
-                "summary": f"Appointment {appointment_id} is cancelled."
+                "appointment": apt,
+                "summary": f"Appointment {appointment_id} is already cancelled."
             }
 
         updated = mock_db.update_appointment(appointment_id, {"status": "CANCELLED"})
@@ -171,6 +227,18 @@ class AppointmentService:
 
         doctor_id = apt.get("doctor_id")
 
+        if "-" not in new_time_slot:
+            parts = new_time_slot.split(":")
+            if len(parts) == 2:
+                hr = int(parts[0])
+                mn = int(parts[1]) + 30
+                if mn >= 60:
+                    hr += 1
+                    mn -= 60
+                new_time_slot = f"{new_time_slot}-{hr:02d}:{mn:02d}"
+            else:
+                new_time_slot = f"{new_time_slot}-11:30"
+
         # Check conflict on new slot
         existing_apts = mock_db.find_many("appointments", "doctor_id", doctor_id)
         for other in existing_apts:
@@ -180,11 +248,9 @@ class AppointmentService:
                     other.get("status") in ["BOOKED", "CONFIRMED", "SCHEDULED"]):
                     raise ValueError(f"New slot '{new_time_slot}' on {new_date} is already occupied.")
 
-        if "-" not in new_time_slot:
-            new_time_slot = f"{new_time_slot}-11:30"
-
         updates = {
             "appointment_date": new_date,
+            "date": new_date,
             "time_slot": new_time_slot,
             "status": "RESCHEDULED"
         }

@@ -1,7 +1,17 @@
 from pathlib import Path
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+
+try:
+    from dotenv import load_dotenv
+    base_dir = Path(__file__).resolve().parent.parent.parent
+    load_dotenv(base_dir / "backend" / ".env")
+    load_dotenv(base_dir / ".env")
+except Exception:
+    pass
+
 from app.api.router import api_router
 from app.api.health import router as root_health_router
 

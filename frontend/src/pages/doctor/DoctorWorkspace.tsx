@@ -5,6 +5,7 @@ import { dispatchToWorkbench } from '../../api/workbench';
 import { ExecutionTraceStep } from '../../types';
 import { HumanResponseRenderer } from '../../components/intelligence/HumanResponseRenderer';
 import { MOCK_PATIENT, MOCK_LAB_REPORT } from '../../data/mockDatasets';
+import { useSharedPatients, useSharedAppointments } from '../../services/dataService';
 import { Search, FlaskConical, TrendingDown, FileText, Activity, Calendar } from 'lucide-react';
 
 interface DoctorWorkspaceProps {
@@ -17,6 +18,13 @@ export const DoctorWorkspace: React.FC<DoctorWorkspaceProps> = ({ onTraceGenerat
   const [output, setOutput] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'clinical' | 'lab' | 'summary'>('clinical');
+
+  const patients = useSharedPatients();
+  const appointments = useSharedAppointments();
+
+  const activePatient = patients.find(p => p.patient_id.toUpperCase() === patientId.toUpperCase()) || patients[0] || MOCK_PATIENT;
+  const patientApts = appointments.filter(a => a.patient_id.toUpperCase() === activePatient.patient_id.toUpperCase() && a.status !== 'CANCELLED');
+  const upcomingApt = patientApts[0] || null;
 
   const handleAction = async (actionType: string) => {
     setLoading(true);
@@ -92,12 +100,12 @@ export const DoctorWorkspace: React.FC<DoctorWorkspaceProps> = ({ onTraceGenerat
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
-              <h1 className="h1" style={{ fontSize: '1.75rem' }}>{MOCK_PATIENT.first_name} {MOCK_PATIENT.last_name}</h1>
-              <span className="badge-ui badge-green">{MOCK_PATIENT.patient_id}</span>
-              <span className="badge-ui badge-neutral">{MOCK_PATIENT.gender} • DOB {MOCK_PATIENT.date_of_birth}</span>
+              <h1 className="h1" style={{ fontSize: '1.75rem' }}>{activePatient.first_name} {activePatient.last_name}</h1>
+              <span className="badge-ui badge-green">{activePatient.patient_id}</span>
+              <span className="badge-ui badge-neutral">{activePatient.gender} • DOB {activePatient.date_of_birth}</span>
             </div>
             <p className="text-secondary" style={{ fontSize: '0.85rem' }}>
-              Primary Doctor: DOC-101 • Policy: POL-701 • Blood Group: {MOCK_PATIENT.blood_group}
+              Primary Doctor: {activePatient.primary_doctor_id} • Policy: {activePatient.insurance_policy_id} • Blood Group: {activePatient.blood_group}
             </p>
           </div>
 
@@ -134,19 +142,28 @@ export const DoctorWorkspace: React.FC<DoctorWorkspaceProps> = ({ onTraceGenerat
               <h4 className="h4" style={{ marginBottom: '0.75rem' }}>Demographic Information</h4>
               <table className="table-ui" style={{ marginBottom: '1.5rem' }}>
                 <tbody>
-                  <tr><td className="text-muted">Full Address</td><td>{MOCK_PATIENT.address}</td></tr>
-                  <tr><td className="text-muted">Contact Phone</td><td>{MOCK_PATIENT.phone}</td></tr>
-                  <tr><td className="text-muted">Emergency Contact</td><td>{MOCK_PATIENT.emergency_contact.name} ({MOCK_PATIENT.emergency_contact.relationship} • {MOCK_PATIENT.emergency_contact.phone})</td></tr>
+                  <tr><td className="text-muted">Full Address</td><td>{activePatient.address}</td></tr>
+                  <tr><td className="text-muted">Contact Phone</td><td>{activePatient.phone}</td></tr>
+                  <tr><td className="text-muted">Emergency Contact</td><td>{activePatient.emergency_contact.name} ({activePatient.emergency_contact.relationship} • {activePatient.emergency_contact.phone})</td></tr>
                 </tbody>
               </table>
             </div>
 
             <div style={{ background: 'var(--bg-app)', padding: '1.25rem', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
               <h4 className="h4" style={{ marginBottom: '0.5rem' }}>Upcoming Appointments</h4>
-              <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Cardiology Follow-up</div>
-              <div className="text-muted" style={{ fontSize: '0.78rem', marginTop: '0.25rem' }}>
-                <Calendar style={{ width: 12, height: 12, display: 'inline', marginRight: 4 }} /> 2024-09-10 (10:00 - 10:30)
-              </div>
+              {upcomingApt ? (
+                <>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{upcomingApt.reason || 'Clinical Follow-up'}</div>
+                  <div className="text-muted" style={{ fontSize: '0.78rem', marginTop: '0.25rem' }}>
+                    <Calendar style={{ width: 12, height: 12, display: 'inline', marginRight: 4 }} /> {upcomingApt.date} ({upcomingApt.time_slot})
+                  </div>
+                  <div style={{ marginTop: '0.35rem' }}>
+                    <Badge variant="green">{upcomingApt.appointment_id}</Badge>
+                  </div>
+                </>
+              ) : (
+                <div className="text-muted" style={{ fontSize: '0.8rem' }}>No upcoming appointments scheduled</div>
+              )}
             </div>
           </div>
         )}

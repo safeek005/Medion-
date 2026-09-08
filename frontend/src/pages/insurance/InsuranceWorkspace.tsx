@@ -5,6 +5,7 @@ import { Badge } from '../../components/ui/Badge';
 import { dispatchToWorkbench } from '../../api/workbench';
 import { ExecutionTraceStep } from '../../types';
 import { HumanResponseRenderer } from '../../components/intelligence/HumanResponseRenderer';
+import { useSharedClaims, dataService } from '../../services/dataService';
 import { ShieldCheck, FileText, CheckCircle2 } from 'lucide-react';
 
 interface InsuranceWorkspaceProps {
@@ -15,6 +16,10 @@ export const InsuranceWorkspace: React.FC<InsuranceWorkspaceProps> = ({ onTraceG
   const [claimId, setClaimId] = useState('CLM-1001');
   const [output, setOutput] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+
+  const claims = useSharedClaims();
+  const policies = dataService.getPolicies();
+  const activeClaim = claims.find(c => c.claim_id.toUpperCase() === claimId.toUpperCase()) || claims[0];
 
   const handleAction = async (actionType: string) => {
     setLoading(true);
@@ -65,12 +70,12 @@ export const InsuranceWorkspace: React.FC<InsuranceWorkspaceProps> = ({ onTraceG
       {/* Adjudication Lifecycle Panel */}
       <div className="section-panel">
         <SectionHeader
-          title="Claim Adjudication Lifecycle (CLM-1001)"
-          subtitle="Policy POL-701 • Comprehensive Health Shield • Coverage Limit: ₹500,000"
+          title={`Claim Adjudication Lifecycle (${activeClaim.claim_id})`}
+          subtitle={`Policy ${activeClaim.policy_id} • Claim Amount: ₹${activeClaim.claim_amount.toLocaleString()}`}
           actions={
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <Button variant="primary" size="sm" onClick={() => handleAction('submit_claim')}>
-                <ShieldCheck style={{ width: 14, height: 14 }} /> Adjudicate Claim CLM-1001
+                <ShieldCheck style={{ width: 14, height: 14 }} /> Adjudicate Claim {activeClaim.claim_id}
               </Button>
               <Button variant="secondary" size="sm" onClick={() => handleAction('verify_insurance')}>
                 Verify Policy POL-701
@@ -81,10 +86,10 @@ export const InsuranceWorkspace: React.FC<InsuranceWorkspaceProps> = ({ onTraceG
 
         <Timeline
           steps={[
-            { label: 'Prepared', sublabel: 'BILL-1001', status: 'completed' },
+            { label: 'Prepared', sublabel: activeClaim.bill_id || 'BILL-1001', status: 'completed' },
             { label: 'Submitted', sublabel: 'Sent to Payer', status: 'completed' },
-            { label: 'Under Review', sublabel: 'Rules Engine Active', status: 'active' },
-            { label: 'Approved', sublabel: 'Final Settlement', status: 'pending' },
+            { label: 'Under Review', sublabel: 'Rules Engine Active', status: activeClaim.status === 'APPROVED' ? 'completed' : 'active' },
+            { label: 'Approved', sublabel: activeClaim.status === 'APPROVED' ? `₹${(activeClaim.approved_amount || 0).toLocaleString()}` : 'Pending', status: activeClaim.status === 'APPROVED' ? 'completed' : 'pending' },
           ]}
         />
       </div>
@@ -96,7 +101,7 @@ export const InsuranceWorkspace: React.FC<InsuranceWorkspaceProps> = ({ onTraceG
           <thead>
             <tr>
               <th>Policy ID</th>
-              <th>Policy Holder</th>
+              <th>Policy Holder / Patient</th>
               <th>Plan Type</th>
               <th>Coverage Amount</th>
               <th>Remaining Limit</th>
@@ -105,24 +110,17 @@ export const InsuranceWorkspace: React.FC<InsuranceWorkspaceProps> = ({ onTraceG
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td style={{ fontWeight: 600 }}>POL-701</td>
-              <td>Arun Kumar (PAT-1001)</td>
-              <td>Comprehensive Health Shield</td>
-              <td>₹500,000</td>
-              <td>₹425,000</td>
-              <td>10%</td>
-              <td><Badge variant="green">ACTIVE</Badge></td>
-            </tr>
-            <tr>
-              <td style={{ fontWeight: 600 }}>POL-702</td>
-              <td>Sneha Sharma (PAT-1002)</td>
-              <td>Executive Gold Mediclaim</td>
-              <td>₹1,000,000</td>
-              <td>₹1,000,000</td>
-              <td>5%</td>
-              <td><Badge variant="green">ACTIVE</Badge></td>
-            </tr>
+            {policies.map((pol) => (
+              <tr key={pol.policy_id}>
+                <td style={{ fontWeight: 600 }}>{pol.policy_id}</td>
+                <td>{pol.patient_id}</td>
+                <td>{pol.plan_type}</td>
+                <td>₹{pol.coverage_limit.toLocaleString()}</td>
+                <td>₹{pol.remaining_coverage.toLocaleString()}</td>
+                <td>{pol.copay_percentage}%</td>
+                <td><Badge variant="green">{pol.status}</Badge></td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

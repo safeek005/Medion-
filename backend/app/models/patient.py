@@ -58,14 +58,14 @@ class PatientRegisterRequest(BaseModel):
     last_name: Optional[str] = None
     date_of_birth: Optional[str] = None
     dob: Optional[str] = None
-    gender: str
-    blood_group: str = "O+"
+    gender: Optional[str] = None
+    blood_group: Optional[str] = None
     phone: str
-    email: EmailStr
-    address: str
+    email: Optional[EmailStr] = None
+    address: Optional[str] = None
     emergency_contact: Optional[EmergencyContact] = None
-    primary_doctor_id: Optional[str] = "DOC-101"
-    insurance_policy_id: Optional[str] = "POL-701"
+    primary_doctor_id: Optional[str] = None
+    insurance_policy_id: Optional[str] = None
 
 class PatientUpdateRequest(BaseModel):
     patient_id: str

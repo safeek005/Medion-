@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { UserRole, ExecutionTraceStep } from '../../types';
 import { Sparkles, ArrowRight, Code, RotateCcw, User, Bot, Clock, ShieldAlert, CheckCircle2, Trash2 } from 'lucide-react';
-import { dispatchWorkbench } from '../../api/medionApi';
+import { executeAssistantAction, dispatchWorkbench } from '../../api/medionApi';
 import { Button } from '../../components/ui/Button';
 import { HumanResponseRenderer } from '../../components/intelligence/HumanResponseRenderer';
 import { dataService } from '../../services/dataService';
@@ -23,10 +23,10 @@ interface AiWorkspaceViewProps {
 }
 
 const PROCESSING_STEPS = [
-  'Understanding your request...',
-  'Identifying the required service...',
-  'Retrieving clinical information...',
-  'Preparing your response...'
+  'Understanding your clinical request...',
+  'Routing to specialized MEDION Agent...',
+  'Validating parameters & executing database mutation...',
+  'Formatting confirmed response...'
 ];
 
 export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceGenerated, onOpenTraceDrawer }) => {
@@ -46,7 +46,7 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
       {
         id: 'msg-welcome',
         sender: 'medion',
-        text: 'Hello! I am MEDION Healthcare Intelligence. You can ask me to book or check appointments, analyze laboratory reports, review insurance policies, track claims, or look up patient clinical records.',
+        text: 'Hello! I am MEDION Healthcare Multi-Agent Intelligence. You can ask me to register patients, book or reschedule appointments, review laboratory reports, verify insurance policies, or track claims.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         targetAgent: 'orchestrator'
       }
@@ -74,21 +74,68 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
     }
     const interval = setInterval(() => {
       setProcessingStepIdx((prev) => (prev < PROCESSING_STEPS.length - 1 ? prev + 1 : prev));
-    }, 700);
+    }, 600);
     return () => clearInterval(interval);
   }, [loading]);
 
-  const samplePrompts = [
-    { label: 'Register Patient', prompt: 'Register a new patient Safeek' },
-    { label: 'Check Dr Rajesh Slots', prompt: 'When is Dr Rajesh available?' },
-    { label: 'Book with Dr Rajesh', prompt: 'Book an appointment with Dr Rajesh tomorrow at 10 AM' },
-    { label: 'Cancel Appointment', prompt: 'Cancel appointment APT-1001' },
-    { label: 'Analyze Lab Report', prompt: "Analyze Arun Kumar's latest laboratory report (LABR-1001)" },
-    { label: 'Explain Lab Results', prompt: 'Explain LABR-1001 in simple language' },
-    { label: 'Verify Insurance', prompt: 'Is my insurance active?' },
-    { label: 'Submit Claim', prompt: 'Submit claim CLM-1001' },
-    { label: 'Patient History', prompt: "Show Arun Kumar's medical history" }
-  ];
+  // Dynamic context-aware suggested prompts
+  const getContextualSuggestions = () => {
+    const activeCtx = conversationContext || dataService.getConversationContext() || {};
+    const pendingAction = activeCtx.pending_action || activeCtx.action || activeCtx.awaiting_action;
+
+    if (pendingAction === 'register_patient') {
+      const missing = activeCtx.missing_fields || [];
+      if (missing.includes('gender') && missing.length === 1) {
+        return [
+          { label: 'Male', prompt: 'Male' },
+          { label: 'Female', prompt: 'Female' },
+          { label: 'Other', prompt: 'Other' }
+        ];
+      }
+      if (missing.includes('phone') && missing.length === 1) {
+        return [
+          { label: '9566036555', prompt: '9566036555' },
+          { label: '+91 9876543210', prompt: '+91 9876543210' }
+        ];
+      }
+      return [
+        { label: 'DOB: 31.01.2007', prompt: '31.01.2007' },
+        { label: 'Male', prompt: 'Male' },
+        { label: 'Female', prompt: 'Female' },
+        { label: 'Phone: 9566036555', prompt: '9566036555' }
+      ];
+    }
+
+    if (pendingAction === 'book_appointment') {
+      return [
+        { label: 'Tomorrow at 10 AM', prompt: 'Tomorrow at 10 AM' },
+        { label: 'Tomorrow at 2 PM', prompt: 'Tomorrow at 2 PM' },
+        { label: 'Friday at 11 AM', prompt: 'Friday at 11 AM' },
+        { label: 'Next available slot', prompt: 'Next available slot' }
+      ];
+    }
+
+    if (pendingAction === 'verify_insurance' || pendingAction === 'insurance_actions') {
+      return [
+        { label: 'Verify eligibility', prompt: 'Verify insurance eligibility' },
+        { label: 'Check coverage', prompt: 'How much coverage do I have?' },
+        { label: 'Prepare claim', prompt: 'Prepare a claim' },
+        { label: 'Check claim status', prompt: 'What is my claim status?' }
+      ];
+    }
+
+    return [
+      { label: 'Register Patient Safeek', prompt: 'Register a new patient Safeek' },
+      { label: 'Book with Dr Rajesh', prompt: 'Book Arun Kumar with Dr Rajesh tomorrow at 10 AM' },
+      { label: 'Check Dr Rajesh Slots', prompt: 'When is Dr Rajesh available?' },
+      { label: 'Cancel APT-1001', prompt: 'Cancel appointment APT-1001' },
+      { label: 'Analyze Lab Report', prompt: "Analyze Arun Kumar's latest laboratory report (LABR-1001)" },
+      { label: 'Explain Lab Results', prompt: 'Explain LABR-1001 in simple language' },
+      { label: 'Verify Insurance', prompt: 'Is my insurance active?' },
+      { label: 'Submit Claim', prompt: 'Submit claim CLM-1001' },
+      { label: 'Find Arun Kumar', prompt: 'Find Arun Kumar' }
+    ];
+  };
 
   const handleExecute = async (promptText: string) => {
     const textToSend = promptText.trim();
@@ -111,38 +158,36 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
     setProcessingStepIdx(0);
 
     const activeCtx = conversationContext || dataService.getConversationContext() || {};
-    const requestPayload: any = {
-      portal_source: role,
-      message: textToSend,
-      user_role: role,
-      previous_context: activeCtx,
-      conversation_context: activeCtx,
-    };
-
-    // Include patient context automatically if user is patient
-    if (role === 'patient') {
-      requestPayload.patient_id = 'PAT-1001';
-    }
-
     const startTime = performance.now();
+
     try {
-      const res = await dispatchWorkbench(requestPayload);
+      const res = await executeAssistantAction(textToSend, role, {
+        previous_context: activeCtx,
+        conversation_context: activeCtx,
+        ...(role === 'patient' ? { patient_id: 'PAT-1001' } : {})
+      });
       const duration = Math.round(performance.now() - startTime);
 
-      // Extract context if clarification was asked or doctor/action was identified
-      const outData = res?.output?.result_data || res?.result || {};
-      if (outData?.needs_clarification) {
-        const nextCtx = outData.context || {
-          awaiting_action: outData.awaiting_action,
+      const outData = res?.output?.result_data || res?.result?.result_data || res?.result || {};
+      const needsClarification = Boolean(
+        outData?.needs_clarification ||
+        (res as any)?.needs_clarification ||
+        res?.action_performed === 'handle_clarification' ||
+        (outData?.missing_parameters && outData.missing_parameters.length > 0)
+      );
+
+      if (needsClarification) {
+        const nextCtx = outData.context || (res as any).context || {
+          pending_action: res.action_performed || outData.target_action || 'clarification',
+          collected_entities: outData.parameters_used || outData.extracted_parameters || {},
+          missing_fields: outData.missing_parameters || [],
           patient_name: outData.patient_name,
           doctor_id: outData.doctor_id,
-          doctor_name: outData.doctor_name,
           patient_id: outData.patient_id || (role === 'patient' ? 'PAT-1001' : undefined)
         };
         setConversationContext(nextCtx);
         dataService.setConversationContext(nextCtx);
-      } else {
-        // Reset context after successful execution
+      } else if (res.success) {
         setConversationContext({});
         dataService.clearConversationContext();
       }
@@ -167,7 +212,12 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
         action: res.action_performed || 'natural_language_query',
         durationMs: duration,
         success: res.success !== false,
-        request: requestPayload,
+        request: {
+          agent_target: 'assistant',
+          action: 'interpret_request',
+          portal_source: role,
+          payload: { message: textToSend, conversation_context: activeCtx }
+        },
         response: res,
       });
     } catch (err: any) {
@@ -176,7 +226,7 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
         {
           id: `med-err-${Date.now()}`,
           sender: 'medion',
-          text: "I couldn't retrieve the healthcare information right now. Please check your query or try again.",
+          text: `MEDION encountered an issue: ${err.message || 'Unable to reach backend service.'}`,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           targetAgent: 'orchestrator',
           isError: true
@@ -190,16 +240,19 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
   const handleClearHistory = () => {
     sessionStorage.removeItem(`medion_chat_${role}`);
     setConversationContext({});
+    dataService.clearConversationContext();
     setMessages([
       {
         id: 'msg-welcome-new',
         sender: 'medion',
-        text: 'Session reset. Ask me anything about appointments, laboratory results, insurance policies, or patient history.',
+        text: 'Session reset. Ask me anything about patient registration, appointments, laboratory results, insurance policies, or claims.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         targetAgent: 'orchestrator'
       }
     ]);
   };
+
+  const suggestions = getContextualSuggestions();
 
   return (
     <div style={{ maxWidth: 1050, margin: '0 auto', padding: '1.5rem 1rem', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)' }}>
@@ -244,7 +297,7 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
       }}>
         <CheckCircle2 style={{ width: 14, height: 14, color: 'var(--forest-green)', flexShrink: 0 }} />
         <span>
-          <strong>Clinical Reference Mode:</strong> Responses are grounded in verified synthetic health data and do not substitute for certified physician diagnosis.
+          <strong>Clinical Source of Truth:</strong> Confirmed operations are persisted to the shared database and reflected across Patients, Appointments, and Dashboard views.
         </span>
       </div>
 
@@ -343,7 +396,7 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', maxWidth: '85%' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.25rem', fontSize: '0.75rem', color: 'var(--forest-green)' }}>
               <Bot style={{ width: 12, height: 12 }} />
-              <span style={{ fontWeight: 600 }}>MEDION Orchestrator is processing...</span>
+              <span style={{ fontWeight: 600 }}>MEDION Multi-Agent Orchestrator is executing...</span>
             </div>
             <div style={{
               background: 'rgba(16, 185, 129, 0.05)',
@@ -375,10 +428,10 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
       {/* Suggested Quick Action Chips */}
       <div style={{ marginBottom: '0.75rem' }}>
         <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.35rem' }}>
-          Quick Action Suggestions
+          {conversationContext.pending_action ? 'Suggested Next Inputs' : 'Quick Action Suggestions'}
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
-          {samplePrompts.map((item, idx) => (
+          {suggestions.map((item, idx) => (
             <button
               key={idx}
               onClick={() => handleExecute(item.prompt)}
@@ -407,7 +460,7 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
             type="text"
             className="command-input"
             style={{ fontSize: '0.92rem' }}
-            placeholder="Ask MEDION any clinical query, appointment request, report check, or claim question..."
+            placeholder="Ask MEDION... (e.g. 'Register a new patient Safeek' or 'Book with Dr Rajesh tomorrow at 10 AM')"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             disabled={loading}

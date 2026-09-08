@@ -6,6 +6,7 @@ import { dispatchToWorkbench } from '../../api/workbench';
 import { ExecutionTraceStep } from '../../types';
 import { HumanResponseRenderer } from '../../components/intelligence/HumanResponseRenderer';
 import { MOCK_PATIENT, MOCK_APPOINTMENTS, MOCK_LAB_REPORT } from '../../data/mockDatasets';
+import { useSharedPatients, useSharedAppointments } from '../../services/dataService';
 import { ShieldCheck, FileCheck, DollarSign, Send, Users, Calendar, FlaskConical, AlertCircle } from 'lucide-react';
 
 interface NurseWorkspaceProps {
@@ -18,6 +19,12 @@ export const NurseWorkspace: React.FC<NurseWorkspaceProps> = ({ onTraceGenerated
   const [claimId, setClaimId] = useState('CLM-1001');
   const [output, setOutput] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+
+  const patients = useSharedPatients();
+  const appointments = useSharedAppointments();
+
+  const activePatient = patients.find(p => p.patient_id.toUpperCase() === patientId.toUpperCase()) || patients[0] || MOCK_PATIENT;
+  const activeApts = appointments.filter(a => a.status !== 'CANCELLED');
 
   const handleAction = async (actionType: string) => {
     setLoading(true);
@@ -70,13 +77,13 @@ export const NurseWorkspace: React.FC<NurseWorkspaceProps> = ({ onTraceGenerated
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
         <div className="section-panel" style={{ marginBottom: 0 }}>
           <div className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>Intake Queue</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700, margin: '0.25rem 0' }}>{MOCK_PATIENT.first_name} {MOCK_PATIENT.last_name}</div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>PAT-1001 • DOB {MOCK_PATIENT.date_of_birth}</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 700, margin: '0.25rem 0' }}>{activePatient.first_name} {activePatient.last_name}</div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{activePatient.patient_id} • DOB {activePatient.date_of_birth}</div>
         </div>
 
         <div className="section-panel" style={{ marginBottom: 0 }}>
-          <div className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>Today's Appointments</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 700, margin: '0.25rem 0' }}>2 Scheduled</div>
+          <div className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>Active Appointments</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 700, margin: '0.25rem 0' }}>{activeApts.length} Scheduled</div>
           <div style={{ fontSize: '0.8rem', color: 'var(--forest-green)' }}>Cardiology & Endocrinology</div>
         </div>
 

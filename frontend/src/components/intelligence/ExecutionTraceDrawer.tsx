@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, CheckCircle2, Layers, Cpu, Server } from 'lucide-react';
+import { X, CheckCircle2, Layers, Cpu, Server, Sparkles, Activity, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { ExecutionTraceStep } from '../../types';
 
 interface ExecutionTraceDrawerProps {
@@ -12,6 +12,18 @@ export const ExecutionTraceDrawer: React.FC<ExecutionTraceDrawerProps> = ({ isOp
   if (!isOpen) return null;
 
   const latestTrace = traces[0];
+  const providerInfo =
+    latestTrace?.providerInfo ||
+    latestTrace?.response?.provider_info ||
+    (latestTrace?.response?.output?.result_data as any)?.provider_info ||
+    (latestTrace?.response?.result as any)?.provider_info ||
+    {
+      provider_name: 'MEDION Deterministic Healthcare Engine (Offline / Local)',
+      is_fallback: true,
+      fallback_reason: 'Default offline deterministic engine active (No external cloud LLM API key required)',
+      endpoint_used: '/api/workbench/dispatch',
+      model: 'Rule-based Slot Matcher & Domain Specialist'
+    };
 
   return (
     <>
@@ -30,6 +42,64 @@ export const ExecutionTraceDrawer: React.FC<ExecutionTraceDrawerProps> = ({ isOp
         </div>
 
         <div className="drawer-body">
+          {/* Active AI Provider & Routing Pathway Card */}
+          <div
+            style={{
+              marginBottom: '1.25rem',
+              background: 'var(--bg-app)',
+              border: '1px solid var(--border-subtle)',
+              padding: '1rem',
+              borderRadius: 8,
+              borderLeft: providerInfo.is_fallback
+                ? '4px solid #f59e0b'
+                : '4px solid var(--forest-green)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Sparkles style={{ width: 15, height: 15, color: providerInfo.is_fallback ? '#f59e0b' : 'var(--forest-green)' }} />
+                <h4 className="h4" style={{ fontSize: '0.82rem', margin: 0, fontWeight: 700 }}>
+                  Active AI Provider & Routing Pathway
+                </h4>
+              </div>
+              <span
+                className="badge-ui"
+                style={{
+                  fontSize: '0.68rem',
+                  fontWeight: 700,
+                  background: providerInfo.is_fallback ? '#fef3c7' : 'var(--forest-green-light)',
+                  color: providerInfo.is_fallback ? '#92400e' : 'var(--forest-green)',
+                  border: `1px solid ${providerInfo.is_fallback ? '#fde68a' : 'var(--forest-green)'}`
+                }}
+              >
+                {providerInfo.is_fallback ? '⚡ Deterministic Fallback Active' : '✨ Live Cloud LLM Active'}
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', fontSize: '0.76rem' }}>
+              <div>
+                <span className="text-muted" style={{ display: 'block', fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.4px' }}>AI Provider Engine</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{providerInfo.provider_name}</span>
+              </div>
+              <div>
+                <span className="text-muted" style={{ display: 'block', fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Inference / Slot Model</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{providerInfo.model || 'Rule & Slot Matcher'}</span>
+              </div>
+              <div style={{ gridColumn: 'span 2' }}>
+                <span className="text-muted" style={{ display: 'block', fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Target Dispatch Endpoint</span>
+                <code style={{ fontSize: '0.72rem', background: 'var(--bg-surface)', padding: '0.15rem 0.4rem', borderRadius: 4, border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
+                  {providerInfo.endpoint_used || '/api/workbench/dispatch'}
+                </code>
+              </div>
+              {providerInfo.fallback_reason && (
+                <div style={{ gridColumn: 'span 2', background: 'var(--bg-surface)', padding: '0.5rem 0.6rem', borderRadius: 6, border: '1px dashed var(--border-subtle)', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                  <span style={{ fontWeight: 600, color: providerInfo.is_fallback ? '#b45309' : 'var(--text-primary)' }}>Execution Mode: </span>
+                  {providerInfo.fallback_reason}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Core Registered Agents & External System Badges */}
           <div style={{ marginBottom: '1.25rem', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', padding: '1rem', borderRadius: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
@@ -85,8 +155,10 @@ export const ExecutionTraceDrawer: React.FC<ExecutionTraceDrawerProps> = ({ isOp
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'var(--forest-green-light)', color: 'var(--forest-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.75rem' }}>2</div>
                     <div>
-                      <div style={{ fontWeight: 600 }}>SNS Workbench Webhook</div>
-                      <div className="text-muted" style={{ fontSize: '0.72rem' }}>Master Orchestrator Switch Router</div>
+                      <div style={{ fontWeight: 600 }}>SNS Workbench Webhook Dispatcher</div>
+                      <div className="text-muted" style={{ fontSize: '0.72rem' }}>
+                        Router: {providerInfo.endpoint_used || '/api/workbench/dispatch'} ({providerInfo.is_fallback ? 'Offline Fallback Engine' : 'Cloud Gemini LLM'})
+                      </div>
                     </div>
                   </div>
 
@@ -105,8 +177,8 @@ export const ExecutionTraceDrawer: React.FC<ExecutionTraceDrawerProps> = ({ isOp
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'var(--forest-green-light)', color: 'var(--forest-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.75rem' }}>4</div>
                     <div>
-                      <div style={{ fontWeight: 600 }}>MEDION FastAPI Backend Tool</div>
-                      <div className="text-muted" style={{ fontSize: '0.72rem' }}>POST /api/v1/workbench/dispatch</div>
+                      <div style={{ fontWeight: 600 }}>Shared Healthcare Database Engine</div>
+                      <div className="text-muted" style={{ fontSize: '0.72rem' }}>Validated CRUD State Sync & Role-aware Formatting</div>
                     </div>
                   </div>
                 </div>
@@ -121,7 +193,7 @@ export const ExecutionTraceDrawer: React.FC<ExecutionTraceDrawerProps> = ({ isOp
               </div>
 
               <div>
-                <h4 className="h4" style={{ marginBottom: '0.35rem', fontSize: '0.78rem' }}>Structured Response Payload</h4>
+                <h4 className="h4" style={{ marginBottom: '0.35rem', fontSize: '0.78rem' }}>Structured Response Payload (Includes Provider Telemetry)</h4>
                 <pre style={{ background: 'var(--bg-app)', padding: '0.75rem', borderRadius: 8, fontSize: '0.72rem', fontFamily: 'var(--font-mono)', overflowX: 'auto', border: '1px solid var(--border-subtle)' }}>
                   {JSON.stringify(latestTrace.response, null, 2)}
                 </pre>

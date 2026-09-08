@@ -5,7 +5,7 @@ import { Badge } from '../../components/ui/Badge';
 import { dispatchToWorkbench } from '../../api/workbench';
 import { ExecutionTraceStep } from '../../types';
 import { HumanResponseRenderer } from '../../components/intelligence/HumanResponseRenderer';
-import { MOCK_APPOINTMENTS } from '../../data/mockDatasets';
+import { useSharedAppointments } from '../../services/dataService';
 import { Building2, Calendar, Users, FlaskConical } from 'lucide-react';
 
 interface HospitalAdminWorkspaceProps {
@@ -17,6 +17,7 @@ export const HospitalAdminWorkspace: React.FC<HospitalAdminWorkspaceProps> = ({ 
   const [date, setDate] = useState('2024-09-10');
   const [output, setOutput] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const appointments = useSharedAppointments();
 
   const handleAction = async (actionType: string) => {
     setLoading(true);
@@ -108,14 +109,18 @@ export const HospitalAdminWorkspace: React.FC<HospitalAdminWorkspaceProps> = ({ 
             </tr>
           </thead>
           <tbody>
-            {MOCK_APPOINTMENTS.map((apt, i) => (
-              <tr key={i}>
+            {appointments.map((apt, i) => (
+              <tr key={apt.appointment_id || i}>
                 <td style={{ fontWeight: 600 }}>{apt.appointment_id}</td>
                 <td>{apt.patient_id}</td>
                 <td>{apt.doctor_id}</td>
                 <td>{apt.hospital_id}</td>
                 <td>{apt.date} ({apt.time_slot})</td>
-                <td><Badge variant="green">{apt.status}</Badge></td>
+                <td>
+                  <Badge variant={apt.status === 'CANCELLED' ? 'red' : apt.status === 'RESCHEDULED' ? 'amber' : 'green'}>
+                    {apt.status}
+                  </Badge>
+                </td>
               </tr>
             ))}
           </tbody>

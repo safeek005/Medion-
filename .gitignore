@@ -34,9 +34,13 @@ ENV/
 
 # Environment files
 .env
+.env.*
 .env.local
 .env.*.local
 *.local
+**/.env
+**/.env.*
+**/.env.local
 
 # IDEs and Editors
 .vscode/
@@ -52,3 +56,6 @@ htmlcov/
 
 # Logs
 *.log
+
+# Scratch scripts
+scratch/

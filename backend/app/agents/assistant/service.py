@@ -8,27 +8,65 @@ class AssistantService:
         """
         Action: interpret_request
         Understands natural language request, identifies intent, target agent/action, parameters, and missing fields.
-        When a specialized agent intent is identified, executes that agent and returns the formatted clinical result.
+        Maintains multi-turn context and executes the specialized agent only when all parameters are validated.
         """
         message = payload.get("message") or payload.get("prompt") or payload.get("query", "")
-        user_role = payload.get("user_role") or payload.get("portal_source", "doctor")
+        user_role = (payload.get("user_role") or payload.get("portal_source") or "doctor").lower().strip()
+        context = payload.get("conversation_context") or payload.get("previous_context") or {}
 
         if not message:
             raise ValueError("Field 'message' (or 'prompt') is required for interpret_request.")
 
-        parsed = assistant_ai_provider.parse_intent(message, user_role=user_role)
+        parsed = assistant_ai_provider.parse_intent(message, user_role=user_role, context=context)
         target_agent = parsed.get("target_agent", "assistant")
         target_action = parsed.get("target_action", "handle_clarification")
+        missing_params = parsed.get("missing_parameters", [])
+        is_ambiguous = parsed.get("is_ambiguous", False)
 
         # Merge extracted parameters with context payload
         params = {**payload, **parsed.get("required_parameters", {})}
-        params.pop("message", None)
-        params.pop("prompt", None)
-        params.pop("query", None)
-        params.pop("user_role", None)
-        params.pop("portal_source", None)
+        for k in ["message", "prompt", "query", "user_role", "portal_source", "conversation_context", "previous_context"]:
+            params.pop(k, None)
 
-        # If intent routes to a specialized agent (patient, medical, appointment, insurance), execute it
+        # If clarification is needed (ambiguous or missing required fields)
+        if is_ambiguous or len(missing_params) > 0 or target_agent == "assistant":
+            clarification = self.handle_clarification({
+                "missing_parameters": missing_params,
+                "ambiguous_options": parsed.get("ambiguous_options", []),
+                "target_action": target_action,
+                "intent": parsed.get("intent"),
+                "target_agent": target_agent,
+                "user_role": user_role,
+                "extracted_parameters": params,
+                "context": {
+                    "pending_action": target_action,
+                    "pending_domain": target_agent,
+                    "collected_entities": params,
+                    "missing_fields": missing_params,
+                    "patient_id": params.get("patient_id"),
+                    "doctor_id": params.get("doctor_id"),
+                    "appointment_id": params.get("appointment_id")
+                }
+            })
+            clarification["provider_info"] = parsed.get("provider_info")
+            return {
+                **parsed,
+                "success": True,
+                "target_agent": target_agent,
+                "target_action": target_action,
+                "action_performed": target_action,
+                "needs_clarification": True,
+                "clarification_question": clarification.get("clarification_question"),
+                "summary": clarification.get("clarification_question"),
+                "formatted_text": clarification.get("clarification_question"),
+                "suggested_answers": clarification.get("suggested_answers", []),
+                "ambiguous_options": clarification.get("ambiguous_options", []),
+                "result_data": clarification,
+                "context": clarification.get("context"),
+                "provider_info": parsed.get("provider_info")
+            }
+
+        # If intent routes to a specialized domain agent, execute it with verified parameters
         if target_agent in ["medical", "patient", "appointment", "insurance"]:
             from app.agents.patient.service import patient_service
             from app.agents.medical.service import medical_service
@@ -48,13 +86,14 @@ class AssistantService:
             if action_func and callable(action_func):
                 try:
                     agent_result = action_func(params)
+                    agent_result["provider_info"] = parsed.get("provider_info")
                     # Format output using role-aware clinical brief formatter
                     formatted = self.format_response({
                         "specialized_agent_result": agent_result,
                         "user_role": user_role
                     })
 
-                    full_summary = formatted.get("formatted_text") or agent_result.get("summary") or "Analysis complete."
+                    full_summary = agent_result.get("summary") or formatted.get("formatted_text") or "Operation complete."
                     if agent_result.get("explanation") and agent_result.get("explanation") not in full_summary:
                         full_summary = f"{full_summary}\n\n{agent_result.get('explanation')}"
 
@@ -68,19 +107,41 @@ class AssistantService:
                         "summary": full_summary,
                         "formatted_text": formatted.get("formatted_text"),
                         "result_data": agent_result,
+                        "patient": agent_result.get("patient"),
+                        "appointment": agent_result.get("appointment"),
+                        "claim": agent_result.get("claim"),
+                        "available_slots": agent_result.get("available_slots"),
                         "explanation": agent_result.get("explanation"),
                         "parameters_used": params,
-                        "parsed_intent": parsed
+                        "needs_clarification": False,
+                        "context": None,
+                        "provider_info": parsed.get("provider_info")
                     }
 
                 except Exception as e:
-                    # If specific parameters failed, return clarification or parsed metadata
-                    pass
+                    # Return deterministic failure, NEVER claim fake success
+                    err_msg = str(e)
+                    return {
+                        **parsed,
+                        "success": False,
+                        "target_agent": target_agent,
+                        "target_action": target_action,
+                        "action_performed": target_action,
+                        "error": err_msg,
+                        "message": err_msg,
+                        "summary": f"Could not complete {target_action}: {err_msg}",
+                        "formatted_text": f"The requested operation could not be completed: {err_msg}",
+                        "result_data": {
+                            "success": False,
+                            "error": err_msg,
+                            "action": target_action
+                        },
+                        "needs_clarification": False
+                    }
 
         result = parsed
         result["success"] = True
         return result
-
 
     def extract_parameters(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -168,6 +229,9 @@ class AssistantService:
         if "patient" in agent_result and isinstance(agent_result["patient"], dict):
             p = agent_result["patient"]
             extra_details.append(f"Gender: {p.get('gender')}, Blood Group: {p.get('blood_group')}, Primary Doctor: {p.get('primary_doctor_id')}, Policy: {p.get('insurance_policy_id')}")
+        if "appointment" in agent_result and isinstance(agent_result["appointment"], dict):
+            apt = agent_result["appointment"]
+            extra_details.append(f"Appointment ID: {apt.get('appointment_id')}, Date: {apt.get('appointment_date')}, Time: {apt.get('time_slot')}, Status: {apt.get('status')}")
         if "available_slots" in agent_result and isinstance(agent_result["available_slots"], list):
             slots_list = [
                 s.get("time_slot") or s.get("start_time") if isinstance(s, dict) else str(s)
@@ -214,7 +278,6 @@ class AssistantService:
                 if "abnormal_count" in agent_result:
                     formatted += f" (Abnormal items: {agent_result['abnormal_count']})"
 
-
         return {
             "success": True,
             "user_role": user_role,
@@ -225,15 +288,67 @@ class AssistantService:
     def handle_clarification(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """
         Action: handle_clarification
-        Generates focused clarification question for missing parameters or ambiguous options.
+        Generates focused clarification question and context-aware suggested answers.
         """
         missing = payload.get("missing_parameters", [])
         ambiguous = payload.get("ambiguous_options", [])
         target_action = payload.get("target_action") or payload.get("intent") or "the requested action"
+        extracted = payload.get("extracted_parameters") or {}
+        context = payload.get("context") or {}
 
-        if ambiguous:
-            opts_str = ", ".join(ambiguous)
-            clarification_text = f"Your request is ambiguous. Did you mean to {opts_str}?"
+        suggested_answers: List[str] = []
+
+        if ambiguous or "insurance" in target_action.lower():
+            if ambiguous:
+                clarification_text = "I can help verify eligibility, check coverage, prepare a claim, submit a claim, or check claim status. Which would you like to do?"
+            else:
+                clarification_text = f"Your request is ambiguous. Did you mean to {', '.join(ambiguous)}?"
+            suggested_answers = ["Verify eligibility", "Check coverage", "Prepare claim", "Check claim status"]
+
+        elif target_action == "register_patient":
+            patient_name = extracted.get("full_name") or extracted.get("first_name") or "the new patient"
+            missing_labels = []
+            for m in missing:
+                if m in ["dob", "date_of_birth"]:
+                    missing_labels.append("date of birth")
+                elif m == "gender":
+                    missing_labels.append("gender")
+                elif m in ["phone", "contact_number"]:
+                    missing_labels.append("contact number")
+                else:
+                    missing_labels.append(m.replace("_", " "))
+
+            if "gender" in missing and len(missing) == 1:
+                clarification_text = f"Please provide the gender for {patient_name}."
+                suggested_answers = ["Male", "Female", "Other"]
+            elif "phone" in missing and len(missing) == 1:
+                clarification_text = f"Please provide the contact number for {patient_name}."
+                suggested_answers = ["+91 9876543210", "+91 9123456780"]
+            else:
+                clarification_text = f"I can register {patient_name} as a new patient. Please provide the {', '.join(missing_labels)}."
+                suggested_answers = ["Male", "Female", "01.01.1990", "+91 9876543210"]
+
+        elif target_action == "book_appointment":
+            doctor_id = extracted.get("doctor_id") or "Dr. Rajesh Mehta"
+            doc_name = "Dr. Rajesh Mehta" if "101" in str(doctor_id) else ("Dr. Anita Deshmukh" if "102" in str(doctor_id) else "Dr. Suresh Rao")
+            if "date" in missing and "time_slot" in missing:
+                clarification_text = f"Sure. What date and preferred time would you like for {doc_name}?"
+                suggested_answers = ["Tomorrow at 10 AM", "Tomorrow at 2 PM", "Friday at 11 AM", "Next available slot"]
+            elif "time_slot" in missing:
+                clarification_text = f"What time would you prefer for {doc_name}?"
+                suggested_answers = ["10:00 AM", "11:00 AM", "2:00 PM", "Next available slot"]
+            else:
+                clarification_text = f"To book with {doc_name}, please provide: {', '.join(missing)}."
+                suggested_answers = ["Tomorrow at 10 AM", "Tomorrow at 2 PM"]
+
+        elif target_action == "get_available_slots":
+            clarification_text = "Which doctor or specialty would you like to check availability for?"
+            suggested_answers = ["Dr. Rajesh Mehta (Cardiology)", "Dr. Anita Deshmukh (Endocrinology)", "Dr. Suresh Rao (General Medicine)"]
+
+        elif target_action in ["analyze_lab_report", "explain_lab_report"]:
+            clarification_text = "Which lab report or test would you like me to check?"
+            suggested_answers = ["LABR-1001 (Blood & Lipid Panel)", "LABR-1002 (Thyroid Profile)", "Latest report"]
+
         elif missing:
             param_str = ", ".join(missing)
             clarification_text = f"To proceed with {target_action}, please provide: {param_str}."
@@ -246,7 +361,9 @@ class AssistantService:
             "missing_parameters": missing,
             "ambiguous_options": ambiguous,
             "clarification_question": clarification_text,
-            "summary": "Generated clarification prompt for missing or ambiguous inputs."
+            "suggested_answers": suggested_answers,
+            "context": context,
+            "summary": clarification_text
         }
 
 assistant_service = AssistantService()

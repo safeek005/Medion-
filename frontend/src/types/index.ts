@@ -69,6 +69,14 @@ export interface AgentOutput {
   next_recommended_action?: string;
 }
 
+export interface ProviderInfo {
+  provider_name: string;
+  is_fallback: boolean;
+  fallback_reason?: string | null;
+  endpoint_used?: string;
+  model?: string;
+}
+
 export interface WorkbenchResponse {
   success: boolean;
   workflow_id?: string;
@@ -78,6 +86,7 @@ export interface WorkbenchResponse {
   result?: any;
   errors?: string[];
   execution_trace?: any;
+  provider_info?: ProviderInfo;
   timestamp?: string;
 }
 
@@ -92,4 +101,5 @@ export interface ExecutionTraceStep {
   success: boolean;
   request: WorkbenchRequest;
   response: WorkbenchResponse;
+  providerInfo?: ProviderInfo;
 }

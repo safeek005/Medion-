@@ -36,55 +36,57 @@ export const PatientResultCard: React.FC<PatientResultCardProps> = ({ data, summ
             {fullName}
           </h4>
           <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-            DOB: {patient.dob || '1982-05-14'} • {patient.gender || 'Male'}
+            DOB: {patient.dob || patient.date_of_birth || 'Not provided'} • {patient.gender || 'Not specified'}
           </span>
         </div>
-        {patient.blood_group && (
-          <span className="badge-ui badge-red" style={{ fontSize: '0.8rem', fontWeight: 700 }}>
-            {patient.blood_group}
-          </span>
-        )}
+        <div>
+          {patient.blood_group ? (
+            <span className="badge-ui badge-red" style={{ fontSize: '0.8rem', fontWeight: 700 }}>
+              {patient.blood_group}
+            </span>
+          ) : (
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+              Blood Group: Not provided
+            </span>
+          )}
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.85rem', marginBottom: '1rem' }}>
-        {patient.phone && (
-          <div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Contact Phone</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.86rem', color: 'var(--text-primary)' }}>
-              <Phone style={{ width: 12, height: 12, color: 'var(--forest-green)' }} />
-              {patient.phone}
-            </div>
+        <div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Contact Phone</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.86rem', color: patient.phone ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+            <Phone style={{ width: 12, height: 12, color: 'var(--forest-green)' }} />
+            {patient.phone || 'Not provided'}
           </div>
-        )}
+        </div>
 
-        {patient.primary_doctor_id && (
-          <div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Primary Care Physician</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.86rem', color: 'var(--text-primary)' }}>
-              <Stethoscope style={{ width: 12, height: 12, color: 'var(--forest-green)' }} />
-              {patient.primary_doctor_id}
-            </div>
+        <div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Primary Care Physician</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.86rem', color: patient.primary_doctor_id ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+            <Stethoscope style={{ width: 12, height: 12, color: patient.primary_doctor_id ? 'var(--forest-green)' : 'var(--text-muted)' }} />
+            {patient.primary_doctor_id || 'Not assigned'}
           </div>
-        )}
+        </div>
 
-        {patient.insurance_policy_id && (
-          <div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Insurance Policy</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.86rem', color: 'var(--text-primary)' }}>
-              <Shield style={{ width: 12, height: 12, color: 'var(--forest-green)' }} />
-              {patient.insurance_policy_id}
-            </div>
+        <div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Insurance Policy</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.86rem', color: patient.insurance_policy_id ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+            <Shield style={{ width: 12, height: 12, color: patient.insurance_policy_id ? 'var(--forest-green)' : 'var(--text-muted)' }} />
+            {patient.insurance_policy_id || 'Not assigned'}
           </div>
-        )}
+        </div>
 
-        {patient.emergency_contact?.name && (
-          <div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Emergency Contact</span>
-            <span style={{ fontSize: '0.86rem', color: 'var(--text-primary)' }}>
-              {patient.emergency_contact.name} ({patient.emergency_contact.relationship})
-            </span>
-          </div>
-        )}
+        <div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Emergency Contact</span>
+          <span style={{ fontSize: '0.86rem', color: (patient.emergency_contact?.name || (typeof patient.emergency_contact === 'string' && patient.emergency_contact)) ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+            {patient.emergency_contact?.name
+              ? `${patient.emergency_contact.name} (${patient.emergency_contact.relationship || 'Contact'})`
+              : (typeof patient.emergency_contact === 'string' && patient.emergency_contact.trim()
+                  ? patient.emergency_contact
+                  : 'Not provided')}
+          </span>
+        </div>
       </div>
 
       {/* Clinical History Counters if present */}

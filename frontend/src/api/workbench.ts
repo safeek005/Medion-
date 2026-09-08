@@ -77,6 +77,17 @@ export async function dispatchToWorkbench(request: WorkbenchRequest): Promise<Wo
 
       const isSuccess = data.success !== false && data.status !== 'FAILED';
       const extractedResult = data.result || data.output || data.data || data;
+      const providerInfo =
+        data.provider_info ||
+        data.output?.result_data?.provider_info ||
+        extractedResult?.provider_info ||
+        extractedResult?.result_data?.provider_info ||
+        {
+          provider_name: 'MEDION Healthcare Intelligence Engine (Active)',
+          is_fallback: true,
+          endpoint_used: primaryUrl,
+          model: 'Multi-Agent Rule & Context Orchestrator',
+        };
 
       return {
         success: isSuccess,
@@ -86,6 +97,7 @@ export async function dispatchToWorkbench(request: WorkbenchRequest): Promise<Wo
         result: extractedResult,
         errors: data.errors || (data.error ? [data.error] : undefined),
         execution_trace: data.execution_trace || undefined,
+        provider_info: providerInfo,
         timestamp: new Date().toLocaleTimeString(),
       };
     } else {

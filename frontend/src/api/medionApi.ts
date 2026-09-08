@@ -38,46 +38,64 @@ export async function getNotifications(): Promise<NotificationItem[]> {
  * into the client-side shared database.
  */
 function syncAgentResultWithDatabase(response: WorkbenchResponse) {
-  if (!response || !response.success || !response.output) return;
+  if (!response || response.success === false) return;
 
-  const resData = response.output.result_data || {};
-  const action = response.action_performed || resData.target_action || resData.intent || '';
+  const rawRes = response.result || response.output || (response as any).data || {};
+  const resData = (typeof rawRes === 'object' && rawRes !== null)
+    ? (rawRes.result_data || rawRes)
+    : {};
+
+  const action = response.action_performed || resData.target_action || resData.intent || resData.action || '';
 
   // 1. Patient Registration / Updates
-  if (action === 'register_patient' || resData.patient?.created_at || (resData.patient && !dataService.getPatientById(resData.patient.patient_id))) {
-    if (resData.patient) {
-      dataService.createPatient(resData.patient);
-    }
-  } else if (action === 'update_patient' && resData.patient) {
-    dataService.updatePatient(resData.patient.patient_id, resData.patient);
+  const patient = resData.patient || (response as any).patient || (action === 'register_patient' && resData.patient_id ? resData : null);
+  if (action === 'register_patient' && patient) {
+    dataService.createPatient(patient);
+  } else if (action === 'update_patient' && patient) {
+    dataService.updatePatient(patient.patient_id, patient);
+  } else if (patient && patient.patient_id && !dataService.getPatientById(patient.patient_id)) {
+    dataService.createPatient(patient);
   }
 
   // 2. Appointment Booking / Rescheduling / Cancellation
-  if (action === 'book_appointment' && resData.appointment) {
-    dataService.bookAppointment(resData.appointment);
-  } else if (action === 'cancel_appointment' && resData.appointment_id) {
-    dataService.cancelAppointment(resData.appointment_id);
-  } else if (action === 'reschedule_appointment' && resData.appointment) {
-    dataService.bookAppointment(resData.appointment); // bookAppointment updates if ID exists
+  const appointment = resData.appointment || (response as any).appointment || (action === 'book_appointment' && resData.appointment_id ? resData : null);
+  const appointmentId = resData.appointment_id || (response as any).appointment_id || appointment?.appointment_id;
+
+  if (action === 'cancel_appointment' && appointmentId) {
+    dataService.cancelAppointment(appointmentId);
+  } else if (action === 'reschedule_appointment' && appointment) {
+    dataService.bookAppointment(appointment);
+  } else if (action === 'book_appointment' && appointment) {
+    dataService.bookAppointment(appointment);
+  } else if (appointment && appointment.appointment_id) {
+    if (appointment.status === 'CANCELLED') {
+      dataService.cancelAppointment(appointment.appointment_id);
+    } else {
+      dataService.bookAppointment(appointment);
+    }
   }
 
   // 3. Claims
-  if (action === 'submit_claim' && resData.claim) {
-    dataService.submitClaim(resData.claim);
+  const claim = resData.claim || (response as any).claim;
+  if ((action === 'submit_claim' || action === 'prepare_claim') && claim) {
+    dataService.submitClaim(claim);
   }
 
   // 4. Conversation Context Tracking for Multi-turn
-  if (resData.needs_clarification && resData.context) {
-    dataService.setConversationContext(resData.context);
-  } else if (resData.needs_clarification && resData.awaiting_action) {
-    dataService.setConversationContext({
-      action: resData.awaiting_action,
-      patient_name: resData.patient_name,
-      doctor_id: resData.doctor_id,
-      patient_id: resData.patient_id,
-    });
-  } else if (response.success && !resData.needs_clarification) {
-    // Operation completed successfully, clear active multi-turn context
+  const needsClarification = Boolean(
+    resData.needs_clarification ||
+    (response as any).needs_clarification ||
+    resData.clarification_question
+  );
+
+  if (needsClarification) {
+    const ctx = resData.context || (response as any).context || {
+      pending_action: resData.target_action || resData.awaiting_action || action,
+      collected_entities: resData.parameters_used || resData.extracted_parameters || {},
+      missing_fields: resData.missing_parameters || [],
+    };
+    dataService.setConversationContext(ctx);
+  } else if (response.success && !needsClarification) {
     dataService.clearConversationContext();
   }
 }
@@ -178,4 +196,3 @@ export async function executeAssistantAction(
   };
   return await dispatchWorkbench(req);
 }
-
