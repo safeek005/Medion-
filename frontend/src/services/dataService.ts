@@ -166,7 +166,7 @@ function setStorageItem<T>(key: string, value: T): void {
 
 // Event Dispatcher for cross-component and cross-tab UI synchronization
 export type DBChangeEvent = {
-  table: 'patients' | 'appointments' | 'lab_reports' | 'insurance' | 'claims' | 'prescriptions' | 'context';
+  table: 'patients' | 'appointments' | 'lab_reports' | 'insurance' | 'claims' | 'prescriptions' | 'context' | 'doctors' | 'policies';
   action: 'create' | 'update' | 'delete' | 'reset';
   data?: any;
 };
@@ -605,6 +605,31 @@ class SharedDataService {
     return list[idx];
   }
 
+  updateAppointmentStatus(appointmentId: string, status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' | 'RESCHEDULED'): AppointmentItem | null {
+    const list = this.getAppointments();
+    const idx = list.findIndex((a) => a.appointment_id.toUpperCase() === appointmentId.toUpperCase());
+    if (idx === -1) return null;
+
+    list[idx] = {
+      ...list[idx],
+      status: status as any,
+    };
+    setStorageItem(STORAGE_KEYS.APPOINTMENTS, list);
+    emitDbChange({ table: 'appointments', action: 'update', data: list[idx] });
+
+    const sb = getSupabaseClient();
+    if (sb) {
+      sb.from('appointments').update({
+        status: status,
+        updated_at: new Date().toISOString(),
+      }).eq('appointment_id', appointmentId).then(({ error }) => {
+        if (error) console.warn('[MEDION Supabase] Appointment status update failed:', error.message);
+      });
+    }
+
+    return list[idx];
+  }
+
   // ----------------------------------------------------
   // DOCTORS
   // ----------------------------------------------------
@@ -799,3 +824,34 @@ export function useSharedClaims() {
 
   return claims;
 }
+
+export function useSharedDoctors() {
+  const [doctors, setDoctors] = useState(() => dataService.getDoctors());
+
+  useEffect(() => {
+    const unsubscribe = dataService.subscribe((event) => {
+      if (event.table === 'doctors' || event.action === 'reset') {
+        setDoctors(dataService.getDoctors());
+      }
+    });
+    return unsubscribe;
+  }, []);
+
+  return doctors;
+}
+
+export function useSharedPolicies() {
+  const [policies, setPolicies] = useState(() => dataService.getPolicies());
+
+  useEffect(() => {
+    const unsubscribe = dataService.subscribe((event) => {
+      if (event.table === 'policies' || event.action === 'reset') {
+        setPolicies(dataService.getPolicies());
+      }
+    });
+    return unsubscribe;
+  }, []);
+
+  return policies;
+}
+

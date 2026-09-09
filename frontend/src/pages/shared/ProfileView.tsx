@@ -16,6 +16,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ role }) => {
       case 'lab': return { name: 'Lab Tech Manager', title: 'Laboratory Specialist', department: 'Diagnostic Pathology (LAB-001)', email: 'lab.tech@medionlabs.org', phone: '+91 9876500003', facility: 'Central Diagnostics Lab' };
       case 'insurance': return { name: 'Claims Officer', title: 'Payer Adjudicator', department: 'Insurance & Claims Operations', email: 'claims@medioncare.com', phone: '+91 9876500004', facility: 'Star Health & Allied Insurance' };
       case 'hospital': return { name: 'Hospital Administrator', title: 'Chief Operations Officer', department: 'Executive Hospital Administration', email: 'admin@medionhealth.org', phone: '+91 9876500005', facility: 'MEDION Health Network' };
+      case 'receptionist': return { name: 'Priya Sharma', title: 'Lead Receptionist & Triage', department: 'Front Desk & Patient Onboarding', email: 'reception.priya@medionhealth.org', phone: '+91 9876500006', facility: 'MEDION Hospital HOSP-001' };
+      default: return { name: 'Staff Member', title: 'Clinical Staff', department: 'MEDION Healthcare', email: 'staff@medionhealth.org', phone: '+91 9876500000', facility: 'MEDION Health Network' };
     }
   };
 

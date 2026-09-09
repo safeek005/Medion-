@@ -1,51 +1,95 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
-  /* Color System — Premium Dark Forest Green & Soft Neutrals */
-  --bg-app: #f8fafc;
+  /* ========================================================================= */
+  /* 1. COLOR SYSTEM — Apple-Grade Enterprise Healthcare Architecture          */
+  /* ========================================================================= */
+  
+  /* Primary Environments */
+  --bg-app: #f6f8f7;
   --bg-surface: #ffffff;
-  --bg-surface-secondary: #f1f5f9;
-  --bg-surface-hover: #f8fafc;
+  --bg-surface-secondary: #f0f4f2;
+  --bg-surface-tertiary: #e6ede9;
+  --bg-surface-hover: #f7faf8;
   
-  --border-subtle: #e2e8f0;
-  --border-strong: #cbd5e1;
-  --border-accent: #a7f3d0;
+  /* Dark Forest Green Spectrum (Enterprise Brand) */
+  --forest-deep: #071914;
+  --forest-dark: #0b231c;
+  --forest-panel: #0e2b23;
+  --forest-surface: #12362c;
+  --forest-brand: #1E6B52;
+  --forest-brand-hover: #165742;
+  --forest-brand-active: #104232;
+  --forest-tint: #ecfdf5;
+  --forest-tint-subtle: #f0fdf4;
   
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
-  --text-inverse: #ffffff;
-  
-  /* Premium Dark Forest / Hospital Green System */
-  --forest-green-dark: #022c22;
-  --forest-green: #047857;
-  --forest-green-hover: #065f46;
-  --forest-green-light: #ecfdf5;
-  --forest-green-tint: #f0fdf4;
+  /* Accents & Highlights */
+  --mint-accent: #6ee7b7;
+  --mint-vibrant: #34d399;
+  --mint-soft: #a7f3d0;
+  --sage-muted: #88a298;
+  --sage-light: #c2d1cb;
+  --warm-white: #fbfdfb;
   
   /* Clinical Status Tokens */
-  --clinical-green: #047857;
-  --clinical-green-light: #ecfdf5;
+  --clinical-green: #059669;
+  --clinical-green-bg: #ecfdf5;
+  --clinical-green-border: rgba(5, 150, 105, 0.25);
   
   --warning-amber: #d97706;
-  --warning-amber-light: #fffbeb;
+  --warning-amber-bg: #fffbeb;
+  --warning-amber-border: rgba(217, 119, 6, 0.25);
   
   --danger-red: #dc2626;
-  --danger-red-light: #fef2f2;
+  --danger-red-bg: #fef2f2;
+  --danger-red-border: rgba(220, 38, 38, 0.25);
+  
+  --info-blue: #0284c7;
+  --info-blue-bg: #f0f9ff;
+  --info-blue-border: rgba(2, 132, 199, 0.25);
+  
+  /* Borders & Separation */
+  --border-subtle: #e4ebe7;
+  --border-strong: #cbdad2;
+  --border-accent: rgba(30, 107, 82, 0.22);
+  --border-focus: rgba(30, 107, 82, 0.45);
+  
+  /* Text & Readability */
+  --text-primary: #0f241d;
+  --text-secondary: #334e44;
+  --text-muted: #648275;
+  --text-tertiary: #94a99f;
+  --text-inverse: #ffffff;
+  --text-inverse-muted: rgba(255, 255, 255, 0.72);
   
   /* Typography Tokens */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
   
-  /* Elevation & Shadows - Restrained & Subtle Depth */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+  /* Elevation & Shadows - Apple-restrained precision */
+  --shadow-xs: 0 1px 2px rgba(7, 25, 20, 0.03);
+  --shadow-sm: 0 1px 3px rgba(7, 25, 20, 0.04), 0 1px 2px rgba(7, 25, 20, 0.02);
+  --shadow-md: 0 4px 12px -2px rgba(7, 25, 20, 0.06), 0 2px 6px -1px rgba(7, 25, 20, 0.03);
+  --shadow-lg: 0 12px 28px -4px rgba(7, 25, 20, 0.09), 0 4px 10px -2px rgba(7, 25, 20, 0.03);
+  --shadow-xl: 0 24px 48px -12px rgba(7, 25, 20, 0.18);
   
+  /* Geometry */
+  --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+  
+  /* Layout Dimensions */
+  --sidebar-width: 256px;
+  --sidebar-collapsed-width: 76px;
+  --header-height: 64px;
 }
+
+/* ========================================================================= */
+/* 2. BASE RESETS & SCROLLBAR                                                */
+/* ========================================================================= */
 
 * {
   box-sizing: border-box;
@@ -53,27 +97,92 @@
   padding: 0;
 }
 
-body {
+html, body {
+  min-height: 100vh;
   background-color: var(--bg-app);
   color: var(--text-primary);
   font-family: var(--font-sans);
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
-  min-height: 100vh;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-/* Typography Hierarchy */
-h1, .h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: -0.03em; color: var(--text-primary); }
-h2, .h2 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.02em; color: var(--text-primary); }
-h3, .h3 { font-size: 1.15rem; font-weight: 600; letter-spacing: -0.01em; color: var(--text-primary); }
-h4, .h4 { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(15, 36, 29, 0.15);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 36, 29, 0.28);
+}
+
+/* ========================================================================= */
+/* 3. EDITORIAL TYPOGRAPHY HIERARCHY                                         */
+/* ========================================================================= */
+
+.display-title {
+  font-size: 2.75rem;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+  color: var(--text-primary);
+}
+
+h1, .h1 {
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: -0.028em;
+  line-height: 1.25;
+  color: var(--text-primary);
+}
+
+h2, .h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+  color: var(--text-primary);
+}
+
+h3, .h3 {
+  font-size: 1.12rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+
+h4, .h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.text-meta {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
 
 .text-muted { color: var(--text-muted); }
 .text-secondary { color: var(--text-secondary); }
 .text-mono { font-family: var(--font-mono); }
 
-/* Layout Shell */
+/* ========================================================================= */
+/* 4. LAYOUT SHELL & NAVIGATION CONTAINER                                    */
+/* ========================================================================= */
+
 .app-container {
   display: flex;
   min-height: 100vh;
@@ -81,29 +190,33 @@ h4, .h4 { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
 }
 
 .sidebar-container {
-  width: 250px;
+  width: var(--sidebar-width);
   background: var(--bg-surface);
   border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
-  transition: width 0.2s ease;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  z-index: 30;
 }
 
 .sidebar-container.collapsed {
-  width: 72px;
+  width: var(--sidebar-collapsed-width);
 }
 
 .main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
   overflow-x: hidden;
 }
 
-/* Top Header */
 .top-header {
-  height: 60px;
-  background: var(--bg-surface);
+  height: var(--header-height);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
@@ -111,32 +224,35 @@ h4, .h4 { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
   padding: 0 2rem;
   position: sticky;
   top: 0;
-  z-index: 40;
+  z-index: 25;
 }
 
-/* Native Command Bar (Ask MEDION) */
+/* ========================================================================= */
+/* 5. GLOBAL SEARCH COMMAND BAR (ASK MEDION QUICK DOCK)                      */
+/* ========================================================================= */
+
 .command-bar-wrapper {
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-subtle);
-  padding: 0.75rem 2rem;
+  padding: 0.85rem 2rem;
 }
 
 .command-input-container {
-  max-width: 1100px;
+  max-width: 1120px;
   margin: 0 auto;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  background: var(--bg-app);
+  background: var(--bg-surface-secondary);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
-  padding: 0.55rem 1rem;
-  transition: all 0.15s ease;
+  padding: 0.6rem 1.1rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .command-input-container:focus-within {
-  border-color: var(--forest-green);
-  box-shadow: 0 0 0 3px rgba(4, 120, 87, 0.12);
+  border-color: var(--forest-brand);
+  box-shadow: 0 0 0 3px rgba(30, 107, 82, 0.12);
   background: var(--bg-surface);
 }
 
@@ -145,19 +261,45 @@ h4, .h4 { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
   border: none;
   background: transparent;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   color: var(--text-primary);
   outline: none;
 }
 
-/* Section Panels & Borderless Workspaces (Reduced Card Overload) */
+.kbd-shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0.15rem 0.45rem;
+  background: rgba(15, 36, 29, 0.06);
+  border: 1px solid rgba(15, 36, 29, 0.12);
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ========================================================================= */
+/* 6. SECTION PANELS & RESTful ENTERPRISE WORKSPACES                        */
+/* ========================================================================= */
+
 .section-panel {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
   box-shadow: var(--shadow-sm);
   margin-bottom: 1.5rem;
+}
+
+.section-panel-hero {
+  background: linear-gradient(180deg, #ffffff 0%, var(--bg-surface-secondary) 100%);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  padding: 2.25rem;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 2rem;
 }
 
 .section-header {
@@ -169,87 +311,81 @@ h4, .h4 { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
   margin-bottom: 1.25rem;
 }
 
-/* Badges & Status Indicators */
+/* ========================================================================= */
+/* 7. BADGES & CLINICAL STATUS PILLS                                         */
+/* ========================================================================= */
+
 .badge-ui {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
   padding: 0.25rem 0.65rem;
   border-radius: var(--radius-sm);
-  font-size: 0.75rem;
-  font-weight: 500;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
-.badge-green { background: var(--forest-green-light); color: var(--forest-green); border: 1px solid rgba(4, 120, 87, 0.2); }
-.badge-amber { background: var(--warning-amber-light); color: var(--warning-amber); border: 1px solid rgba(217, 119, 6, 0.2); }
-.badge-red { background: var(--danger-red-light); color: var(--danger-red); border: 1px solid rgba(220, 38, 38, 0.2); }
+.badge-green { background: var(--clinical-green-bg); color: var(--clinical-green); border: 1px solid var(--clinical-green-border); }
+.badge-amber { background: var(--warning-amber-bg); color: var(--warning-amber); border: 1px solid var(--warning-amber-border); }
+.badge-red { background: var(--danger-red-bg); color: var(--danger-red); border: 1px solid var(--danger-red-border); }
 .badge-neutral { background: var(--bg-surface-secondary); color: var(--text-secondary); border: 1px solid var(--border-subtle); }
+.badge-brand { background: var(--forest-tint); color: var(--forest-brand); border: 1px solid rgba(30, 107, 82, 0.25); }
 
-/* Tables & Lists */
+/* ========================================================================= */
+/* 8. ENTERPRISE DATA TABLES                                                */
+/* ========================================================================= */
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+}
+
 .table-ui {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
+  font-size: 0.86rem;
+  text-align: left;
 }
 
 .table-ui th {
-  text-align: left;
-  padding: 0.75rem 1rem;
+  padding: 0.85rem 1.1rem;
   background: var(--bg-surface-secondary);
   color: var(--text-muted);
+  font-size: 0.74rem;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
 }
 
 .table-ui td {
-  padding: 0.85rem 1rem;
+  padding: 0.95rem 1.1rem;
   border-bottom: 1px solid var(--border-subtle);
   color: var(--text-primary);
+  vertical-align: middle;
 }
 
-.table-ui tr:hover {
+.table-ui tr:last-child td {
+  border-bottom: none;
+}
+
+.table-ui tbody tr {
+  transition: background-color 0.12s ease;
+}
+
+.table-ui tbody tr:hover {
   background: var(--bg-surface-hover);
 }
 
-/* Technical View Drawer */
-.drawer-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.35);
-  backdrop-filter: blur(2px);
-  z-index: 100;
-}
+/* ========================================================================= */
+/* 9. BUTTON SYSTEM (TACTILE & RESTRAINED)                                   */
+/* ========================================================================= */
 
-.drawer-container {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 540px;
-  max-width: 90vw;
-  background: var(--bg-surface);
-  box-shadow: var(--shadow-lg);
-  z-index: 101;
-  display: flex;
-  flex-direction: column;
-  border-left: 1px solid var(--border-subtle);
-}
-
-.drawer-header {
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid var(--border-subtle);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.drawer-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1.5rem;
-}
-
-/* Button Component System */
 .btn-ui {
   display: inline-flex;
   align-items: center;
@@ -258,18 +394,32 @@ h4, .h4 { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
   padding: 0.55rem 1.15rem;
   border-radius: var(--radius-sm);
   font-weight: 500;
-  font-size: 0.85rem;
+  font-size: 0.86rem;
   cursor: pointer;
   border: 1px solid transparent;
-  transition: all 0.15s ease;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+  line-height: 1.25;
+}
+
+.btn-ui:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--border-focus);
 }
 
 .btn-primary-ui {
-  background: var(--forest-green);
+  background: var(--forest-brand);
   color: var(--text-inverse);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: var(--shadow-xs);
 }
 .btn-primary-ui:hover {
-  background: var(--forest-green-hover);
+  background: var(--forest-brand-hover);
+  box-shadow: var(--shadow-sm);
+}
+.btn-primary-ui:active {
+  background: var(--forest-brand-active);
+  transform: translateY(1px);
 }
 
 .btn-secondary-ui {
@@ -279,6 +429,11 @@ h4, .h4 { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
 }
 .btn-secondary-ui:hover {
   background: var(--bg-surface-secondary);
+  border-color: var(--border-accent);
+}
+.btn-secondary-ui:active {
+  background: var(--bg-surface-tertiary);
+  transform: translateY(1px);
 }
 
 .btn-ghost-ui {
@@ -288,4 +443,124 @@ h4, .h4 { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
 .btn-ghost-ui:hover {
   background: var(--bg-surface-secondary);
   color: var(--text-primary);
+}
+
+.btn-destructive-ui {
+  background: var(--danger-red-bg);
+  color: var(--danger-red);
+  border: 1px solid var(--danger-red-border);
+}
+.btn-destructive-ui:hover {
+  background: #fee2e2;
+}
+
+.btn-icon-ui {
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+.btn-icon-ui:hover {
+  background: var(--bg-surface-secondary);
+  color: var(--text-primary);
+}
+
+/* ========================================================================= */
+/* 10. MODALS & GLOBAL DRAWERS                                              */
+/* ========================================================================= */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(7, 25, 20, 0.62);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fadeIn 0.18s ease-out;
+}
+
+.modal-surface {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  width: 100%;
+  max-width: 620px;
+  overflow: hidden;
+  animation: modalScaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(7, 25, 20, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 100;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.drawer-container {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 580px;
+  max-width: 95vw;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-xl);
+  z-index: 101;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border-subtle);
+  animation: slideDrawer 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drawer-header {
+  padding: 1.35rem 1.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-surface);
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.75rem;
+}
+
+/* ========================================================================= */
+/* 11. KEYFRAME ANIMATIONS                                                   */
+/* ========================================================================= */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalScaleIn {
+  from { opacity: 0; transform: scale(0.97) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes slideDrawer {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
 }

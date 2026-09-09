@@ -17,6 +17,8 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  UserPlus,
+  Stethoscope,
 } from 'lucide-react';
 import { UserRole } from '../../types';
 
@@ -47,63 +49,72 @@ export const Sidebar: React.FC<SidebarProps> = ({
     switch (r) {
       case 'doctor':
         workspaceItems = [
-          { id: 'overview', label: 'Overview', icon: <LayoutDashboard style={{ width: 17, height: 17 }} />, path: '/doctor' },
-          { id: 'patients', label: 'Patients', icon: <Users style={{ width: 17, height: 17 }} />, path: '/doctor/patients' },
-          { id: 'appointments', label: 'Appointments', icon: <Calendar style={{ width: 17, height: 17 }} />, path: '/doctor/appointments' },
-          { id: 'prescriptions', label: 'Prescriptions', icon: <FileText style={{ width: 17, height: 17 }} />, path: '/doctor/prescriptions' },
-          { id: 'lab-reports', label: 'Lab Reports', icon: <FlaskConical style={{ width: 17, height: 17 }} />, path: '/doctor/lab-reports' },
+          { id: 'overview', label: 'Clinical Overview', icon: <LayoutDashboard style={{ width: 16, height: 16 }} />, path: '/doctor' },
+          { id: 'patients', label: 'Patient Charts', icon: <Users style={{ width: 16, height: 16 }} />, path: '/doctor/patients' },
+          { id: 'appointments', label: 'Consultations', icon: <Calendar style={{ width: 16, height: 16 }} />, path: '/doctor/appointments' },
+          { id: 'prescriptions', label: 'Rx Prescriptions', icon: <FileText style={{ width: 16, height: 16 }} />, path: '/doctor/prescriptions' },
+          { id: 'lab-reports', label: 'Diagnostic Panels', icon: <FlaskConical style={{ width: 16, height: 16 }} />, path: '/doctor/lab-reports' },
         ];
         break;
 
       case 'nurse':
         workspaceItems = [
-          { id: 'overview', label: 'Overview', icon: <LayoutDashboard style={{ width: 17, height: 17 }} />, path: '/nurse' },
-          { id: 'patients', label: 'Patients', icon: <Users style={{ width: 17, height: 17 }} />, path: '/nurse/patients' },
-          { id: 'appointments', label: 'Appointments', icon: <Calendar style={{ width: 17, height: 17 }} />, path: '/nurse/appointments' },
-          { id: 'prescriptions', label: 'Prescriptions', icon: <FileText style={{ width: 17, height: 17 }} />, path: '/nurse/prescriptions' },
-          { id: 'lab-reports', label: 'Lab Reports', icon: <FlaskConical style={{ width: 17, height: 17 }} />, path: '/nurse/lab-reports' },
-          { id: 'insurance', label: 'Insurance', icon: <ShieldCheck style={{ width: 17, height: 17 }} />, path: '/nurse/insurance' },
+          { id: 'overview', label: 'Station Overview', icon: <LayoutDashboard style={{ width: 16, height: 16 }} />, path: '/nurse' },
+          { id: 'patients', label: 'Bed Inpatients', icon: <Users style={{ width: 16, height: 16 }} />, path: '/nurse/patients' },
+          { id: 'appointments', label: 'Care Schedule', icon: <Calendar style={{ width: 16, height: 16 }} />, path: '/nurse/appointments' },
+          { id: 'prescriptions', label: 'Medication Orders', icon: <FileText style={{ width: 16, height: 16 }} />, path: '/nurse/prescriptions' },
+          { id: 'lab-reports', label: 'Lab Orders', icon: <FlaskConical style={{ width: 16, height: 16 }} />, path: '/nurse/lab-reports' },
+          { id: 'insurance', label: 'Coverage Verification', icon: <ShieldCheck style={{ width: 16, height: 16 }} />, path: '/nurse/insurance' },
+        ];
+        break;
+
+      case 'receptionist':
+        workspaceItems = [
+          { id: 'overview', label: 'Front Desk Overview', icon: <LayoutDashboard style={{ width: 16, height: 16 }} />, path: '/receptionist' },
+          { id: 'intake', label: 'Patient Intake Wizard', icon: <UserPlus style={{ width: 16, height: 16 }} />, path: '/receptionist/intake' },
+          { id: 'appointments', label: 'Today\'s Schedule', icon: <Calendar style={{ width: 16, height: 16 }} />, path: '/receptionist/appointments' },
+          { id: 'patients', label: 'Master Patient Index', icon: <Users style={{ width: 16, height: 16 }} />, path: '/receptionist/patients' },
         ];
         break;
 
       case 'patient':
         workspaceItems = [
-          { id: 'overview', label: 'Overview', icon: <LayoutDashboard style={{ width: 17, height: 17 }} />, path: '/patient' },
-          { id: 'appointments', label: 'Appointments', icon: <Calendar style={{ width: 17, height: 17 }} />, path: '/patient/appointments' },
-          { id: 'prescriptions', label: 'Prescriptions', icon: <FileText style={{ width: 17, height: 17 }} />, path: '/patient/prescriptions' },
-          { id: 'lab-reports', label: 'Lab Reports', icon: <FlaskConical style={{ width: 17, height: 17 }} />, path: '/patient/lab-reports' },
-          { id: 'insurance', label: 'Insurance', icon: <ShieldCheck style={{ width: 17, height: 17 }} />, path: '/patient/insurance' },
+          { id: 'overview', label: 'Health Summary', icon: <LayoutDashboard style={{ width: 16, height: 16 }} />, path: '/patient' },
+          { id: 'appointments', label: 'My Appointments', icon: <Calendar style={{ width: 16, height: 16 }} />, path: '/patient/appointments' },
+          { id: 'prescriptions', label: 'My Prescriptions', icon: <FileText style={{ width: 16, height: 16 }} />, path: '/patient/prescriptions' },
+          { id: 'lab-reports', label: 'Lab Reports', icon: <FlaskConical style={{ width: 16, height: 16 }} />, path: '/patient/lab-reports' },
+          { id: 'insurance', label: 'Insurance Policy', icon: <ShieldCheck style={{ width: 16, height: 16 }} />, path: '/patient/insurance' },
         ];
         break;
 
       case 'lab':
         workspaceItems = [
-          { id: 'overview', label: 'Overview', icon: <LayoutDashboard style={{ width: 17, height: 17 }} />, path: '/laboratory' },
-          { id: 'patients', label: 'Patients', icon: <Users style={{ width: 17, height: 17 }} />, path: '/laboratory/patients' },
-          { id: 'reports', label: 'Reports', icon: <FlaskConical style={{ width: 17, height: 17 }} />, path: '/laboratory/reports' },
-          { id: 'report-processing', label: 'Report Processing', icon: <Cpu style={{ width: 17, height: 17 }} />, path: '/laboratory/report-processing' },
+          { id: 'overview', label: 'Lab Station', icon: <LayoutDashboard style={{ width: 16, height: 16 }} />, path: '/laboratory' },
+          { id: 'patients', label: 'Diagnostic Queue', icon: <Users style={{ width: 16, height: 16 }} />, path: '/laboratory/patients' },
+          { id: 'reports', label: 'Specimen Reports', icon: <FlaskConical style={{ width: 16, height: 16 }} />, path: '/laboratory/reports' },
+          { id: 'report-processing', label: 'Automated Pipeline', icon: <Cpu style={{ width: 16, height: 16 }} />, path: '/laboratory/report-processing' },
         ];
         break;
 
       case 'insurance':
         workspaceItems = [
-          { id: 'overview', label: 'Overview', icon: <LayoutDashboard style={{ width: 17, height: 17 }} />, path: '/insurance' },
-          { id: 'policies', label: 'Policies', icon: <FileText style={{ width: 17, height: 17 }} />, path: '/insurance/policies' },
-          { id: 'claims', label: 'Claims', icon: <ShieldCheck style={{ width: 17, height: 17 }} />, path: '/insurance/claims' },
-          { id: 'patients', label: 'Patients', icon: <Users style={{ width: 17, height: 17 }} />, path: '/insurance/patients' },
+          { id: 'overview', label: 'Payer Portal', icon: <LayoutDashboard style={{ width: 16, height: 16 }} />, path: '/insurance' },
+          { id: 'policies', label: 'Policy Directory', icon: <FileText style={{ width: 16, height: 16 }} />, path: '/insurance/policies' },
+          { id: 'claims', label: 'Claims Adjudication', icon: <ShieldCheck style={{ width: 16, height: 16 }} />, path: '/insurance/claims' },
+          { id: 'patients', label: 'Beneficiaries', icon: <Users style={{ width: 16, height: 16 }} />, path: '/insurance/patients' },
         ];
         break;
 
       case 'hospital':
         workspaceItems = [
-          { id: 'overview', label: 'Overview', icon: <LayoutDashboard style={{ width: 17, height: 17 }} />, path: '/hospital' },
-          { id: 'patients', label: 'Patients', icon: <Users style={{ width: 17, height: 17 }} />, path: '/hospital/patients' },
-          { id: 'doctors', label: 'Doctors', icon: <Building2 style={{ width: 17, height: 17 }} />, path: '/hospital/doctors' },
-          { id: 'nurses', label: 'Nurses', icon: <Users style={{ width: 17, height: 17 }} />, path: '/hospital/nurses' },
-          { id: 'appointments', label: 'Appointments', icon: <Calendar style={{ width: 17, height: 17 }} />, path: '/hospital/appointments' },
-          { id: 'laboratories', label: 'Laboratories', icon: <FlaskConical style={{ width: 17, height: 17 }} />, path: '/hospital/laboratories' },
-          { id: 'insurance', label: 'Insurance', icon: <ShieldCheck style={{ width: 17, height: 17 }} />, path: '/hospital/insurance' },
-          { id: 'analytics', label: 'Analytics', icon: <BarChart3 style={{ width: 17, height: 17 }} />, path: '/hospital/analytics' },
+          { id: 'overview', label: 'Executive Command', icon: <LayoutDashboard style={{ width: 16, height: 16 }} />, path: '/hospital' },
+          { id: 'patients', label: 'Master Census', icon: <Users style={{ width: 16, height: 16 }} />, path: '/hospital/patients' },
+          { id: 'doctors', label: 'Physicians Directory', icon: <Building2 style={{ width: 16, height: 16 }} />, path: '/hospital/doctors' },
+          { id: 'nurses', label: 'Nursing Staff', icon: <Users style={{ width: 16, height: 16 }} />, path: '/hospital/nurses' },
+          { id: 'appointments', label: 'Hospital Master Schedule', icon: <Calendar style={{ width: 16, height: 16 }} />, path: '/hospital/appointments' },
+          { id: 'laboratories', label: 'Diagnostic Units', icon: <FlaskConical style={{ width: 16, height: 16 }} />, path: '/hospital/laboratories' },
+          { id: 'insurance', label: 'Payer Relationships', icon: <ShieldCheck style={{ width: 16, height: 16 }} />, path: '/hospital/insurance' },
+          { id: 'analytics', label: 'Network BI', icon: <BarChart3 style={{ width: 16, height: 16 }} />, path: '/hospital/analytics' },
         ];
         break;
     }
@@ -111,12 +122,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return {
       workspace: workspaceItems,
       intelligence: [
-        { id: 'ai', label: 'Ask MEDION', icon: <Sparkles style={{ width: 17, height: 17, color: 'var(--forest-green)' }} />, path: `${prefix}/ai` },
+        { id: 'ai', label: 'Ask MEDION', icon: <Sparkles style={{ width: 16, height: 16, color: 'var(--color-primary-light)' }} />, path: `${prefix}/ai` },
       ],
       system: [
-        { id: 'notifications', label: 'Notifications', icon: <Bell style={{ width: 17, height: 17 }} />, path: `${prefix}/notifications` },
-        { id: 'profile', label: 'Profile', icon: <User style={{ width: 17, height: 17 }} />, path: `${prefix}/profile` },
-        { id: 'settings', label: 'Settings', icon: <Settings style={{ width: 17, height: 17 }} />, path: `${prefix}/settings` },
+        { id: 'notifications', label: 'Notifications', icon: <Bell style={{ width: 16, height: 16 }} />, path: `${prefix}/notifications` },
+        { id: 'profile', label: 'Profile', icon: <User style={{ width: 16, height: 16 }} />, path: `${prefix}/profile` },
+        { id: 'settings', label: 'Settings', icon: <Settings style={{ width: 16, height: 16 }} />, path: `${prefix}/settings` },
       ],
     };
   };
@@ -132,11 +143,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const renderNavGroup = (title: string, items: Array<{ id: string; label: string; icon: React.ReactNode; path: string }>) => (
     <div style={{ marginBottom: '1.25rem' }}>
       {!collapsed && (
-        <div style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-muted)', padding: '0 0.75rem 0.35rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        <div style={{ fontSize: '0.66rem', fontWeight: 600, color: 'var(--text-muted)', padding: '0 0.75rem 0.35rem', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
           {title}
         </div>
       )}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
         {items.map((item) => {
           const isActive = location.pathname === item.path || (item.id === 'overview' && (location.pathname === item.path || location.pathname === `${item.path}/`));
           return (
@@ -147,12 +158,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
               style={{
                 justifyContent: collapsed ? 'center' : 'flex-start',
                 width: '100%',
-                padding: collapsed ? '0.6rem' : '0.55rem 0.85rem',
-                fontSize: '0.82rem',
-                background: isActive ? 'var(--forest-green-light)' : 'transparent',
-                color: isActive ? 'var(--forest-green)' : 'var(--text-secondary)',
+                padding: collapsed ? '0.55rem' : '0.48rem 0.85rem',
+                fontSize: '0.8rem',
+                background: isActive ? 'rgba(110, 231, 183, 0.08)' : 'transparent',
+                color: isActive ? 'var(--color-primary-light)' : 'var(--text-secondary)',
                 fontWeight: isActive ? 600 : 400,
-                borderLeft: isActive && !collapsed ? '3px solid var(--forest-green)' : '3px solid transparent',
+                borderLeft: isActive && !collapsed ? '3px solid var(--color-primary-light)' : '3px solid transparent',
+                borderRadius: collapsed ? 8 : '0 8px 8px 0',
+                transition: 'all 0.15s ease',
               }}
               title={item.label}
             >
@@ -171,12 +184,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div style={{ height: 60, padding: '0 1.25rem', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         {!collapsed ? (
           <div>
-            <span style={{ fontWeight: 700, fontSize: '1.15rem', color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
-              MEDION <span style={{ color: 'var(--forest-green)' }}>AGENT</span>
+            <span style={{ fontWeight: 700, fontSize: '1.12rem', color: 'var(--text-primary)', letterSpacing: '-0.4px' }}>
+              MEDION <span style={{ color: 'var(--color-primary-light)', fontWeight: 600 }}>HEALTH</span>
             </span>
           </div>
         ) : (
-          <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--forest-green)' }}>MA</div>
+          <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--color-primary-light)' }}>MH</div>
         )}
         <button className="btn-ui btn-ghost-ui" onClick={onToggleCollapse} style={{ padding: '0.25rem' }}>
           {collapsed ? <ChevronRight style={{ width: 16, height: 16 }} /> : <ChevronLeft style={{ width: 16, height: 16 }} />}
@@ -191,24 +204,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </nav>
 
       {/* Demo Role Switcher Footer */}
-      <div style={{ padding: '0.85rem', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-surface-secondary)' }}>
+      <div style={{ padding: '0.85rem', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-card)' }}>
         {!collapsed && (
           <div style={{ marginBottom: '0.5rem' }}>
-            <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.25rem' }}>
-              Demo Application Role
+            <label style={{ display: 'block', fontSize: '0.66rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.25rem' }}>
+              Active Clinical Workspace
             </label>
             <select
               value={role}
               onChange={(e) => handleRoleSelect(e.target.value as UserRole)}
-              className="select-field-sm"
-              style={{ width: '100%', background: 'var(--bg-surface)', border: '1px solid var(--border-strong)', fontSize: '0.78rem' }}
+              className="select-field"
+              style={{ width: '100%', fontSize: '0.78rem', padding: '0.35rem 0.6rem' }}
             >
-              <option value="doctor">Doctor</option>
-              <option value="nurse">Nurse</option>
-              <option value="patient">Patient</option>
-              <option value="lab">Laboratory</option>
-              <option value="insurance">Insurance</option>
-              <option value="hospital">Hospital Administration</option>
+              <option value="doctor">Doctor (Cardiology)</option>
+              <option value="nurse">Nurse (Inpatient Care)</option>
+              <option value="receptionist">Receptionist (Front Desk)</option>
+              <option value="patient">Patient (Health Portal)</option>
+              <option value="lab">Laboratory (Diagnostics)</option>
+              <option value="insurance">Insurance (Payer Adjudication)</option>
+              <option value="hospital">Hospital Command (Admin)</option>
             </select>
           </div>
         )}
@@ -216,9 +230,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           onClick={onLogout}
           className="btn-ui btn-ghost-ui"
-          style={{ width: '100%', justifyContent: collapsed ? 'center' : 'flex-start', color: 'var(--danger-red)', fontSize: '0.8rem', padding: '0.4rem 0.6rem' }}
+          style={{ width: '100%', justifyContent: collapsed ? 'center' : 'flex-start', color: 'var(--status-danger)', fontSize: '0.78rem', padding: '0.4rem 0.6rem' }}
         >
-          <LogOut style={{ width: 15, height: 15 }} />
+          <LogOut style={{ width: 14, height: 14 }} />
           {!collapsed && <span>Sign Out</span>}
         </button>
       </div>

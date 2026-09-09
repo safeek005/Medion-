@@ -1,4 +1,4 @@
-export type UserRole = 'doctor' | 'nurse' | 'patient' | 'lab' | 'insurance' | 'hospital';
+export type UserRole = 'doctor' | 'nurse' | 'patient' | 'lab' | 'insurance' | 'hospital' | 'receptionist';
 
 export type CoreAgentName = 'patient' | 'medical' | 'appointment' | 'insurance' | 'assistant';
 

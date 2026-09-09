@@ -124,6 +124,17 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
       ];
     }
 
+    if (role === 'receptionist') {
+      return [
+        { label: 'Register Patient Harini', prompt: 'Register a new patient Harini S, female, phone 9876543210' },
+        { label: 'Check Dr Rajesh Slots', prompt: 'When is Dr Rajesh available?' },
+        { label: 'Check Dr Anita Slots', prompt: 'When is Dr Anita available?' },
+        { label: 'Book Appointment', prompt: 'Book Arun Kumar with Dr Rajesh tomorrow at 10 AM' },
+        { label: 'Cancel APT-1001', prompt: 'Cancel appointment APT-1001' },
+        { label: 'Find Patient Arun', prompt: 'Find patient Arun Kumar' },
+      ];
+    }
+
     return [
       { label: 'Register Patient Safeek', prompt: 'Register a new patient Safeek' },
       { label: 'Book with Dr Rajesh', prompt: 'Book Arun Kumar with Dr Rajesh tomorrow at 10 AM' },

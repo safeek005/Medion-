@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { UserRole, ExecutionTraceStep } from './types';
 
@@ -8,11 +8,12 @@ import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { AskMedionCommand } from './components/intelligence/AskMedionCommand';
 import { ExecutionTraceDrawer } from './components/intelligence/ExecutionTraceDrawer';
+import { GlobalSearchModal } from './components/intelligence/GlobalSearchModal';
 import { dataService } from './services/dataService';
-import { useEffect } from 'react';
 
 import { DoctorWorkspace } from './pages/doctor/DoctorWorkspace';
 import { NurseWorkspace } from './pages/nurse/NurseWorkspace';
+import { ReceptionistWorkspace } from './pages/receptionist/ReceptionistWorkspace';
 import { PatientWorkspace } from './pages/patient/PatientWorkspace';
 import { LabWorkspace } from './pages/lab/LabWorkspace';
 import { InsuranceWorkspace } from './pages/insurance/InsuranceWorkspace';
@@ -34,6 +35,7 @@ function AppLayout() {
   const getRoleFromPath = (): UserRole => {
     const p = location.pathname;
     if (p.startsWith('/nurse')) return 'nurse';
+    if (p.startsWith('/receptionist')) return 'receptionist';
     if (p.startsWith('/patient')) return 'patient';
     if (p.startsWith('/laboratory')) return 'lab';
     if (p.startsWith('/insurance')) return 'insurance';
@@ -44,10 +46,23 @@ function AppLayout() {
   const activeRole = getRoleFromPath();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isTraceDrawerOpen, setIsTraceDrawerOpen] = useState(false);
+  const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
   const [executionTraces, setExecutionTraces] = useState<ExecutionTraceStep[]>([]);
 
   useEffect(() => {
     dataService.syncFromSupabase();
+  }, []);
+
+  // Global Keyboard Shortcut: Cmd+K / Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsGlobalSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   const handleTraceGenerated = (step: ExecutionTraceStep) => {
@@ -72,7 +87,11 @@ function AppLayout() {
 
       <div className="main-content">
         {/* Top Header */}
-        <Header role={activeRole} onOpenTraceDrawer={() => setIsTraceDrawerOpen(true)} />
+        <Header
+          role={activeRole}
+          onOpenTraceDrawer={() => setIsTraceDrawerOpen(true)}
+          onOpenGlobalSearch={() => setIsGlobalSearchOpen(true)}
+        />
 
         {/* Global Ask MEDION Command Bar */}
         <AskMedionCommand
@@ -108,6 +127,17 @@ function AppLayout() {
             <Route path="/nurse/notifications" element={<NotificationsView />} />
             <Route path="/nurse/profile" element={<ProfileView role="nurse" />} />
             <Route path="/nurse/settings" element={<SettingsView />} />
+
+            {/* Receptionist Routes */}
+            <Route path="/receptionist" element={<ReceptionistWorkspace onTraceGenerated={handleTraceGenerated} />} />
+            <Route path="/receptionist/intake" element={<ReceptionistWorkspace onTraceGenerated={handleTraceGenerated} defaultTab="intake" />} />
+            <Route path="/receptionist/appointments" element={<AppointmentsView />} />
+            <Route path="/receptionist/patients" element={<PatientsView onTraceGenerated={handleTraceGenerated} onOpenTraceDrawer={() => setIsTraceDrawerOpen(true)} />} />
+            <Route path="/receptionist/patients/:patientId" element={<PatientsView onTraceGenerated={handleTraceGenerated} onOpenTraceDrawer={() => setIsTraceDrawerOpen(true)} />} />
+            <Route path="/receptionist/ai" element={<AiWorkspaceView role="receptionist" onTraceGenerated={handleTraceGenerated} onOpenTraceDrawer={() => setIsTraceDrawerOpen(true)} />} />
+            <Route path="/receptionist/notifications" element={<NotificationsView />} />
+            <Route path="/receptionist/profile" element={<ProfileView role="receptionist" />} />
+            <Route path="/receptionist/settings" element={<SettingsView />} />
 
             {/* Patient Routes */}
             <Route path="/patient" element={<PatientWorkspace onTraceGenerated={handleTraceGenerated} />} />
@@ -161,6 +191,15 @@ function AppLayout() {
           </Routes>
         </main>
       </div>
+
+      {/* Global Spotlight Search Modal */}
+      <GlobalSearchModal
+        isOpen={isGlobalSearchOpen}
+        onClose={() => setIsGlobalSearchOpen(false)}
+        onSelectPatient={(pId) => {
+          navigate(`/${activeRole}/patients/${pId}`);
+        }}
+      />
 
       {/* Technical Architecture Execution View Drawer */}
       <ExecutionTraceDrawer
