@@ -351,6 +351,60 @@ function resolvePatient(text, defaultPatientId = null) {
   return null;
 }
 
+async function resolvePatientAsync(text, defaultPatientId = null) {
+  const syncMatch = resolvePatient(text, defaultPatientId);
+  if (syncMatch) return syncMatch;
+
+  if (text) {
+    const patIdMatch = String(text).match(/PAT-\d+/i);
+    if (patIdMatch) {
+      const id = patIdMatch[0].toUpperCase();
+      try {
+        const sbRes = await supabaseRequest(`patients?patient_id=eq.${id}&select=*`, 'GET');
+        if (Array.isArray(sbRes) && sbRes.length > 0) {
+          MOCK_DATA.patients.unshift(sbRes[0]);
+          return sbRes[0];
+        }
+      } catch (e) {}
+    }
+    const cleanName = String(text).replace(/\b(for|patient|pat-\d+|mr|mrs|ms|dr|find|who is|view|profile|details|history|about|search|lookup)\b/gi, "").trim();
+    if (cleanName.length >= 2) {
+      try {
+        const sbRes = await supabaseRequest(`patients?select=*`, 'GET');
+        if (Array.isArray(sbRes) && sbRes.length > 0) {
+          const lower = cleanName.toLowerCase();
+          const match = sbRes.find(sp => {
+            const first = (sp.first_name || "").toLowerCase();
+            const last = (sp.last_name || "").toLowerCase();
+            const full = `${first} ${last}`.trim();
+            return (
+              (first && (first.includes(lower) || lower.includes(first))) ||
+              (last && (last.includes(lower) || lower.includes(last))) ||
+              (full && (full.includes(lower) || lower.includes(full)))
+            );
+          });
+          if (match) {
+            MOCK_DATA.patients.unshift(match);
+            return match;
+          }
+        }
+      } catch (e) {}
+    }
+  }
+
+  if (defaultPatientId) {
+    try {
+      const sbRes = await supabaseRequest(`patients?patient_id=eq.${defaultPatientId.toUpperCase()}&select=*`, 'GET');
+      if (Array.isArray(sbRes) && sbRes.length > 0) {
+        MOCK_DATA.patients.unshift(sbRes[0]);
+        return sbRes[0];
+      }
+    } catch (e) {}
+  }
+
+  return null;
+}
+
 function parseRelativeDate(text) {
   if (!text) return null;
   const lower = text.toLowerCase();
@@ -436,25 +490,40 @@ function parseTimeSlot(text, doctor) {
 // 1. APPOINTMENT AGENT HANDLER
 // ----------------------------------------------------
 
-function handleAppointmentAgent(action, payload) {
+async function handleAppointmentAgent(action, payload) {
   const doctor = resolveDoctor(payload.doctor_name || payload.doctor_id || "") ||
                  MOCK_DATA.doctors.find(d => d.doctor_id === (payload.doctor_id || "DOC-101")) ||
                  MOCK_DATA.doctors[0];
-  const patient = resolvePatient(payload.patient_name || payload.patient_id || "", payload.user_role === "patient" ? "PAT-1001" : "PAT-1001");
-  const date = payload.date || payload.appointment_date || "2026-09-09";
+  const defaultPatId = payload.user_role === "patient" ? "PAT-1001" : (payload.patient_id || null);
+  const patient = (await resolvePatientAsync(payload.patient_name || payload.patient_id || "", defaultPatId)) ||
+                  (payload.patient_id ? { patient_id: payload.patient_id, first_name: payload.patient_name || "Patient", last_name: "" } : null) ||
+                  (payload.user_role === "patient" ? MOCK_DATA.patients[0] : null);
+  const date = payload.date || payload.appointment_date || new Date().toISOString().split("T")[0];
 
   if (action === "get_available_slots" || action === "list_slots") {
     const dayOfWeek = new Date(date).toLocaleDateString("en-US", { weekday: "long" });
     const isDoctorWorking = doctor.available_days.includes(dayOfWeek);
 
+    let bookedSlots = MOCK_DATA.appointments
+      .filter(a => a.doctor_id === doctor.doctor_id && (a.appointment_date === date || a.date === date) && a.status !== "CANCELLED")
+      .map(a => a.time_slot);
+
+    try {
+      const sbApts = await supabaseRequest(`appointments?doctor_id=eq.${doctor.doctor_id}&appointment_date=eq.${date}&status=neq.CANCELLED&select=time_slot`, "GET");
+      if (Array.isArray(sbApts)) {
+        sbApts.forEach(a => { if (a.time_slot && !bookedSlots.includes(a.time_slot)) bookedSlots.push(a.time_slot); });
+      }
+    } catch (e) {}
+
     const slots = (doctor.available_slots || []).map(s => ({
       time_slot: s,
-      status: "AVAILABLE",
+      status: bookedSlots.includes(s) ? "BOOKED" : "AVAILABLE",
       date: date
     }));
 
+    const availableSlots = slots.filter(s => s.status === "AVAILABLE");
     const summary = isDoctorWorking
-      ? `Dr. ${doctor.first_name} ${doctor.last_name} (${doctor.specialty}) has ${slots.length} available slots on ${dayOfWeek}, ${date}: ${doctor.available_slots.join(", ")}.`
+      ? `Dr. ${doctor.first_name} ${doctor.last_name} (${doctor.specialty}) has ${availableSlots.length} available slot(s) on ${dayOfWeek}, ${date}: ${availableSlots.map(s => s.time_slot).join(", ") || "No slots available"}.`
       : `Dr. ${doctor.first_name} ${doctor.last_name} is typically available on ${doctor.available_days.join(", ")}. Available slots on regular days: ${doctor.available_slots.join(", ")}.`;
 
     return {
@@ -476,23 +545,69 @@ function handleAppointmentAgent(action, payload) {
   }
 
   if (action === "book_appointment") {
+    if (!patient) {
+      return {
+        agent_id: "AGT-APT-001",
+        agent_name: "Appointment Agent",
+        agent_type: "domain_expert",
+        summary: "Please specify the patient for whom this appointment should be booked.",
+        result_data: { success: false, error: "PATIENT_REQUIRED" }
+      };
+    }
+
     const timeSlot = payload.time_slot || doctor.available_slots[0] || "10:00-10:30";
+
+    // Double Booking Prevention Check
+    const localConflict = MOCK_DATA.appointments.find(a =>
+      a.doctor_id === doctor.doctor_id &&
+      (a.appointment_date === date || a.date === date) &&
+      a.time_slot === timeSlot &&
+      a.status !== "CANCELLED"
+    );
+
+    let remoteConflict = null;
+    try {
+      const sbConflict = await supabaseRequest(`appointments?doctor_id=eq.${doctor.doctor_id}&appointment_date=eq.${date}&time_slot=eq.${encodeURIComponent(timeSlot)}&status=neq.CANCELLED&select=*`, "GET");
+      if (Array.isArray(sbConflict) && sbConflict.length > 0) remoteConflict = sbConflict[0];
+    } catch (e) {}
+
+    if (localConflict || remoteConflict) {
+      return {
+        agent_id: "AGT-APT-001",
+        agent_name: "Appointment Agent",
+        agent_type: "domain_expert",
+        summary: `Slot conflict: Dr. ${doctor.first_name} ${doctor.last_name} is already booked on ${date} at ${timeSlot}. Please select another time slot.`,
+        result_data: {
+          success: false,
+          error: "SLOT_UNAVAILABLE",
+          message: `Doctor ${doctor.doctor_id} already has a confirmed appointment at ${timeSlot} on ${date}.`,
+          doctor_id: doctor.doctor_id,
+          date: date,
+          conflicting_time_slot: timeSlot
+        }
+      };
+    }
+
     const appointmentId = `APT-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const newApt = {
       appointment_id: appointmentId,
       patient_id: patient.patient_id,
-      patient_name: `${patient.first_name} ${patient.last_name}`,
+      patient_name: `${patient.first_name} ${patient.last_name || ''}`.trim(),
       doctor_id: doctor.doctor_id,
       doctor_name: `Dr. ${doctor.first_name} ${doctor.last_name}`,
       specialty: doctor.specialty,
       hospital_id: doctor.hospital_id,
       appointment_date: date,
+      date: date,
       time_slot: timeSlot,
       status: "CONFIRMED",
-      reason_for_visit: payload.reason || "Clinical Consultation"
+      reason_for_visit: payload.reason || "Clinical Consultation",
+      reason: payload.reason || "Clinical Consultation",
+      created_at: new Date().toISOString()
     };
 
+    await supabaseRequest("appointments", "POST", newApt);
     MOCK_DATA.appointments.unshift(newApt);
 
     return {
@@ -513,22 +628,62 @@ function handleAppointmentAgent(action, payload) {
   if (action === "get_appointment") {
     const aptId = (payload.appointment_id || "").toUpperCase();
     let apt = MOCK_DATA.appointments.find(a => a.appointment_id === aptId);
+    if (!apt && aptId) {
+      try {
+        const sbRes = await supabaseRequest(`appointments?appointment_id=eq.${aptId}&select=*`, "GET");
+        if (Array.isArray(sbRes) && sbRes.length > 0) apt = sbRes[0];
+      } catch (e) {}
+    }
+    if (!apt && patient) {
+      apt = MOCK_DATA.appointments.find(a => a.patient_id === patient.patient_id);
+      if (!apt) {
+        try {
+          const sbRes = await supabaseRequest(`appointments?patient_id=eq.${patient.patient_id}&order=created_at.desc&limit=1&select=*`, "GET");
+          if (Array.isArray(sbRes) && sbRes.length > 0) apt = sbRes[0];
+        } catch (e) {}
+      }
+    }
     if (!apt) {
-      apt = MOCK_DATA.appointments.find(a => a.patient_id === patient.patient_id) || MOCK_DATA.appointments[0];
+      return {
+        agent_id: "AGT-APT-001",
+        agent_name: "Appointment Agent",
+        agent_type: "domain_expert",
+        summary: `No appointment found matching '${aptId || (patient ? patient.patient_id : 'request')}'.`,
+        result_data: { success: false, error: "APPOINTMENT_NOT_FOUND" }
+      };
     }
     return {
       agent_id: "AGT-APT-001",
       agent_name: "Appointment Agent",
       agent_type: "domain_expert",
-      summary: `Appointment ${apt.appointment_id}: Patient ${apt.patient_name || apt.patient_id} with Dr. ${apt.doctor_name || apt.doctor_id} on ${apt.appointment_date} at ${apt.time_slot} (Status: ${apt.status}).`,
+      summary: `Appointment ${apt.appointment_id}: Patient ${apt.patient_name || apt.patient_id} with Dr. ${apt.doctor_name || apt.doctor_id} on ${apt.appointment_date || apt.date} at ${apt.time_slot} (Status: ${apt.status}).`,
       result_data: { success: true, appointment: apt }
     };
   }
 
   if (action === "cancel_appointment") {
-    const aptId = (payload.appointment_id || "APT-1001").toUpperCase();
-    const apt = MOCK_DATA.appointments.find(a => a.appointment_id === aptId) || MOCK_DATA.appointments[0];
+    const aptId = (payload.appointment_id || "").toUpperCase();
+    let apt = MOCK_DATA.appointments.find(a => a.appointment_id === aptId);
+    if (!apt && aptId) {
+      try {
+        const sbRes = await supabaseRequest(`appointments?appointment_id=eq.${aptId}&select=*`, "GET");
+        if (Array.isArray(sbRes) && sbRes.length > 0) apt = sbRes[0];
+      } catch (e) {}
+    }
+    if (!apt && patient) {
+      apt = MOCK_DATA.appointments.find(a => a.patient_id === patient.patient_id && a.status !== "CANCELLED");
+    }
+    if (!apt) {
+      return {
+        agent_id: "AGT-APT-001",
+        agent_name: "Appointment Agent",
+        agent_type: "domain_expert",
+        summary: `Appointment '${aptId || 'requested'}' could not be found to cancel.`,
+        result_data: { success: false, error: "APPOINTMENT_NOT_FOUND" }
+      };
+    }
     apt.status = "CANCELLED";
+    await supabaseRequest(`appointments?appointment_id=eq.${apt.appointment_id}`, "PATCH", { status: "CANCELLED" });
 
     return {
       agent_id: "AGT-APT-001",
@@ -540,14 +695,39 @@ function handleAppointmentAgent(action, payload) {
   }
 
   if (action === "reschedule_appointment") {
-    const aptId = (payload.appointment_id || "APT-1001").toUpperCase();
-    const apt = MOCK_DATA.appointments.find(a => a.appointment_id === aptId) || MOCK_DATA.appointments[0];
+    const aptId = (payload.appointment_id || "").toUpperCase();
+    let apt = MOCK_DATA.appointments.find(a => a.appointment_id === aptId);
+    if (!apt && aptId) {
+      try {
+        const sbRes = await supabaseRequest(`appointments?appointment_id=eq.${aptId}&select=*`, "GET");
+        if (Array.isArray(sbRes) && sbRes.length > 0) apt = sbRes[0];
+      } catch (e) {}
+    }
+    if (!apt && patient) {
+      apt = MOCK_DATA.appointments.find(a => a.patient_id === patient.patient_id && a.status !== "CANCELLED");
+    }
+    if (!apt) {
+      return {
+        agent_id: "AGT-APT-001",
+        agent_name: "Appointment Agent",
+        agent_type: "domain_expert",
+        summary: `Appointment '${aptId || 'requested'}' could not be found to reschedule.`,
+        result_data: { success: false, error: "APPOINTMENT_NOT_FOUND" }
+      };
+    }
     const newDate = payload.new_date || payload.date || "2026-09-11";
     const newTime = payload.new_time_slot || payload.time_slot || "11:00-11:30";
 
     apt.appointment_date = newDate;
+    apt.date = newDate;
     apt.time_slot = newTime;
     apt.status = "RESCHEDULED";
+    await supabaseRequest(`appointments?appointment_id=eq.${apt.appointment_id}`, "PATCH", {
+      appointment_date: newDate,
+      date: newDate,
+      time_slot: newTime,
+      status: "RESCHEDULED"
+    });
 
     return {
       agent_id: "AGT-APT-001",
@@ -571,46 +751,73 @@ function handleAppointmentAgent(action, payload) {
 // 2. MEDICAL / LAB AGENT HANDLER
 // ----------------------------------------------------
 
-function handleMedicalAgent(action, payload) {
+async function handleMedicalAgent(action, payload) {
   const reportId = (payload.report_id || payload.lab_report_id || "").toUpperCase();
-  const patient = resolvePatient(payload.patient_name || payload.patient_id || "");
+  const patient = await resolvePatientAsync(payload.patient_name || payload.patient_id || "");
 
   let report = null;
   if (reportId) {
     report = MOCK_DATA.lab_reports.find(r => r.report_id === reportId);
+    if (!report) {
+      try {
+        const sbRes = await supabaseRequest(`lab_reports?report_id=eq.${reportId}&select=*`, "GET");
+        if (Array.isArray(sbRes) && sbRes.length > 0) report = sbRes[0];
+      } catch (e) {}
+    }
   }
+  if (!report && patient) {
+    report = MOCK_DATA.lab_reports.find(r => r.patient_id === patient.patient_id);
+    if (!report) {
+      try {
+        const sbRes = await supabaseRequest(`lab_reports?patient_id=eq.${patient.patient_id}&order=created_at.desc&limit=1&select=*`, "GET");
+        if (Array.isArray(sbRes) && sbRes.length > 0) report = sbRes[0];
+      } catch (e) {}
+    }
+  }
+
   if (!report) {
-    report = MOCK_DATA.lab_reports.find(r => r.patient_id === patient.patient_id) || MOCK_DATA.lab_reports[0];
+    return {
+      agent_id: "AGT-MED-001",
+      agent_name: "Medical Agent",
+      agent_type: "domain_expert",
+      summary: `No laboratory report found matching '${reportId || (patient ? patient.patient_id : 'provided query')}'. Please verify the Report ID or patient name.`,
+      result_data: { success: false, error: "REPORT_NOT_FOUND" }
+    };
   }
 
-  const patientName = `${patient.first_name} ${patient.last_name}`;
+  const patientName = patient ? `${patient.first_name} ${patient.last_name || ''}`.trim() : (report.patient_id || "Patient");
+  const rawResults = report.test_results || report.results || [];
+  const testResults = Array.isArray(rawResults) ? rawResults : [];
 
-  const abnormal = report.test_results.filter(t => t.flagged || t.status !== "NORMAL").map(t => ({
-    parameter: t.test_parameter,
-    value: `${t.value} ${t.unit}`,
-    status: t.status,
-    reference_range: t.reference_range,
+  const abnormal = testResults.filter(t => t.flagged || t.is_abnormal || (t.status && t.status !== "NORMAL")).map(t => ({
+    parameter: t.test_parameter || t.parameter,
+    value: t.value !== undefined ? `${t.value} ${t.unit || ''}`.trim() : "N/A",
+    status: t.status || t.abnormality_direction || "ABNORMAL",
+    reference_range: t.reference_range || "N/A",
     flagged: true
   }));
 
-  const normal = report.test_results.filter(t => !t.flagged && t.status === "NORMAL").map(t => ({
-    parameter: t.test_parameter,
-    value: `${t.value} ${t.unit}`,
-    status: t.status,
-    reference_range: t.reference_range,
+  const normal = testResults.filter(t => !t.flagged && !t.is_abnormal && (t.status === "NORMAL" || !t.status)).map(t => ({
+    parameter: t.test_parameter || t.parameter,
+    value: t.value !== undefined ? `${t.value} ${t.unit || ''}`.trim() : "N/A",
+    status: "NORMAL",
+    reference_range: t.reference_range || "N/A",
     flagged: false
   }));
 
   const abnormalStr = abnormal.map(a => `* ${a.parameter}: ${a.value} (Status: ${a.status}, Reference: ${a.reference_range})`).join("\n");
   const normalStr = normal.map(n => `* ${n.parameter}: ${n.value} (Status: ${n.status}, Reference: ${n.reference_range})`).join("\n");
 
-  const safetyNote = "Informational analysis based on synthetic MEDION health data. Not a definitive medical diagnosis.";
+  const safetyNote = "Informational analysis based on MEDION health data. Not a definitive medical diagnosis.";
 
   if (action === "explain_lab_report") {
-    const plainExplanation = `EXPLANATION OF ${report.report_id} (${report.test_name}) FOR ${patientName}:\n` +
-      `Your test results show ${abnormal.length} parameter(s) outside the expected reference bounds:\n` +
-      abnormal.map(a => `• ${a.parameter}: The level is ${a.value} which is ${a.status.toLowerCase()} compared to the standard range of ${a.reference_range}.`).join("\n") +
-      `\n\nAll other tested parameters including ${normal.map(n => n.parameter).join(", ")} are within healthy baseline ranges.\n\nNext Step: Please share these findings with your consulting physician for clinical correlation.`;
+    const plainExplanation = `EXPLANATION OF ${report.report_id} (${report.test_name || report.test_type || 'Diagnostic Panel'}) FOR ${patientName}:\n` +
+      (abnormal.length > 0
+        ? `Your test results show ${abnormal.length} parameter(s) outside the expected reference bounds:\n` +
+          abnormal.map(a => `• ${a.parameter}: The level is ${a.value} which is ${a.status.toLowerCase()} compared to the standard range of ${a.reference_range}.`).join("\n") + "\n\n"
+        : "All tested parameters are within healthy baseline ranges.\n\n") +
+      (normal.length > 0 ? `Parameters within normal bounds: ${normal.map(n => n.parameter).join(", ")}.\n\n` : "") +
+      `Next Step: Please share these findings with your consulting physician for clinical correlation.`;
 
     return {
       agent_id: "AGT-MED-001",
@@ -679,22 +886,25 @@ function handleMedicalAgent(action, payload) {
       agent_id: "AGT-MED-001",
       agent_name: "Medical Agent",
       agent_type: "domain_expert",
-      summary: `Extracted ${report.test_results.length} laboratory test parameters for ${report.report_id}.`,
+      summary: `Extracted ${testResults.length} laboratory test parameters for ${report.report_id}.`,
       result_data: {
         success: true,
         report_id: report.report_id,
         patient_id: report.patient_id,
         patient_name: patientName,
-        test_name: report.test_name,
-        test_results: report.test_results,
-        count: report.test_results.length,
+        test_name: report.test_name || report.test_type,
+        test_results: testResults,
+        count: testResults.length,
         safety_note: safetyNote
       }
     };
   }
 
   // Default: analyze_lab_report
-  const clinicalSummary = `CLINICAL SUMMARY (${report.report_id}):\nLaboratory Panel '${report.test_name}' for patient ${patientName} (${report.patient_id}) contains ${abnormal.length} parameter(s) outside reference bounds.\n\nAbnormal Findings:\n${abnormalStr}\n\nNormal Findings:\n${normalStr}\n\nRECOMMENDED ACTION:\nReview flagged laboratory parameters in conjunction with the patient's full clinical history and vital signs.`;
+  const clinicalSummary = `CLINICAL SUMMARY (${report.report_id}):\nLaboratory Panel '${report.test_name || report.test_type || 'Diagnostic Panel'}' for patient ${patientName} (${report.patient_id}) contains ${abnormal.length} parameter(s) outside reference bounds.\n\n` +
+    (abnormal.length > 0 ? `Abnormal Findings:\n${abnormalStr}\n\n` : "No abnormal findings detected.\n\n") +
+    (normal.length > 0 ? `Normal Findings:\n${normalStr}\n\n` : "") +
+    `RECOMMENDED ACTION:\nReview flagged laboratory parameters in conjunction with the patient's full clinical history and vital signs.`;
 
   return {
     agent_id: "AGT-MED-001",
@@ -707,9 +917,9 @@ function handleMedicalAgent(action, payload) {
         report_id: report.report_id,
         patient_id: report.patient_id,
         patient_name: patientName,
-        test_name: report.test_name,
-        collection_date: report.collection_date,
-        result_date: report.result_date,
+        test_name: report.test_name || report.test_type,
+        collection_date: report.collection_date || report.test_date,
+        result_date: report.result_date || report.test_date,
         status: report.status
       },
       abnormal_findings: abnormal,
@@ -728,17 +938,45 @@ function handleMedicalAgent(action, payload) {
 // 3. INSURANCE AGENT HANDLER
 // ----------------------------------------------------
 
-function handleInsuranceAgent(action, payload) {
-  const patient = resolvePatient(payload.patient_name || payload.patient_id || "");
-  const patientName = `${patient.first_name} ${patient.last_name}`;
+async function handleInsuranceAgent(action, payload) {
+  const patient = await resolvePatientAsync(payload.patient_name || payload.patient_id || "");
+  const patientName = patient ? `${patient.first_name} ${patient.last_name || ''}`.trim() : (payload.patient_name || "Patient");
 
   let policy = null;
   const policyId = (payload.policy_id || "").toUpperCase();
   if (policyId) {
     policy = MOCK_DATA.insurance_policies.find(p => p.policy_id === policyId);
+    if (!policy) {
+      try {
+        const sbRes = await supabaseRequest(`insurance_policies?policy_id=eq.${policyId}&select=*`, "GET");
+        if (Array.isArray(sbRes) && sbRes.length > 0) policy = sbRes[0];
+      } catch (e) {}
+    }
   }
+  if (!policy && patient) {
+    policy = MOCK_DATA.insurance_policies.find(p => p.patient_id === patient.patient_id);
+    if (!policy) {
+      try {
+        const sbRes = await supabaseRequest(`insurance_policies?patient_id=eq.${patient.patient_id}&select=*`, "GET");
+        if (Array.isArray(sbRes) && sbRes.length > 0) policy = sbRes[0];
+      } catch (e) {}
+    }
+  }
+
   if (!policy) {
-    policy = MOCK_DATA.insurance_policies.find(p => p.patient_id === patient.patient_id) || MOCK_DATA.insurance_policies[0];
+    return {
+      agent_id: "AGT-INS-001",
+      agent_name: "Insurance Agent",
+      agent_type: "domain_expert",
+      summary: `No insurance policy found on file for ${patientName}. Status: Not insured or policy unassigned.`,
+      result_data: {
+        success: false,
+        eligible: false,
+        status: "NOT_FOUND",
+        error: "POLICY_NOT_FOUND",
+        patient_name: patientName
+      }
+    };
   }
 
   if (action === "get_coverage") {
@@ -746,10 +984,10 @@ function handleInsuranceAgent(action, payload) {
       agent_id: "AGT-INS-001",
       agent_name: "Insurance Agent",
       agent_type: "domain_expert",
-      summary: `Coverage Details for ${patientName} (Policy ${policy.policy_id}): Total Coverage Limit: $${policy.coverage_limit.toLocaleString()}, Remaining Coverage: $${policy.remaining_coverage.toLocaleString()}, Copay: ${policy.copay_percentage}%, Plan Type: ${policy.plan_type}.`,
+      summary: `Coverage Details for ${patientName} (Policy ${policy.policy_id}): Total Coverage Limit: ₹${(policy.coverage_limit || 0).toLocaleString()}, Remaining Coverage: ₹${(policy.remaining_coverage || 0).toLocaleString()}, Copay: ${policy.copay_percentage || 0}%, Plan Type: ${policy.plan_type || 'Standard'}.`,
       result_data: {
         success: true,
-        patient_id: patient.patient_id,
+        patient_id: patient ? patient.patient_id : policy.patient_id,
         policy_id: policy.policy_id,
         coverage_limit: policy.coverage_limit,
         remaining_coverage: policy.remaining_coverage,
@@ -767,7 +1005,7 @@ function handleInsuranceAgent(action, payload) {
 
     const newClaim = {
       claim_id: claimId,
-      patient_id: patient.patient_id,
+      patient_id: patient ? patient.patient_id : policy.patient_id,
       patient_name: patientName,
       policy_id: policy.policy_id,
       bill_id: billId,
@@ -780,21 +1018,21 @@ function handleInsuranceAgent(action, payload) {
       agent_id: "AGT-INS-001",
       agent_name: "Insurance Agent",
       agent_type: "domain_expert",
-      summary: `Prepared insurance claim ${claimId} for ${patientName} under policy ${policy.policy_id} for amount $${amount.toLocaleString()} (Status: DRAFT).`,
+      summary: `Prepared insurance claim ${claimId} for ${patientName} under policy ${policy.policy_id} for amount ₹${amount.toLocaleString()} (Status: DRAFT).`,
       result_data: { success: true, claim: newClaim },
       next_recommended_action: "submit_claim"
     };
   }
 
   if (action === "submit_claim") {
-    const claimId = (payload.claim_id || "CLM-1001").toUpperCase();
-    const approvedAmount = 13500;
+    const claimId = (payload.claim_id || `CLM-${Math.floor(1000 + Math.random() * 9000)}`).toUpperCase();
+    const approvedAmount = Math.round((payload.amount || 15000) * (1 - (policy.copay_percentage || 10) / 100));
 
     return {
       agent_id: "AGT-INS-001",
       agent_name: "Insurance Agent",
       agent_type: "domain_expert",
-      summary: `Claim ${claimId} successfully submitted to ${policy.provider_name}. Adjudication Result: APPROVED for $${approvedAmount.toLocaleString()} after ${policy.copay_percentage}% copay.`,
+      summary: `Claim ${claimId} successfully submitted to ${policy.provider_name}. Adjudication Result: APPROVED for ₹${approvedAmount.toLocaleString()} after ${policy.copay_percentage || 10}% copay.`,
       result_data: {
         success: true,
         claim_id: claimId,
@@ -803,7 +1041,7 @@ function handleInsuranceAgent(action, payload) {
         provider: policy.provider_name,
         claim: {
           claim_id: claimId,
-          patient_id: patient.patient_id,
+          patient_id: patient ? patient.patient_id : policy.patient_id,
           policy_id: policy.policy_id,
           status: "APPROVED",
           approved_amount: approvedAmount,
@@ -814,14 +1052,38 @@ function handleInsuranceAgent(action, payload) {
   }
 
   if (action === "get_claim_status") {
-    const claimId = (payload.claim_id || "CLM-1001").toUpperCase();
-    const claim = MOCK_DATA.claims.find(c => c.claim_id === claimId) || MOCK_DATA.claims[0];
+    const claimId = (payload.claim_id || "").toUpperCase();
+    let claim = MOCK_DATA.claims.find(c => c.claim_id === claimId);
+    if (!claim && claimId) {
+      try {
+        const sbRes = await supabaseRequest(`insurance_claims?claim_id=eq.${claimId}&select=*`, "GET");
+        if (Array.isArray(sbRes) && sbRes.length > 0) claim = sbRes[0];
+      } catch (e) {}
+    }
+    if (!claim && patient) {
+      claim = MOCK_DATA.claims.find(c => c.patient_id === patient.patient_id);
+      if (!claim) {
+        try {
+          const sbRes = await supabaseRequest(`insurance_claims?patient_id=eq.${patient.patient_id}&order=created_at.desc&limit=1&select=*`, "GET");
+          if (Array.isArray(sbRes) && sbRes.length > 0) claim = sbRes[0];
+        } catch (e) {}
+      }
+    }
+    if (!claim) {
+      return {
+        agent_id: "AGT-INS-001",
+        agent_name: "Insurance Agent",
+        agent_type: "domain_expert",
+        summary: `No claim found matching '${claimId || patientName}'.`,
+        result_data: { success: false, error: "CLAIM_NOT_FOUND" }
+      };
+    }
 
     return {
       agent_id: "AGT-INS-001",
       agent_name: "Insurance Agent",
       agent_type: "domain_expert",
-      summary: `Claim ${claim.claim_id} Status: ${claim.status}. Claimed Amount: $${claim.claim_amount.toLocaleString()}, Approved: $${claim.approved_amount.toLocaleString()} (${claim.adjudication_notes}).`,
+      summary: `Claim ${claim.claim_id} Status: ${claim.status}. Claimed Amount: ₹${(claim.claim_amount || 0).toLocaleString()}, Approved: ₹${(claim.approved_amount || 0).toLocaleString()} (${claim.adjudication_notes || 'Processing'}).`,
       result_data: { success: true, claim: claim }
     };
   }
@@ -832,7 +1094,7 @@ function handleInsuranceAgent(action, payload) {
     agent_id: "AGT-INS-001",
     agent_name: "Insurance Agent",
     agent_type: "domain_expert",
-    summary: `Insurance verification for ${patientName}: Policy ${policy.policy_id} (${policy.provider_name} - ${policy.plan_type}) is ${policy.status} (Eligible: ${isEligible ? "Yes" : "No"}, Copay: ${policy.copay_percentage}%, Remaining Balance: $${policy.remaining_coverage.toLocaleString()}).`,
+    summary: `Insurance verification for ${patientName}: Policy ${policy.policy_id} (${policy.provider_name} - ${policy.plan_type}) is ${policy.status} (Eligible: ${isEligible ? "Yes" : "No"}, Copay: ${policy.copay_percentage}%, Remaining Balance: ₹${(policy.remaining_coverage || 0).toLocaleString()}).`,
     result_data: { success: true, eligible: isEligible, status: policy.status, policy: policy },
     next_recommended_action: "get_coverage"
   };
@@ -889,27 +1151,44 @@ async function handlePatientAgent(action, payload) {
   }
 
   if (action === "get_patient_history" || action === "get_patient_medical_history") {
-    const patient = resolvePatient(payload.patient_name || payload.patient_id || query);
+    const patient = await resolvePatientAsync(payload.patient_name || payload.patient_id || query, payload.patient_id);
+    if (!patient) {
+      return {
+        agent_id: "AGT-PAT-001",
+        agent_name: "Patient Agent",
+        agent_type: "domain_expert",
+        summary: `Patient records could not be found for '${payload.patient_name || payload.patient_id || query || "unknown"}'.`,
+        result_data: { success: false, error: "Patient Not Found", medical_records: [], lab_reports: [], prescriptions: [], appointments: [] }
+      };
+    }
+
     const records = MOCK_DATA.medical_records.filter(r => r.patient_id === patient.patient_id);
     const labs = MOCK_DATA.lab_reports.filter(l => l.patient_id === patient.patient_id);
     const rx = MOCK_DATA.prescriptions.filter(p => p.patient_id === patient.patient_id);
     const apts = MOCK_DATA.appointments.filter(a => a.patient_id === patient.patient_id);
 
+    let summaryText;
+    if (records.length === 0 && labs.length === 0 && rx.length === 0 && apts.length === 0) {
+      summaryText = `No previous clinical visits, lab reports, prescriptions, or appointments found for ${patient.first_name} ${patient.last_name || ''} (${patient.patient_id}). The patient currently has no active medical history on file.`;
+    } else {
+      summaryText = `Clinical & administrative history for ${patient.first_name} ${patient.last_name || ''} (${patient.patient_id}): ${records.length} visit record(s), ${labs.length} lab report(s), ${rx.length} active prescription(s), ${apts.length} appointment(s).`;
+    }
+
     return {
       agent_id: "AGT-PAT-001",
       agent_name: "Patient Agent",
       agent_type: "domain_expert",
-      summary: `Clinical & administrative history for ${patient.first_name} ${patient.last_name} (${patient.patient_id}): ${records.length} visit record(s), ${labs.length} lab report(s), ${rx.length} active prescription(s), ${apts.length} appointment(s).`,
+      summary: summaryText,
       result_data: {
         success: true,
         patient_id: patient.patient_id,
-        patient_name: `${patient.first_name} ${patient.last_name}`,
+        patient_name: `${patient.first_name} ${patient.last_name || ''}`.trim(),
         medical_records: records,
         lab_reports: labs,
         prescriptions: rx,
         appointments: apts
       },
-      next_recommended_action: "analyze_lab_report"
+      next_recommended_action: labs.length > 0 ? "analyze_lab_report" : "book_appointment"
     };
   }
 
@@ -943,57 +1222,60 @@ async function handlePatientAgent(action, payload) {
   }
 
   if (action === "update_patient") {
-    const patient = resolvePatient(payload.patient_name || payload.patient_id || query);
+    const patient = await resolvePatientAsync(payload.patient_name || payload.patient_id || query, payload.patient_id);
+    if (!patient) {
+      return {
+        agent_id: "AGT-PAT-001",
+        agent_name: "Patient Agent",
+        agent_type: "domain_expert",
+        summary: `Patient record could not be found to update.`,
+        result_data: { success: false, error: "Patient Not Found", patient: null }
+      };
+    }
+
+    if (payload.phone) patient.phone = payload.phone;
+    if (payload.email) patient.email = payload.email;
+    if (payload.address) patient.address = payload.address;
+    if (payload.blood_group) patient.blood_group = payload.blood_group;
+    if (payload.primary_doctor_id) patient.primary_doctor_id = payload.primary_doctor_id;
+    if (payload.insurance_policy_id) patient.insurance_policy_id = payload.insurance_policy_id;
+
+    try {
+      await supabaseRequest(`patients?patient_id=eq.${patient.patient_id}`, "PATCH", patient);
+    } catch (e) {}
+
     return {
       agent_id: "AGT-PAT-001",
       agent_name: "Patient Agent",
       agent_type: "domain_expert",
-      summary: `Successfully updated record details for patient ${patient.patient_id} (${patient.first_name} ${patient.last_name}).`,
+      summary: `Successfully updated record details for patient ${patient.patient_id} (${patient.first_name} ${patient.last_name || ''}).`,
       result_data: { success: true, patient: patient }
     };
   }
 
   // Default: get_patient
-  let patient = null;
-  const targetIdOrName = payload.patient_id || payload.patient_name || query;
-  if (targetIdOrName) {
-    const patIdMatch = String(targetIdOrName).match(/PAT-\d+/i);
-    if (patIdMatch) {
-      const id = patIdMatch[0].toUpperCase();
-      try {
-        const sbRes = await supabaseRequest(`patients?patient_id=eq.${id}&select=*`, 'GET');
-        if (Array.isArray(sbRes) && sbRes.length > 0) patient = sbRes[0];
-      } catch (e) {}
-      if (!patient) patient = MOCK_DATA.patients.find(p => p.patient_id.toUpperCase() === id);
-    } else {
-      const lower = String(targetIdOrName).toLowerCase();
-      try {
-        const sbRes = await supabaseRequest(`patients?select=*`, 'GET');
-        if (Array.isArray(sbRes) && sbRes.length > 0) {
-          patient = sbRes.find(p => lower.includes(p.first_name.toLowerCase()) || (p.last_name && lower.includes(p.last_name.toLowerCase())));
-        }
-      } catch (e) {}
-      if (!patient) {
-        patient = MOCK_DATA.patients.find(p => lower.includes(p.first_name.toLowerCase()) || (p.last_name && lower.includes(p.last_name.toLowerCase())));
-      }
-    }
-  }
-
+  const patient = await resolvePatientAsync(payload.patient_id || payload.patient_name || query);
   if (!patient) {
     return {
       agent_id: "AGT-PAT-001",
       agent_name: "Patient Agent",
       agent_type: "domain_expert",
-      summary: `Patient profile '${targetIdOrName || 'unknown'}' could not be found.`,
+      summary: `Patient profile '${payload.patient_id || payload.patient_name || query || 'unknown'}' could not be found.`,
       result_data: { success: false, error: "Patient Not Found", patient: null }
     };
   }
+
+  const ecText = patient.emergency_contact?.name
+    ? `${patient.emergency_contact.name} (${patient.emergency_contact.phone || ''})`
+    : (typeof patient.emergency_contact === 'string' && patient.emergency_contact.trim()
+      ? patient.emergency_contact
+      : 'Not provided');
 
   return {
     agent_id: "AGT-PAT-001",
     agent_name: "Patient Agent",
     agent_type: "domain_expert",
-    summary: `Profile for ${patient.first_name} ${patient.last_name || ''} (${patient.patient_id}): DOB: ${patient.dob || 'Not provided'}, Gender: ${patient.gender || 'Not specified'}, Blood Group: ${patient.blood_group || 'Not provided'}, Primary Doctor: ${patient.primary_doctor_id || 'Not assigned'}, Insurance: ${patient.insurance_policy_id || 'Not assigned'}, Emergency Contact: ${patient.emergency_contact?.name ? `${patient.emergency_contact.name} (${patient.emergency_contact.phone || ''})` : (typeof patient.emergency_contact === 'string' && patient.emergency_contact.trim() ? patient.emergency_contact : 'Not provided')}.`,
+    summary: `Profile for ${patient.first_name} ${patient.last_name || ''} (${patient.patient_id}): DOB: ${patient.dob || 'Not provided'}, Gender: ${patient.gender || 'Not specified'}, Blood Group: ${patient.blood_group || 'Not provided'}, Primary Doctor: ${patient.primary_doctor_id || 'Not assigned'}, Insurance: ${patient.insurance_policy_id || 'Not assigned'}, Emergency Contact: ${ecText}.`,
     result_data: { success: true, patient: patient },
     next_recommended_action: "get_patient_history"
   };
@@ -1010,7 +1292,8 @@ async function handleAssistantAgent(action, payload) {
 
   // Extract entities
   const doctor = resolveDoctor(message) || (previousContext.doctor_id ? MOCK_DATA.doctors.find(d => d.doctor_id === previousContext.doctor_id) : null);
-  const patient = resolvePatient(message, payload.user_role === "patient" ? "PAT-1001" : (previousContext.patient_id || "PAT-1001"));
+  const defaultPatId = (payload.user_role === "patient") ? "PAT-1001" : (previousContext.patient_id || null);
+  let patient = await resolvePatientAsync(message, defaultPatId);
   const relativeDate = parseRelativeDate(message);
   const timeSlot = parseTimeSlot(message, doctor);
 
@@ -1108,12 +1391,12 @@ async function handleAssistantAgent(action, payload) {
     const finalDoctor = doctor || (docId ? MOCK_DATA.doctors.find(d => d.doctor_id === docId) : null) || MOCK_DATA.doctors[0];
 
     const patId = previousContext.patient_id || previousContext.collected_entities?.patient_id || previousContext.collectedEntities?.patient_id || (payload.user_role === "patient" ? "PAT-1001" : null);
-    const finalPatient = (patId ? resolvePatient(patId) : patient) || MOCK_DATA.patients[0];
+    const finalPatient = (patId ? await resolvePatientAsync(patId, patId) : patient) || MOCK_DATA.patients[0];
 
     const finalDate = relativeDate || previousContext.date || previousContext.collected_entities?.date || previousContext.collectedEntities?.date || "2026-09-09";
     const finalTime = timeSlot || previousContext.time_slot || previousContext.collected_entities?.time_slot || previousContext.collectedEntities?.time_slot || "14:00-14:30";
 
-    const bookRes = handleAppointmentAgent("book_appointment", {
+    const bookRes = await handleAppointmentAgent("book_appointment", {
       doctor_id: finalDoctor.doctor_id,
       patient_id: finalPatient.patient_id,
       date: finalDate,
@@ -1145,7 +1428,7 @@ async function handleAssistantAgent(action, payload) {
 
   // Reschedule
   if (/\b(reschedule|move|postpone|change date|change time)\b/i.test(message)) {
-    const aptRes = handleAppointmentAgent("reschedule_appointment", {
+    const aptRes = await handleAppointmentAgent("reschedule_appointment", {
       appointment_id: aptIdMatch ? aptIdMatch[0].toUpperCase() : "APT-1001",
       new_date: relativeDate || "2026-09-11",
       new_time_slot: timeSlot || "11:00-11:30"
@@ -1169,7 +1452,7 @@ async function handleAssistantAgent(action, payload) {
 
   // Cancel
   if (/\b(cancel|drop|revoke|remove appointment)\b/i.test(message)) {
-    const aptRes = handleAppointmentAgent("cancel_appointment", {
+    const aptRes = await handleAppointmentAgent("cancel_appointment", {
       appointment_id: aptIdMatch ? aptIdMatch[0].toUpperCase() : "APT-1001"
     });
     return {
@@ -1191,9 +1474,9 @@ async function handleAssistantAgent(action, payload) {
 
   // Retrieve Appointment Details
   if (/\b(show my appointment|my appointment details|get appointment|view appointment|check appointment status)\b/i.test(message) || (aptIdMatch && !/\b(cancel|reschedule|move)\b/i.test(message))) {
-    const aptRes = handleAppointmentAgent("get_appointment", {
+    const aptRes = await handleAppointmentAgent("get_appointment", {
       appointment_id: aptIdMatch ? aptIdMatch[0].toUpperCase() : "APT-301",
-      patient_id: patient.patient_id
+      patient_id: patient ? patient.patient_id : null
     });
     return {
       agent_id: "AGT-AST-001",
@@ -1258,10 +1541,11 @@ async function handleAssistantAgent(action, payload) {
     const targetDoctor = doctor || MOCK_DATA.doctors[0];
     const finalDate = relativeDate || "2026-09-09";
     const finalTime = timeSlot || targetDoctor.available_slots[0] || "10:00-10:30";
+    const finalPatient = patient || (payload.user_role === "patient" ? MOCK_DATA.patients[0] : (MOCK_DATA.patients.find(p => p.patient_id === "PAT-1001") || MOCK_DATA.patients[0]));
 
-    const bookRes = handleAppointmentAgent("book_appointment", {
+    const bookRes = await handleAppointmentAgent("book_appointment", {
       doctor_id: targetDoctor.doctor_id,
-      patient_id: patient.patient_id,
+      patient_id: finalPatient.patient_id,
       date: finalDate,
       time_slot: finalTime
     });
@@ -1272,7 +1556,7 @@ async function handleAssistantAgent(action, payload) {
       agent_type: "orchestrator",
       summary: bookRes.summary,
       result_data: {
-        success: true,
+        success: bookRes.result_data.success !== false,
         intent: "book_appointment",
         target_agent: "appointment",
         target_action: "book_appointment",
@@ -1288,7 +1572,7 @@ async function handleAssistantAgent(action, payload) {
     const targetDoctor = doctor || MOCK_DATA.doctors[0];
     const targetDate = relativeDate || "2026-09-09";
 
-    const slotRes = handleAppointmentAgent("get_available_slots", {
+    const slotRes = await handleAppointmentAgent("get_available_slots", {
       doctor_id: targetDoctor.doctor_id,
       date: targetDate
     });
@@ -1315,9 +1599,9 @@ async function handleAssistantAgent(action, payload) {
 
   // Explain Lab Report
   if (/\b(explain|in simple language|simply|patient-friendly|plain terms|what does it mean)\b/i.test(message) && /\b(lab|report|result|test|blood|labr)\b/i.test(message)) {
-    const medRes = handleMedicalAgent("explain_lab_report", {
-      report_id: reportIdMatch ? reportIdMatch[0].toUpperCase() : "LABR-1001",
-      patient_id: patient.patient_id
+    const medRes = await handleMedicalAgent("explain_lab_report", {
+      report_id: reportIdMatch ? reportIdMatch[0].toUpperCase() : null,
+      patient_id: patient ? patient.patient_id : null
     });
     return {
       agent_id: "AGT-AST-001",
@@ -1325,7 +1609,7 @@ async function handleAssistantAgent(action, payload) {
       agent_type: "orchestrator",
       summary: medRes.summary,
       result_data: {
-        success: true,
+        success: medRes.result_data.success !== false,
         intent: "explain_lab_report",
         target_agent: "medical",
         target_action: "explain_lab_report",
@@ -1337,8 +1621,8 @@ async function handleAssistantAgent(action, payload) {
 
   // Compare Lab Reports
   if (/\b(compare|comparison|trend|versus|vs|against previous)\b/i.test(message)) {
-    const medRes = handleMedicalAgent("compare_lab_reports", {
-      patient_id: patient.patient_id
+    const medRes = await handleMedicalAgent("compare_lab_reports", {
+      patient_id: patient ? patient.patient_id : null
     });
     return {
       agent_id: "AGT-AST-001",
@@ -1346,7 +1630,7 @@ async function handleAssistantAgent(action, payload) {
       agent_type: "orchestrator",
       summary: medRes.summary,
       result_data: {
-        success: true,
+        success: medRes.result_data.success !== false,
         intent: "compare_lab_reports",
         target_agent: "medical",
         target_action: "compare_lab_reports",
@@ -1358,8 +1642,8 @@ async function handleAssistantAgent(action, payload) {
 
   // Medical Summary
   if (/\b(medical summary|summary of my medical|clinical summary|summarize my reports|summarize medical history)\b/i.test(message)) {
-    const medRes = handleMedicalAgent("get_medical_summary", {
-      patient_id: patient.patient_id
+    const medRes = await handleMedicalAgent("get_medical_summary", {
+      patient_id: patient ? patient.patient_id : null
     });
     return {
       agent_id: "AGT-AST-001",
@@ -1367,7 +1651,7 @@ async function handleAssistantAgent(action, payload) {
       agent_type: "orchestrator",
       summary: medRes.summary,
       result_data: {
-        success: true,
+        success: medRes.result_data.success !== false,
         intent: "get_medical_summary",
         target_agent: "medical",
         target_action: "get_medical_summary",
@@ -1379,9 +1663,9 @@ async function handleAssistantAgent(action, payload) {
 
   // Extract Lab Parameters
   if (/\b(extract|parse parameters|get parameters)\b/i.test(message) && /\b(lab|report|test)\b/i.test(message)) {
-    const medRes = handleMedicalAgent("extract_lab_report", {
-      report_id: reportIdMatch ? reportIdMatch[0].toUpperCase() : "LABR-1001",
-      patient_id: patient.patient_id
+    const medRes = await handleMedicalAgent("extract_lab_report", {
+      report_id: reportIdMatch ? reportIdMatch[0].toUpperCase() : null,
+      patient_id: patient ? patient.patient_id : null
     });
     return {
       agent_id: "AGT-AST-001",
@@ -1389,7 +1673,7 @@ async function handleAssistantAgent(action, payload) {
       agent_type: "orchestrator",
       summary: medRes.summary,
       result_data: {
-        success: true,
+        success: medRes.result_data.success !== false,
         intent: "extract_lab_report",
         target_agent: "medical",
         target_action: "extract_lab_report",
@@ -1401,9 +1685,9 @@ async function handleAssistantAgent(action, payload) {
 
   // Analyze Lab Report / Abnormalities
   if (/\b(analyze|abnormal|findings|panel|blood report|test result|lipid|cholesterol|tsh|hemoglobin|lab report|laboratory)\b/i.test(message) || reportIdMatch) {
-    const medRes = handleMedicalAgent("analyze_lab_report", {
-      report_id: reportIdMatch ? reportIdMatch[0].toUpperCase() : "LABR-1001",
-      patient_id: patient.patient_id
+    const medRes = await handleMedicalAgent("analyze_lab_report", {
+      report_id: reportIdMatch ? reportIdMatch[0].toUpperCase() : null,
+      patient_id: patient ? patient.patient_id : null
     });
     return {
       agent_id: "AGT-AST-001",
@@ -1411,7 +1695,7 @@ async function handleAssistantAgent(action, payload) {
       agent_type: "orchestrator",
       summary: medRes.summary,
       result_data: {
-        success: true,
+        success: medRes.result_data.success !== false,
         intent: "analyze_lab_report",
         target_agent: "medical",
         target_action: "analyze_lab_report",
@@ -1425,9 +1709,10 @@ async function handleAssistantAgent(action, payload) {
   // 3. INSURANCE AGENT ROUTING
   // --------------------------------------------------
 
-  // Ambiguous Insurance Query (e.g., "Apply insurance for Sneha Sharma")
+  // Ambiguous Insurance Query
   if (/\b(apply insurance|use insurance|do insurance)\b/i.test(message)) {
-    const clarifyText = `I can help verify insurance eligibility, check coverage, prepare a claim, submit a claim, or check claim status. Would you like me to verify ${patient.first_name} ${patient.last_name}'s eligibility or prepare a claim?`;
+    const pLabel = patient ? `${patient.first_name} ${patient.last_name || ''}`.trim() : "the patient";
+    const clarifyText = `I can help verify insurance eligibility, check coverage, prepare a claim, submit a claim, or check claim status. Would you like me to verify ${pLabel}'s eligibility or prepare a claim?`;
     return {
       agent_id: "AGT-AST-001",
       agent_name: "Assistant Agent",
@@ -1445,8 +1730,8 @@ async function handleAssistantAgent(action, payload) {
 
   // Coverage / Copay
   if (/\b(coverage|how much coverage|copay|limit|coverage limit)\b/i.test(message)) {
-    const insRes = handleInsuranceAgent("get_coverage", {
-      patient_id: patient.patient_id,
+    const insRes = await handleInsuranceAgent("get_coverage", {
+      patient_id: patient ? patient.patient_id : null,
       policy_id: policyIdMatch ? policyIdMatch[0].toUpperCase() : null
     });
     return {
@@ -1455,7 +1740,7 @@ async function handleAssistantAgent(action, payload) {
       agent_type: "orchestrator",
       summary: insRes.summary,
       result_data: {
-        success: true,
+        success: insRes.result_data.success !== false,
         intent: "get_coverage",
         target_agent: "insurance",
         target_action: "get_coverage",
@@ -1467,8 +1752,8 @@ async function handleAssistantAgent(action, payload) {
 
   // Prepare Claim
   if (/\b(prepare a claim|prepare claim|draft claim|create claim)\b/i.test(message)) {
-    const insRes = handleInsuranceAgent("prepare_claim", {
-      patient_id: patient.patient_id,
+    const insRes = await handleInsuranceAgent("prepare_claim", {
+      patient_id: patient ? patient.patient_id : null,
       policy_id: policyIdMatch ? policyIdMatch[0].toUpperCase() : null
     });
     return {
@@ -1477,7 +1762,7 @@ async function handleAssistantAgent(action, payload) {
       agent_type: "orchestrator",
       summary: insRes.summary,
       result_data: {
-        success: true,
+        success: insRes.result_data.success !== false,
         intent: "prepare_claim",
         target_agent: "insurance",
         target_action: "prepare_claim",
@@ -1489,8 +1774,9 @@ async function handleAssistantAgent(action, payload) {
 
   // Submit Claim
   if (/\b(submit claim|file claim|process claim)\b/i.test(message)) {
-    const insRes = handleInsuranceAgent("submit_claim", {
-      claim_id: claimIdMatch ? claimIdMatch[0].toUpperCase() : "CLM-1001"
+    const insRes = await handleInsuranceAgent("submit_claim", {
+      claim_id: claimIdMatch ? claimIdMatch[0].toUpperCase() : null,
+      patient_id: patient ? patient.patient_id : null
     });
     return {
       agent_id: "AGT-AST-001",
@@ -1498,7 +1784,7 @@ async function handleAssistantAgent(action, payload) {
       agent_type: "orchestrator",
       summary: insRes.summary,
       result_data: {
-        success: true,
+        success: insRes.result_data.success !== false,
         intent: "submit_claim",
         target_agent: "insurance",
         target_action: "submit_claim",
@@ -1511,8 +1797,9 @@ async function handleAssistantAgent(action, payload) {
 
   // Claim Status
   if (/\b(claim status|status of my claim|status of claim|track claim)\b/i.test(message) || claimIdMatch) {
-    const insRes = handleInsuranceAgent("get_claim_status", {
-      claim_id: claimIdMatch ? claimIdMatch[0].toUpperCase() : "CLM-1001"
+    const insRes = await handleInsuranceAgent("get_claim_status", {
+      claim_id: claimIdMatch ? claimIdMatch[0].toUpperCase() : null,
+      patient_id: patient ? patient.patient_id : null
     });
     return {
       agent_id: "AGT-AST-001",
@@ -1520,7 +1807,7 @@ async function handleAssistantAgent(action, payload) {
       agent_type: "orchestrator",
       summary: insRes.summary,
       result_data: {
-        success: true,
+        success: insRes.result_data.success !== false,
         intent: "get_claim_status",
         target_agent: "insurance",
         target_action: "get_claim_status",
@@ -1533,8 +1820,8 @@ async function handleAssistantAgent(action, payload) {
 
   // Verify Insurance / Active Status
   if (/\b(insurance|valid|active|eligible|eligibility|policy)\b/i.test(message) || policyIdMatch) {
-    const insRes = handleInsuranceAgent("verify_insurance", {
-      patient_id: patient.patient_id,
+    const insRes = await handleInsuranceAgent("verify_insurance", {
+      patient_id: patient ? patient.patient_id : null,
       policy_id: policyIdMatch ? policyIdMatch[0].toUpperCase() : null
     });
     return {
@@ -1543,7 +1830,7 @@ async function handleAssistantAgent(action, payload) {
       agent_type: "orchestrator",
       summary: insRes.summary,
       result_data: {
-        success: true,
+        success: insRes.result_data.success !== false,
         intent: "verify_insurance",
         target_agent: "insurance",
         target_action: "verify_insurance",
@@ -1647,7 +1934,7 @@ async function handleAssistantAgent(action, payload) {
     const nameParts = extractedName.trim().split(/\s+/);
     const firstName = nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
     const lastName = nameParts.length > 1 ? nameParts.slice(1).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ") : "";
-    const dob = dobMatch[0];
+    const dob = normalizeDateOfBirth(dobMatch[0]);
     const gender = genderMatch[1].charAt(0).toUpperCase() + genderMatch[1].slice(1).toLowerCase();
     const phone = phoneMatch[0].trim();
 
@@ -1691,11 +1978,11 @@ async function handleAssistantAgent(action, payload) {
     };
   }
 
-  // Update Patient Details (e.g. "Update Arun Kumar's phone number to 9876543210" or "Update Safeek's phone number")
+  // Update Patient Details
   if (/\b(update|modify|change)\b/i.test(message) && /\b(phone|contact|address|details|number|patient)\b/i.test(message)) {
     const userRole = (payload.user_role || payload.portal_source || "doctor").toLowerCase();
-    let targetPatient = MOCK_DATA.patients.find(p => lower.includes(p.first_name.toLowerCase()) || lower.includes(p.patient_id.toLowerCase())) || patient;
-    if (userRole === "patient" && targetPatient.patient_id !== "PAT-1001") {
+    let targetPatient = (await resolvePatientAsync(message, patient ? patient.patient_id : null)) || patient;
+    if (userRole === "patient" && targetPatient && targetPatient.patient_id !== "PAT-1001") {
       const deniedText = "Permission Denied: Patient accounts cannot modify other patient records. Please switch to a Nurse, Doctor, or Admin role.";
       return {
         agent_id: "AGT-AST-001",
@@ -1707,9 +1994,12 @@ async function handleAssistantAgent(action, payload) {
     }
 
     const phoneMatch = message.match(/\b\d{10}\b/) || message.match(/\+?\d[\d\s\-]{8,14}\d/);
-    if (phoneMatch) {
+    if (phoneMatch && targetPatient) {
       targetPatient.phone = phoneMatch[0].trim();
-      const updateMsg = `Successfully updated phone number to ${targetPatient.phone} for patient ${targetPatient.first_name} ${targetPatient.last_name} (${targetPatient.patient_id}).`;
+      try {
+        await supabaseRequest(`patients?patient_id=eq.${targetPatient.patient_id}`, "PATCH", { phone: targetPatient.phone });
+      } catch (e) {}
+      const updateMsg = `Successfully updated phone number to ${targetPatient.phone} for patient ${targetPatient.first_name} ${targetPatient.last_name || ''} (${targetPatient.patient_id}).`;
       return {
         agent_id: "AGT-AST-001",
         agent_name: "Assistant Agent",
@@ -1729,8 +2019,11 @@ async function handleAssistantAgent(action, payload) {
 
   // Patient Medical / Full History
   if (/\b(history|medical history|full history|clinical records)\b/i.test(message)) {
+    const targetPatient = (await resolvePatientAsync(message, patient ? patient.patient_id : null)) || patient;
     const patRes = await handlePatientAgent("get_patient_history", {
-      patient_id: patient.patient_id
+      patient_id: targetPatient ? targetPatient.patient_id : null,
+      patient_name: targetPatient ? `${targetPatient.first_name} ${targetPatient.last_name || ''}`.trim() : null,
+      query: message
     });
     return {
       agent_id: "AGT-AST-001",
@@ -1738,7 +2031,7 @@ async function handleAssistantAgent(action, payload) {
       agent_type: "orchestrator",
       summary: patRes.summary,
       result_data: {
-        success: true,
+        success: patRes.result_data.success !== false,
         intent: "get_patient_history",
         target_agent: "patient",
         target_action: "get_patient_history",
@@ -1749,8 +2042,8 @@ async function handleAssistantAgent(action, payload) {
   }
 
   // Find / Search Patient
-  if (/\b(find|search|lookup|who is)\b/i.test(message) && (lower.includes("patient") || lower.includes("arun") || lower.includes("sneha") || lower.includes("vikram") || lower.includes("safeek") || lower.includes("harini") || lower.includes("ananya") || lower.includes("production") || lower.includes("pooja"))) {
-    const cleanQuery = message.replace(/\b(find|search|lookup|who is|patients?|for)\b/gi, "").trim();
+  if (/\b(find|search|lookup|who is|show|view|get)\b/i.test(message) && (/\b(patient|patients|pat-\d+)\b/i.test(message) || lower.startsWith("who is") || lower.startsWith("find ") || lower.startsWith("search "))) {
+    const cleanQuery = message.replace(/\b(find|search|lookup|who is|show|view|get|patients?|profile|for)\b/gi, "").trim();
     const patRes = await handlePatientAgent("search_patient", {
       query: cleanQuery || message
     });
@@ -1760,7 +2053,7 @@ async function handleAssistantAgent(action, payload) {
       agent_type: "orchestrator",
       summary: patRes.summary,
       result_data: {
-        success: true,
+        success: patRes.result_data.success !== false,
         intent: "search_patient",
         target_agent: "patient",
         target_action: "search_patient",
@@ -1773,13 +2066,15 @@ async function handleAssistantAgent(action, payload) {
   }
 
   // Patient Profile
-  if (/\b(profile|patient|pat-\d+)\b/i.test(message) || lower.includes("arun kumar") || lower.includes("sneha sharma") || lower.includes("vikram singh") || lower.includes("safeek") || lower.includes("harini") || lower.includes("ananya") || lower.includes("production") || lower.includes("pooja")) {
-    const patIdMatch = message.match(/\bPAT-\d+\b/i);
-    const targetPatientId = patIdMatch
-      ? patIdMatch[0].toUpperCase()
-      : (MOCK_DATA.patients.find(p => lower.includes(p.first_name.toLowerCase()) || lower.includes(p.patient_id.toLowerCase()))?.patient_id || (patient ? patient.patient_id : "PAT-1001"));
+  const patIdExplicit = message.match(/\bPAT-\d+\b/i);
+  const isProfileQuery = /\b(profile|details of patient|patient details|info on patient|record of patient)\b/i.test(message) || patIdExplicit;
+  if (isProfileQuery || (patient && /\b(show|view|get|who is)\b/i.test(message) && !/\b(lab|report|test|appointment|slot|claim|insurance)\b/i.test(message))) {
+    const targetPatient = patIdExplicit
+      ? await resolvePatientAsync(patIdExplicit[0].toUpperCase())
+      : ((await resolvePatientAsync(message, patient ? patient.patient_id : null)) || patient);
+
     const patRes = await handlePatientAgent("get_patient", {
-      patient_id: targetPatientId,
+      patient_id: targetPatient ? targetPatient.patient_id : null,
       query: message
     });
     return {
@@ -1859,13 +2154,13 @@ export default async function handler(req, res) {
         output = await handlePatientAgent(action, payload);
         break;
       case "medical":
-        output = handleMedicalAgent(action, payload);
+        output = await handleMedicalAgent(action, payload);
         break;
       case "appointment":
-        output = handleAppointmentAgent(action, payload);
+        output = await handleAppointmentAgent(action, payload);
         break;
       case "insurance":
-        output = handleInsuranceAgent(action, payload);
+        output = await handleInsuranceAgent(action, payload);
         break;
       case "assistant":
       default:
@@ -1875,8 +2170,8 @@ export default async function handler(req, res) {
 
     const providerInfo = {
       provider_name: "MEDION Deterministic Multi-Agent Engine (Serverless)",
-      is_fallback: true,
-      fallback_reason: "Offline deterministic multi-agent parser active",
+      is_fallback: false,
+      fallback_reason: null,
       endpoint_used: "/api/workbench/dispatch",
       model: "Rule-based Slot Matcher & Domain Specialist"
     };

@@ -10,9 +10,9 @@ export const LabReportResultCard: React.FC<LabReportResultCardProps> = ({ data, 
   const abnormal = data?.abnormal_findings || [];
   const normal = data?.normal_findings || [];
   const reportSummary = data?.report_summary || {};
-  const reportId = data?.report_id || reportSummary?.report_id || 'LABR-1001';
+  const reportId = data?.report_id || reportSummary?.report_id || '';
   const testName = reportSummary?.test_name || data?.test_name || 'Laboratory Analysis';
-  const patientName = data?.patient_name || reportSummary?.patient_name || 'Patient';
+  const patientName = data?.patient_name || reportSummary?.patient_name || '';
   const priority = data?.priority || (abnormal.length > 0 ? 'HIGH' : 'NORMAL');
   const safetyNote = data?.safety_note || 'Informational analysis based on synthetic health records. Not a medical diagnosis.';
 

@@ -10,8 +10,8 @@ export const PatientResultCard: React.FC<PatientResultCardProps> = ({ data, summ
   const patient = data?.patient || {};
   const isHistory = Boolean(data?.medical_records || data?.lab_reports || data?.prescriptions);
 
-  const patientId = patient.patient_id || data?.patient_id || 'PAT-1001';
-  const fullName = patient.first_name ? `${patient.first_name} ${patient.last_name}` : (data?.patient_name || 'Patient');
+  const patientId = patient.patient_id || data?.patient_id || '';
+  const fullName = patient.first_name ? `${patient.first_name} ${patient.last_name || ''}`.trim() : (data?.patient_name || 'Patient Profile');
 
   return (
     <div className="result-card patient-card" style={{

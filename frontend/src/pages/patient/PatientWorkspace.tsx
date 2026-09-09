@@ -86,20 +86,32 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({ onTraceGener
 
           <div>
             <div className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Latest Test Results</div>
-            <div style={{ fontSize: '1.05rem', fontWeight: 600, marginTop: '0.25rem' }}>Blood & Lipid Panel</div>
-            <div className="text-muted" style={{ fontSize: '0.8rem' }}>Collection Date: 2024-06-14</div>
-            <div style={{ marginTop: '0.5rem' }}>
-              <Badge variant="amber">Low Hemoglobin (10.4 g/dL)</Badge>
-            </div>
+            {activePatient.patient_id === 'PAT-1001' ? (
+              <>
+                <div style={{ fontSize: '1.05rem', fontWeight: 600, marginTop: '0.25rem' }}>Blood & Lipid Panel</div>
+                <div className="text-muted" style={{ fontSize: '0.8rem' }}>Collection Date: 2024-06-14</div>
+                <div style={{ marginTop: '0.5rem' }}>
+                  <Badge variant="amber">Low Hemoglobin (10.4 g/dL)</Badge>
+                </div>
+              </>
+            ) : (
+              <div className="text-muted" style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>No lab reports on file</div>
+            )}
           </div>
 
           <div>
             <div className="text-muted" style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Insurance Coverage</div>
-            <div style={{ fontSize: '1.05rem', fontWeight: 600, marginTop: '0.25rem' }}>POL-701 (Active)</div>
-            <div className="text-muted" style={{ fontSize: '0.8rem' }}>Comprehensive Health Shield</div>
-            <div style={{ marginTop: '0.5rem' }}>
-              <Badge variant="green"><CheckCircle2 style={{ width: 12, height: 12 }} /> 90% Coverage Active</Badge>
-            </div>
+            {activePatient.insurance_policy_id ? (
+              <>
+                <div style={{ fontSize: '1.05rem', fontWeight: 600, marginTop: '0.25rem' }}>{activePatient.insurance_policy_id} (Active)</div>
+                <div className="text-muted" style={{ fontSize: '0.8rem' }}>Comprehensive Health Shield</div>
+                <div style={{ marginTop: '0.5rem' }}>
+                  <Badge variant="green"><CheckCircle2 style={{ width: 12, height: 12 }} /> 90% Coverage Active</Badge>
+                </div>
+              </>
+            ) : (
+              <div className="text-muted" style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>Not assigned - No policy on file</div>
+            )}
           </div>
         </div>
 
@@ -116,27 +128,36 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({ onTraceGener
 
       {/* Active Medications List */}
       <div className="section-panel">
-        <SectionHeader title="Active Prescriptions" subtitle="Prescribed by Dr. Rajesh Mehta on 2024-06-15" />
-        <table className="table-ui">
-          <thead>
-            <tr>
-              <th>Medication</th>
-              <th>Dosage</th>
-              <th>Frequency</th>
-              <th>Instructions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {MOCK_PRESCRIPTIONS[0].medications.map((m, i) => (
-              <tr key={i}>
-                <td style={{ fontWeight: 600 }}>{m.name}</td>
-                <td>{m.dosage}</td>
-                <td>{m.frequency}</td>
-                <td className="text-muted">{m.instructions}</td>
+        <SectionHeader
+          title="Active Prescriptions"
+          subtitle={activePatient.patient_id === 'PAT-1001' ? "Prescribed by Dr. Rajesh Mehta on 2024-06-15" : "Current medication regimens"}
+        />
+        {activePatient.patient_id === 'PAT-1001' ? (
+          <table className="table-ui">
+            <thead>
+              <tr>
+                <th>Medication</th>
+                <th>Dosage</th>
+                <th>Frequency</th>
+                <th>Instructions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {MOCK_PRESCRIPTIONS[0].medications.map((m, i) => (
+                <tr key={i}>
+                  <td style={{ fontWeight: 600 }}>{m.name}</td>
+                  <td>{m.dosage}</td>
+                  <td>{m.frequency}</td>
+                  <td className="text-muted">{m.instructions}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <div className="text-muted" style={{ padding: '1rem 0', fontSize: '0.88rem' }}>
+            No active prescriptions on file for this patient.
+          </div>
+        )}
       </div>
 
       {/* Output Panel */}

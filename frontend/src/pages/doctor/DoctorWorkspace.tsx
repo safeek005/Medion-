@@ -100,12 +100,12 @@ export const DoctorWorkspace: React.FC<DoctorWorkspaceProps> = ({ onTraceGenerat
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
-              <h1 className="h1" style={{ fontSize: '1.75rem' }}>{activePatient.first_name} {activePatient.last_name}</h1>
+              <h1 className="h1" style={{ fontSize: '1.75rem' }}>{activePatient.first_name} {activePatient.last_name || ''}</h1>
               <span className="badge-ui badge-green">{activePatient.patient_id}</span>
-              <span className="badge-ui badge-neutral">{activePatient.gender} • DOB {activePatient.date_of_birth}</span>
+              <span className="badge-ui badge-neutral">{activePatient.gender || 'Gender: Not specified'} • DOB {activePatient.dob || activePatient.date_of_birth || 'Not provided'}</span>
             </div>
             <p className="text-secondary" style={{ fontSize: '0.85rem' }}>
-              Primary Doctor: {activePatient.primary_doctor_id} • Policy: {activePatient.insurance_policy_id} • Blood Group: {activePatient.blood_group}
+              Primary Doctor: {activePatient.primary_doctor_id || 'Not assigned'} • Policy: {activePatient.insurance_policy_id || 'Not assigned'} • Blood Group: {activePatient.blood_group || 'Not provided'}
             </p>
           </div>
 
@@ -131,7 +131,7 @@ export const DoctorWorkspace: React.FC<DoctorWorkspaceProps> = ({ onTraceGenerat
             onClick={() => setActiveTab('lab')}
             style={{ padding: '0.5rem 0.25rem', background: 'none', border: 'none', borderBottom: activeTab === 'lab' ? '2px solid var(--forest-green)' : '2px solid transparent', color: activeTab === 'lab' ? 'var(--forest-green)' : 'var(--text-muted)', fontWeight: activeTab === 'lab' ? 600 : 400, cursor: 'pointer', fontSize: '0.88rem' }}
           >
-            Laboratory Results (LABR-1001)
+            Laboratory Results {activePatient.patient_id === 'PAT-1001' ? '(LABR-1001)' : ''}
           </button>
         </div>
 
@@ -142,8 +142,8 @@ export const DoctorWorkspace: React.FC<DoctorWorkspaceProps> = ({ onTraceGenerat
               <h4 className="h4" style={{ marginBottom: '0.75rem' }}>Demographic Information</h4>
               <table className="table-ui" style={{ marginBottom: '1.5rem' }}>
                 <tbody>
-                  <tr><td className="text-muted">Full Address</td><td>{activePatient.address}</td></tr>
-                  <tr><td className="text-muted">Contact Phone</td><td>{activePatient.phone}</td></tr>
+                  <tr><td className="text-muted">Full Address</td><td>{activePatient.address || 'Not provided'}</td></tr>
+                  <tr><td className="text-muted">Contact Phone</td><td>{activePatient.phone || 'Not provided'}</td></tr>
                   <tr>
                     <td className="text-muted">Emergency Contact</td>
                     <td>
@@ -180,37 +180,45 @@ export const DoctorWorkspace: React.FC<DoctorWorkspaceProps> = ({ onTraceGenerat
         {/* Tab 2: Laboratory Panel */}
         {activeTab === 'lab' && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{MOCK_LAB_REPORT.test_type}</span>
-              <span className="text-muted" style={{ fontSize: '0.8rem' }}>Collection Date: {MOCK_LAB_REPORT.test_date}</span>
-            </div>
+            {activePatient.patient_id === 'PAT-1001' ? (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{MOCK_LAB_REPORT.test_type}</span>
+                  <span className="text-muted" style={{ fontSize: '0.8rem' }}>Collection Date: {MOCK_LAB_REPORT.test_date}</span>
+                </div>
 
-            <table className="table-ui">
-              <thead>
-                <tr>
-                  <th>Parameter</th>
-                  <th>Result Value</th>
-                  <th>Reference Range</th>
-                  <th>Indicator</th>
-                </tr>
-              </thead>
-              <tbody>
-                {MOCK_LAB_REPORT.results.map((r, i) => (
-                  <tr key={i}>
-                    <td style={{ fontWeight: 500 }}>{r.parameter}</td>
-                    <td>{r.value} {r.unit}</td>
-                    <td className="text-muted">{r.reference_range}</td>
-                    <td>
-                      {r.is_abnormal ? (
-                        <Badge variant="amber">{r.abnormality_direction}</Badge>
-                      ) : (
-                        <Badge variant="green">NORMAL</Badge>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                <table className="table-ui">
+                  <thead>
+                    <tr>
+                      <th>Parameter</th>
+                      <th>Result Value</th>
+                      <th>Reference Range</th>
+                      <th>Indicator</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {MOCK_LAB_REPORT.results.map((r, i) => (
+                      <tr key={i}>
+                        <td style={{ fontWeight: 500 }}>{r.parameter}</td>
+                        <td>{r.value} {r.unit}</td>
+                        <td className="text-muted">{r.reference_range}</td>
+                        <td>
+                          {r.is_abnormal ? (
+                            <Badge variant="amber">{r.abnormality_direction}</Badge>
+                          ) : (
+                            <Badge variant="green">NORMAL</Badge>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            ) : (
+              <div className="text-muted" style={{ padding: '1.5rem 0', fontSize: '0.9rem' }}>
+                No laboratory reports on file for {activePatient.first_name} {activePatient.last_name || ''} ({activePatient.patient_id}).
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -188,8 +188,15 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
         setConversationContext(nextCtx);
         dataService.setConversationContext(nextCtx);
       } else if (res.success) {
-        setConversationContext({});
-        dataService.clearConversationContext();
+        const pId = outData.patient_id || outData.patient?.patient_id;
+        const pName = outData.patient?.first_name || outData.patient_name;
+        const preservedCtx = pId ? { patient_id: pId, patient_name: pName } : {};
+        setConversationContext(preservedCtx);
+        if (pId) {
+          dataService.setConversationContext(preservedCtx);
+        } else {
+          dataService.clearConversationContext();
+        }
       }
 
       const medionMsg: MessageItem = {
