@@ -1116,7 +1116,7 @@ async function handlePatientAgent(action, payload) {
       }
     } catch (e) {}
 
-    const cleanQ = query.replace(/\b(search|find|lookup|who is|patients?|for)\b/gi, "").trim();
+    const cleanQ = query.replace(/\b(search|find|lookup|who is|patients?|profile|for|of|about)\b/gi, "").trim();
     const results = allPatients.filter(p => {
       if (!cleanQ) return true;
       const fullName = `${p.first_name} ${p.last_name || ''}`.toLowerCase().trim();
@@ -2041,34 +2041,10 @@ async function handleAssistantAgent(action, payload) {
     };
   }
 
-  // Find / Search Patient
-  if (/\b(find|search|lookup|who is|show|view|get)\b/i.test(message) && (/\b(patient|patients|pat-\d+)\b/i.test(message) || lower.startsWith("who is") || lower.startsWith("find ") || lower.startsWith("search "))) {
-    const cleanQuery = message.replace(/\b(find|search|lookup|who is|show|view|get|patients?|profile|for)\b/gi, "").trim();
-    const patRes = await handlePatientAgent("search_patient", {
-      query: cleanQuery || message
-    });
-    return {
-      agent_id: "AGT-AST-001",
-      agent_name: "Assistant Agent",
-      agent_type: "orchestrator",
-      summary: patRes.summary,
-      result_data: {
-        success: patRes.result_data.success !== false,
-        intent: "search_patient",
-        target_agent: "patient",
-        target_action: "search_patient",
-        formatted_text: patRes.summary,
-        patients: patRes.result_data.patients,
-        patient: patRes.result_data.patients && patRes.result_data.patients[0],
-        ...patRes.result_data
-      }
-    };
-  }
-
   // Patient Profile
   const patIdExplicit = message.match(/\bPAT-\d+\b/i);
   const isProfileQuery = /\b(profile|details of patient|patient details|info on patient|record of patient)\b/i.test(message) || patIdExplicit;
-  if (isProfileQuery || (patient && /\b(show|view|get|who is)\b/i.test(message) && !/\b(lab|report|test|appointment|slot|claim|insurance)\b/i.test(message))) {
+  if (isProfileQuery || (patient && /\b(show|view|get|who is)\b/i.test(message) && !/\b(lab|report|test|appointment|slot|claim|insurance|history)\b/i.test(message) && !/\b(all patients|search|find all)\b/i.test(message))) {
     const targetPatient = patIdExplicit
       ? await resolvePatientAsync(patIdExplicit[0].toUpperCase())
       : ((await resolvePatientAsync(message, patient ? patient.patient_id : null)) || patient);
@@ -2089,6 +2065,30 @@ async function handleAssistantAgent(action, payload) {
         target_action: "get_patient",
         formatted_text: patRes.summary,
         patient: patRes.result_data.patient,
+        ...patRes.result_data
+      }
+    };
+  }
+
+  // Find / Search Patient
+  if (/\b(find|search|lookup|who is|show|view|get)\b/i.test(message) && (/\b(patient|patients)\b/i.test(message) || lower.startsWith("who is") || lower.startsWith("find ") || lower.startsWith("search "))) {
+    const cleanQuery = message.replace(/\b(find|search|lookup|who is|show|view|get|patients?|profile|for|of|about)\b/gi, "").trim();
+    const patRes = await handlePatientAgent("search_patient", {
+      query: cleanQuery || message
+    });
+    return {
+      agent_id: "AGT-AST-001",
+      agent_name: "Assistant Agent",
+      agent_type: "orchestrator",
+      summary: patRes.summary,
+      result_data: {
+        success: patRes.result_data.success !== false,
+        intent: "search_patient",
+        target_agent: "patient",
+        target_action: "search_patient",
+        formatted_text: patRes.summary,
+        patients: patRes.result_data.patients,
+        patient: patRes.result_data.patients && patRes.result_data.patients[0],
         ...patRes.result_data
       }
     };
