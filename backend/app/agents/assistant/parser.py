@@ -34,7 +34,13 @@ DOCTOR_PATTERNS = [
 PATIENT_MAPPINGS = {
     "PAT-1001": ["pat-1001", "arun kumar", "arun"],
     "PAT-1002": ["pat-1002", "sneha sharma", "sneha", "snesha"],
-    "PAT-1003": ["pat-1003", "vikram singh", "vikram"]
+    "PAT-1003": ["pat-1003", "vikram singh", "vikram"],
+    "PAT-1004": ["pat-1004", "priya sharma", "priya"],
+    "PAT-1005": ["pat-1005", "kavita iyer", "kavita"],
+    "PAT-1006": ["pat-1006", "rajesh iyer"],
+    "PAT-1007": ["pat-1007", "ananya roy", "ananya"],
+    "PAT-1008": ["pat-1008", "mohammed farooq", "farooq"],
+    "PAT-1025": ["pat-1025", "kavya", "harini"]
 }
 
 class DeterministicParser:
@@ -350,7 +356,15 @@ class DeterministicParser:
         if any(w in text_lower for w in ["compare", "comparison", "trend", "versus", "vs"]):
             return "compare_lab_reports", 0.95, []
 
-        if any(w in text_lower for w in ["medical summary", "summary of my medical", "clinical summary", "summarize my reports", "summarize patient", "clinical brief"]):
+        has_summary_verb = any(w in text_lower for w in ["summarize", "summary", "overview", "brief", "recap", "synopsis"])
+        has_medical_noun = any(w in text_lower for w in [
+            "lab", "labs", "result", "results", "report", "reports", "medical", "clinical",
+            "health", "test", "tests", "patient", "history", "record", "records"
+        ])
+        if has_summary_verb and has_medical_noun:
+            return "get_medical_summary", 0.95, []
+
+        if any(w in text_lower for w in ["medical summary", "summary of my medical", "clinical summary", "summarize my reports", "summarize patient", "clinical brief", "soap note", "soap summary"]):
             return "get_medical_summary", 0.95, []
 
         if any(w in text_lower for w in ["extract", "parse lab", "test parameters"]):

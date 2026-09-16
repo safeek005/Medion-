@@ -30,9 +30,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.api.workbench import router as workbench_router
+from app.api.automations import router as automations_router
 # Mount root health check and API v1 routes
 app.include_router(root_health_router)
 app.include_router(api_router)
+app.include_router(workbench_router, prefix="/api")
+app.include_router(automations_router, prefix="/api")
 
 # Mount frontend web application at root /
 frontend_dir = Path(__file__).resolve().parent.parent.parent / "frontend"

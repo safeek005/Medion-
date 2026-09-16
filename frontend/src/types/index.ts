@@ -2,6 +2,18 @@ export type UserRole = 'doctor' | 'nurse' | 'patient' | 'lab' | 'insurance' | 'h
 
 export type CoreAgentName = 'patient' | 'medical' | 'appointment' | 'insurance' | 'assistant';
 
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  organization: string;
+  facility: string;
+  department?: string;
+  title?: string;
+  phone?: string;
+}
+
 export interface PatientProfile {
   patient_id: string;
   first_name: string;
@@ -20,6 +32,8 @@ export interface PatientProfile {
   } | string | null;
   primary_doctor_id?: string | null;
   insurance_policy_id?: string | null;
+  allergies?: string[] | string | null;
+  chronic_conditions?: string[] | null;
   created_at?: string;
 }
 

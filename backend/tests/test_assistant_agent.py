@@ -42,6 +42,19 @@ def test_interpret_request_medical_intent():
     assert result["target_action"] == "analyze_lab_report"
     assert result["required_parameters"]["report_id"] == "LABR-1001"
 
+def test_interpret_request_summarize_arun_kumar_lab_results():
+    agent = AssistantAgent()
+    payload = {
+        "message": "Summarize Arun Kumar's recent lab results.",
+        "user_role": "doctor"
+    }
+    result = agent.execute("interpret_request", payload)
+    assert result["success"] is True
+    assert result["target_agent"] == "medical"
+    assert result["target_action"] == "get_medical_summary"
+    assert result["needs_clarification"] is False
+    assert result["required_parameters"]["patient_id"] == "PAT-1001"
+
 def test_interpret_request_appointment_intent():
     agent = AssistantAgent()
     payload = {

@@ -72,7 +72,7 @@ def test_analyze_lab_report():
     }
     result = agent.execute("analyze_lab_report", payload)
     assert result["success"] is True
-    assert result["abnormal_count"] == 2  # Hemoglobin LOW, Total Cholesterol HIGH
+    assert result["abnormal_count"] == 4  # Hemoglobin LOW, Total Cholesterol HIGH, LDL HIGH, Triglycerides HIGH
     assert result["priority"] == "HIGH"
     assert result["doctor_review_recommended"] is True
 
@@ -190,3 +190,35 @@ def test_workbench_dispatch_medical_agent():
     assert data["action_performed"] == "analyze_lab_report"
     assert data["output"]["agent_id"] == "AGENT-MEDICAL-02"
     assert data["output"]["result_data"]["priority"] == "HIGH"
+
+def test_medical_agent_soap_summary():
+    agent = MedicalAgent()
+    result = agent.execute("get_medical_summary", {"patient_id": "PAT-1001"})
+    assert result["success"] is True
+    assert "soap_note" in result
+    assert "subjective" in result["soap_note"]
+    assert "assessment" in result["soap_note"]
+    assert "plan" in result["soap_note"]
+
+def test_clinical_decision_support():
+    agent = MedicalAgent()
+    result = agent.execute("clinical_decision_support", {
+        "patient_id": "PAT-1001",
+        "proposal_id": "PROP-MED-4091"
+    })
+    assert result["success"] is True
+    assert result["safety_status"] == "APPROVED_FOR_CLINICAL_SIGN_OFF"
+    assert len(result["contraindications"]) >= 2
+
+def test_sign_clinical_order():
+    agent = MedicalAgent()
+    result = agent.execute("sign_clinical_order", {
+        "patient_id": "PAT-1001",
+        "doctor_id": "DOC-101",
+        "approved_by": "Dr. Rajesh Mehta, MD",
+        "clinician_notes": "Approved after comprehensive contraindication clearance."
+    })
+    assert result["success"] is True
+    assert result["status"] == "ORDER_SIGNED"
+    assert "prescription_id" in result
+    assert result["signed_by"] == "Dr. Rajesh Mehta, MD"

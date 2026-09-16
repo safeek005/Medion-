@@ -31,9 +31,17 @@ class AppointmentAgent(BaseAgent):
             return appointment_service.cancel_appointment(payload)
         elif action_clean == "reschedule_appointment":
             return appointment_service.reschedule_appointment(payload)
+        elif action_clean == "update_appointment_status":
+            return appointment_service.update_appointment_status(payload)
+        elif action_clean == "complete_appointment":
+            return appointment_service.complete_appointment(payload)
+        elif action_clean == "get_patient_appointments":
+            return appointment_service.get_patient_appointments(payload)
+        elif action_clean == "schedule_follow_up":
+            return appointment_service.schedule_follow_up(payload)
         else:
             raise ValueError(
                 f"Action '{action}' is not supported by Appointment Agent. "
-                "Supported actions: get_available_slots, book_appointment, get_appointment, cancel_appointment, reschedule_appointment."
+                "Supported actions: get_available_slots, book_appointment, get_appointment, get_patient_appointments, cancel_appointment, reschedule_appointment, update_appointment_status, complete_appointment, schedule_follow_up."
             )
 

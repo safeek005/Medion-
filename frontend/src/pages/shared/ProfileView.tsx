@@ -2,22 +2,35 @@ import React from 'react';
 import { UserRole } from '../../types';
 import { User, ShieldCheck } from 'lucide-react';
 import { Badge } from '../../components/ui/Badge';
+import { useAuth } from '../../services/authService';
 
 interface ProfileViewProps {
   role: UserRole;
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({ role }) => {
+  const { user } = useAuth();
+
   const getProfileInfo = (r: UserRole) => {
+    if (r === 'patient' && user) {
+      return {
+        name: user.name || 'Registered Patient',
+        title: 'Registered Patient',
+        department: `Outpatient Services (${user.id || 'PAT-1025'})`,
+        email: user.email || 'patient@example.com',
+        phone: (user as any).phone || '+91 98450 12345',
+        facility: 'Coimbatore Medical Center (Main Campus)',
+      };
+    }
     switch (r) {
-      case 'doctor': return { name: 'Dr. Rajesh Mehta', title: 'Senior Cardiologist', department: 'Department of Cardiology', email: 'dr.mehta@medionhealth.org', phone: '+91 9876500001', facility: 'MEDION Hospital HOSP-001' };
-      case 'nurse': return { name: 'Nurse Reka', title: 'Clinical Operations Lead', department: 'Inpatient & Ambulatory Operations', email: 'nurse.reka@medionhealth.org', phone: '+91 9876500002', facility: 'MEDION Hospital HOSP-001' };
-      case 'patient': return { name: 'Arun Kumar', title: 'Registered Patient', department: 'General Care (PAT-1001)', email: 'arun.kumar@example.com', phone: '+91 9876543210', facility: 'MEDION Health System' };
-      case 'lab': return { name: 'Lab Tech Manager', title: 'Laboratory Specialist', department: 'Diagnostic Pathology (LAB-001)', email: 'lab.tech@medionlabs.org', phone: '+91 9876500003', facility: 'Central Diagnostics Lab' };
-      case 'insurance': return { name: 'Claims Officer', title: 'Payer Adjudicator', department: 'Insurance & Claims Operations', email: 'claims@medioncare.com', phone: '+91 9876500004', facility: 'Star Health & Allied Insurance' };
-      case 'hospital': return { name: 'Hospital Administrator', title: 'Chief Operations Officer', department: 'Executive Hospital Administration', email: 'admin@medionhealth.org', phone: '+91 9876500005', facility: 'MEDION Health Network' };
-      case 'receptionist': return { name: 'Priya Sharma', title: 'Lead Receptionist & Triage', department: 'Front Desk & Patient Onboarding', email: 'reception.priya@medionhealth.org', phone: '+91 9876500006', facility: 'MEDION Hospital HOSP-001' };
-      default: return { name: 'Staff Member', title: 'Clinical Staff', department: 'MEDION Healthcare', email: 'staff@medionhealth.org', phone: '+91 9876500000', facility: 'MEDION Health Network' };
+      case 'doctor': return { name: user?.name || 'Dr. Rajesh Mehta', title: 'Senior Cardiologist & Department Head', department: 'Department of Cardiology', email: user?.email || 'dr.mehta@medionhealth.org', phone: '+91 98765 00001', facility: 'Coimbatore Medical Center (Main Campus)' };
+      case 'nurse': return { name: user?.name || 'Nurse Reka', title: 'Clinical Operations Lead', department: 'Inpatient & Ambulatory Operations', email: user?.email || 'nurse.reka@medionhealth.org', phone: '+91 98765 00002', facility: 'Coimbatore Medical Center (Main Campus)' };
+      case 'patient': return { name: 'Kavya Sharma', title: 'Registered Patient', department: 'Outpatient Services (PAT-1025)', email: 'kavya.sharma@example.com', phone: '+91 98450 12345', facility: 'Coimbatore Medical Center (Main Campus)' };
+      case 'lab': return { name: user?.name || 'Lab Tech Manager', title: 'Laboratory Specialist', department: 'Diagnostic Pathology (LAB-001)', email: user?.email || 'lab.tech@medionlabs.org', phone: '+91 98765 00003', facility: 'Central Diagnostics Lab • CMC Wing B' };
+      case 'insurance': return { name: user?.name || 'Officer Rajesh Patel', title: 'Senior Adjudication Officer', department: 'Payer Relations & Claims Operations', email: user?.email || 'claims@medioncare.com', phone: '+91 98765 00004', facility: 'Star Health & Allied TPA Gateway' };
+      case 'hospital': return { name: user?.name || 'Hospital Administrator', title: 'Chief Operating Officer', department: 'Executive Hospital Administration', email: user?.email || 'admin@medionhealth.org', phone: '+91 98765 00005', facility: 'Coimbatore Medical Center Network' };
+      case 'receptionist': return { name: user?.name || 'Priya Sharma', title: 'Lead Receptionist & Triage', department: 'Front Desk & Ambulatory Intake', email: user?.email || 'reception.priya@medionhealth.org', phone: '+91 98765 00006', facility: 'Coimbatore Medical Center (Main Campus)' };
+      default: return { name: user?.name || 'Clinical Staff Member', title: 'Clinical Staff', department: 'MEDION Healthcare', email: user?.email || 'staff@medionhealth.org', phone: '+91 98765 00000', facility: 'Coimbatore Medical Center (Main Campus)' };
     }
   };
 

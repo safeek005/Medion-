@@ -32,8 +32,10 @@ class PatientAgent(BaseAgent):
             return patient_service.update_patient(payload)
         elif action_clean == "get_patient_history":
             return patient_service.get_patient_history(payload)
+        elif action_clean == "get_patient_prescriptions":
+            return patient_service.get_patient_prescriptions(payload)
         else:
             raise ValueError(
                 f"Action '{action}' is not supported by Patient Agent. "
-                "Supported actions: register_patient, get_patient, search_patient, update_patient, get_patient_history."
+                "Supported actions: register_patient, get_patient, search_patient, update_patient, get_patient_history, get_patient_prescriptions."
             )

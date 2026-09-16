@@ -32,9 +32,15 @@ class MedicalAgent(BaseAgent):
             return medical_service.get_medical_summary(payload)
         elif action_clean == "explain_lab_report":
             return medical_service.explain_lab_report(payload)
+        elif action_clean == "clinical_decision_support":
+            return medical_service.clinical_decision_support(payload)
+        elif action_clean == "sign_clinical_order":
+            return medical_service.sign_clinical_order(payload)
+        elif action_clean == "clinical_review":
+            return medical_service.clinical_review(payload)
         else:
             raise ValueError(
                 f"Action '{action}' is not supported by Medical Agent. "
-                "Supported actions: extract_lab_report, analyze_lab_report, compare_lab_reports, get_medical_summary, explain_lab_report."
+                "Supported actions: extract_lab_report, analyze_lab_report, compare_lab_reports, get_medical_summary, explain_lab_report, clinical_decision_support, sign_clinical_order, clinical_review."
             )
 

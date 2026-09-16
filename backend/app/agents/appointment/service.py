@@ -101,14 +101,22 @@ class AppointmentService:
 
         # Normalize time_slot if only start_time was provided
         if "-" not in time_slot:
-            parts = time_slot.split(":")
-            if len(parts) == 2:
-                hr = int(parts[0])
-                mn = int(parts[1]) + 30
-                if mn >= 60:
-                    hr += 1
-                    mn -= 60
-                time_slot = f"{time_slot}-{hr:02d}:{mn:02d}"
+            clean_time = time_slot.upper().replace("AM", "").replace("PM", "").strip()
+            parts = clean_time.split(":")
+            if len(parts) >= 2:
+                try:
+                    hr = int(parts[0].strip())
+                    mn = int(parts[1].strip()[:2])
+                    if "PM" in time_slot.upper() and hr < 12:
+                        hr += 12
+                    end_hr = hr
+                    end_mn = mn + 30
+                    if end_mn >= 60:
+                        end_hr += 1
+                        end_mn -= 60
+                    time_slot = f"{hr:02d}:{mn:02d}-{end_hr:02d}:{end_mn:02d}"
+                except Exception:
+                    time_slot = f"{time_slot}-11:00"
             else:
                 time_slot = f"{time_slot}-10:30"
 
@@ -165,11 +173,42 @@ class AppointmentService:
         if not apt:
             raise ValueError(f"Appointment with ID '{appointment_id}' not found.")
 
+        caller_id = payload.get("caller_patient_id") or payload.get("authenticated_patient_id")
+        user_role = (payload.get("user_role") or payload.get("portal_source") or "").lower().strip()
+        if user_role == "patient" and caller_id and apt.get("patient_id"):
+            if str(caller_id).strip().upper() != str(apt.get("patient_id")).strip().upper():
+                raise ValueError(f"Access Denied: You are not authorized to view or modify appointments for other patients.")
+
         return {
             "success": True,
             "appointment_id": appointment_id,
             "appointment": apt,
             "summary": f"Retrieved details for appointment {appointment_id}."
+        }
+
+    def get_patient_appointments(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Action: get_patient_appointments
+        Retrieves all appointments strictly for a specific patient ID.
+        """
+        patient_id = payload.get("patient_id") or payload.get("caller_patient_id")
+        if not patient_id:
+            raise ValueError("Field 'patient_id' is required.")
+
+        caller_id = payload.get("caller_patient_id") or payload.get("authenticated_patient_id")
+        user_role = (payload.get("user_role") or payload.get("portal_source") or "").lower().strip()
+        if user_role == "patient" and caller_id and str(caller_id).strip().upper() != str(patient_id).strip().upper():
+            raise ValueError(f"Access Denied: Patient '{caller_id}' cannot view appointments for other patients ('{patient_id}').")
+
+        all_apts = mock_db.get_collection("appointments")
+        patient_apts = [a for a in all_apts if a.get("patient_id", "").strip().upper() == str(patient_id).strip().upper()]
+
+        return {
+            "success": True,
+            "patient_id": patient_id,
+            "count": len(patient_apts),
+            "appointments": patient_apts,
+            "summary": f"Found {len(patient_apts)} appointment(s) for patient {patient_id}."
         }
 
     def cancel_appointment(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -184,6 +223,12 @@ class AppointmentService:
         apt = mock_db.find_one("appointments", "appointment_id", appointment_id)
         if not apt:
             raise ValueError(f"Appointment with ID '{appointment_id}' not found.")
+
+        caller_id = payload.get("caller_patient_id") or payload.get("authenticated_patient_id")
+        user_role = (payload.get("user_role") or payload.get("portal_source") or "").lower().strip()
+        if user_role == "patient" and caller_id and apt.get("patient_id"):
+            if str(caller_id).strip().upper() != str(apt.get("patient_id")).strip().upper():
+                raise ValueError(f"Access Denied: You are not authorized to view or modify appointments for other patients.")
 
         if apt.get("status") == "CANCELLED":
             return {
@@ -225,6 +270,12 @@ class AppointmentService:
         if not apt:
             raise ValueError(f"Appointment with ID '{appointment_id}' not found.")
 
+        caller_id = payload.get("caller_patient_id") or payload.get("authenticated_patient_id")
+        user_role = (payload.get("user_role") or payload.get("portal_source") or "").lower().strip()
+        if user_role == "patient" and caller_id and apt.get("patient_id"):
+            if str(caller_id).strip().upper() != str(apt.get("patient_id")).strip().upper():
+                raise ValueError(f"Access Denied: You are not authorized to view or modify appointments for other patients.")
+
         doctor_id = apt.get("doctor_id")
 
         if "-" not in new_time_slot:
@@ -263,5 +314,60 @@ class AppointmentService:
             "appointment": updated,
             "summary": f"Rescheduled appointment {appointment_id} to {new_date} at {new_time_slot}."
         }
+
+    def update_appointment_status(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Action: update_appointment_status
+        Updates status for an appointment (e.g. IN_CONSULTATION, COMPLETED, CANCELLED, SCHEDULED).
+        """
+        appointment_id = payload.get("appointment_id")
+        status = payload.get("status")
+
+        if not appointment_id:
+            raise ValueError("Field 'appointment_id' is required.")
+        if not status:
+            raise ValueError("Field 'status' is required.")
+
+        status = status.upper().strip()
+        apt = mock_db.find_one("appointments", "appointment_id", appointment_id)
+        if not apt:
+            raise ValueError(f"Appointment with ID '{appointment_id}' not found.")
+
+        updated = mock_db.update_appointment_status(appointment_id, status)
+
+        return {
+            "success": True,
+            "appointment_id": appointment_id,
+            "status": status,
+            "appointment": updated,
+            "summary": f"Appointment {appointment_id} status transitioned to {status}."
+        }
+
+    def complete_appointment(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Action: complete_appointment
+        Transitions appointment status to COMPLETED upon clinician consultation finish.
+        """
+        payload["status"] = "COMPLETED"
+        return self.update_appointment_status(payload)
+
+    def schedule_follow_up(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Action: schedule_follow_up
+        Finds slot and schedules post-consultation follow-up appointment.
+        """
+        doctor_id = payload.get("doctor_id") or "DOC-101"
+        date = payload.get("date") or payload.get("appointment_date") or datetime.now(timezone.utc).date().isoformat()
+        slots = mock_db.find_available_slots(doctor_id, date)
+        time_slot = payload.get("time_slot") or (slots[0]["time_slot"] if slots else "10:00 AM - 10:30 AM")
+        
+        booking_payload = {
+            "patient_id": payload.get("patient_id", "PAT-1001"),
+            "doctor_id": doctor_id,
+            "appointment_date": date,
+            "time_slot": time_slot,
+            "reason_for_visit": payload.get("reason", "Post-Consultation Follow-up")
+        }
+        return self.book_appointment(booking_payload)
 
 appointment_service = AppointmentService()

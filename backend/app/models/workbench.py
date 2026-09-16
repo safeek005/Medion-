@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from datetime import datetime, timezone
 
 class WorkbenchRequest(BaseModel):
@@ -8,6 +8,18 @@ class WorkbenchRequest(BaseModel):
     action: str = Field(..., description="Action or query command to perform")
     portal_source: Optional[str] = Field(None, description="Originating portal: doctor | nurse | patient | lab | hospital")
     payload: Dict[str, Any] = Field(default_factory=dict, description="Input data payload for the targeted agent")
+
+    @model_validator(mode="before")
+    @classmethod
+    def assemble_payload(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            core_keys = {"workflow_id", "agent_target", "action", "portal_source", "payload"}
+            payload = dict(data.get("payload") or {})
+            for k, v in data.items():
+                if k not in core_keys and k not in payload:
+                    payload[k] = v
+            data["payload"] = payload
+        return data
 
 class AgentOutput(BaseModel):
     agent_id: str

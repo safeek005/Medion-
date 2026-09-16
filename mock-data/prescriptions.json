@@ -3,13 +3,23 @@
     "prescription_id": "RX-1001",
     "patient_id": "PAT-1001",
     "doctor_id": "DOC-101",
-    "issued_date": "2024-06-15",
+    "issued_date": "2026-09-10",
+    "prescribed_date": "2026-09-10",
+    "status": "ACTIVE",
+    "instructions": "Titrated dual regimen approved by Dr. Rajesh Mehta, MD.",
     "medications": [
       {
         "name": "Amlodipine",
-        "dosage": "5 mg",
+        "dosage": "10 mg",
         "frequency": "Once daily (Morning)",
-        "duration_days": 90,
+        "duration_days": 30,
+        "instructions": "Take with water after breakfast"
+      },
+      {
+        "name": "Telmisartan",
+        "dosage": "40 mg",
+        "frequency": "Once daily (Morning)",
+        "duration_days": 30,
         "instructions": "Take with water after breakfast"
       },
       {
@@ -26,11 +36,14 @@
     "prescription_id": "RX-1002",
     "patient_id": "PAT-1002",
     "doctor_id": "DOC-102",
-    "issued_date": "2024-07-20",
+    "issued_date": "2026-08-10",
+    "prescribed_date": "2026-08-10",
+    "status": "ACTIVE",
+    "instructions": "Daily thyroid hormone replacement.",
     "medications": [
       {
         "name": "Levothyroxine Sodium",
-        "dosage": "25 mcg",
+        "dosage": "50 mcg",
         "frequency": "Once daily (Early Morning)",
         "duration_days": 60,
         "instructions": "Take on empty stomach 30 mins before breakfast"

@@ -30,9 +30,12 @@ class AssistantAgent(BaseAgent):
             return assistant_service.format_response(payload)
         elif action_clean == "handle_clarification":
             return assistant_service.handle_clarification(payload)
+        elif action_clean == "coordinate_patient_care":
+            from app.services.automation_service import automation_service
+            return automation_service.auto_20_care_coordination(payload)
         else:
             raise ValueError(
                 f"Action '{action}' is not supported by Assistant Agent. "
-                "Supported actions: interpret_request, extract_parameters, create_workbench_request, format_response, handle_clarification."
+                "Supported actions: interpret_request, extract_parameters, create_workbench_request, format_response, handle_clarification, coordinate_patient_care."
             )
 

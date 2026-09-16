@@ -21,12 +21,12 @@ def test_get_available_slots():
     agent = AppointmentAgent()
     payload = {
         "doctor_id": "DOC-101",
-        "date": "2024-09-10"
+        "date": "2026-09-16"
     }
     result = agent.execute("get_available_slots", payload)
     assert result["success"] is True
     assert result["count"] >= 1
-    # 10:00-10:30 is already booked in APT-1001 for 2024-09-10, so it should not be in available_slots
+    # 10:00-10:30 is already booked in APT-1001 for 2026-09-16, so it should not be in available_slots
     slots = [s["time_slot"] for s in result["available_slots"]]
     assert "10:00-10:30" not in slots
     assert "11:00-11:30" in slots
@@ -48,12 +48,12 @@ def test_book_appointment_success():
 
 def test_book_appointment_slot_conflict():
     agent = AppointmentAgent()
-    # Try to book 10:00-10:30 on 2024-09-10 which is already occupied by APT-1001
+    # Try to book 10:00-10:30 on 2026-09-16 which is already occupied by APT-1001
     payload = {
         "patient_id": "PAT-1002",
         "doctor_id": "DOC-101",
         "hospital_id": "HOSP-001",
-        "date": "2024-09-10",
+        "date": "2026-09-16",
         "time_slot": "10:00-10:30"
     }
     with pytest.raises(ValueError, match="already booked"):
@@ -130,3 +130,30 @@ def test_workbench_dispatch_appointment_agent():
     assert data["target_agent"] == "Appointment Agent"
     assert data["action_performed"] == "get_available_slots"
     assert data["output"]["agent_id"] == "AGENT-APPOINTMENT-03"
+
+def test_update_appointment_status_and_complete():
+    agent = AppointmentAgent()
+    # Book a test appointment first
+    booked = agent.execute("book_appointment", {
+        "patient_id": "PAT-1001",
+        "doctor_id": "DOC-101",
+        "hospital_id": "HOSP-001",
+        "date": "2024-11-20",
+        "time_slot": "10:00-10:30"
+    })
+    apt_id = booked["appointment_id"]
+
+    # Transition to IN_CONSULTATION
+    res_in_consult = agent.execute("update_appointment_status", {
+        "appointment_id": apt_id,
+        "status": "IN_CONSULTATION"
+    })
+    assert res_in_consult["success"] is True
+    assert res_in_consult["status"] == "IN_CONSULTATION"
+
+    # Complete appointment
+    res_complete = agent.execute("complete_appointment", {
+        "appointment_id": apt_id
+    })
+    assert res_complete["success"] is True
+    assert res_complete["status"] == "COMPLETED"

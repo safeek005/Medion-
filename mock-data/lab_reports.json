@@ -5,8 +5,8 @@
     "doctor_id": "DOC-101",
     "lab_id": "LAB-001",
     "test_name": "Comprehensive Blood & Lipid Panel",
-    "collection_date": "2024-06-14T08:00:00Z",
-    "result_date": "2024-06-14T16:30:00Z",
+    "collection_date": "2026-09-10T08:00:00Z",
+    "result_date": "2026-09-10T16:30:00Z",
     "status": "COMPLETED",
     "test_results": [
       {
@@ -26,45 +26,201 @@
         "flagged": true
       },
       {
+        "test_parameter": "HDL Cholesterol",
+        "value": 44.0,
+        "unit": "mg/dL",
+        "reference_range": "> 40",
+        "status": "NORMAL",
+        "flagged": false
+      },
+      {
+        "test_parameter": "LDL Cholesterol",
+        "value": 142.0,
+        "unit": "mg/dL",
+        "reference_range": "< 100",
+        "status": "HIGH",
+        "flagged": true
+      },
+      {
+        "test_parameter": "Triglycerides",
+        "value": 168.0,
+        "unit": "mg/dL",
+        "reference_range": "< 150",
+        "status": "HIGH",
+        "flagged": true
+      },
+      {
         "test_parameter": "Fasting Blood Sugar",
         "value": 92.0,
         "unit": "mg/dL",
         "reference_range": "70 - 99",
         "status": "NORMAL",
         "flagged": false
+      },
+      {
+        "test_parameter": "Serum Creatinine",
+        "value": 0.95,
+        "unit": "mg/dL",
+        "reference_range": "0.7 - 1.3",
+        "status": "NORMAL",
+        "flagged": false
       }
     ],
-    "lab_technician_notes": "Sample hemolyzed slightly; repeat CBC if anemia symptoms persist.",
-    "summary": "Low hemoglobin (10.4 g/dL) and mildly elevated Total Cholesterol (215 mg/dL) detected."
+    "lab_technician_notes": "Specimen verified. Borderline dyslipidemia and mild anemia noted.",
+    "summary": "Mild microcytic anemia index (Hb 10.4 g/dL) and atherogenic dyslipidemia (LDL 142 mg/dL, Triglycerides 168 mg/dL) identified. Renal markers stable."
+  },
+  {
+    "report_id": "LABR-0990",
+    "patient_id": "PAT-1001",
+    "doctor_id": "DOC-101",
+    "lab_id": "LAB-001",
+    "test_name": "Comprehensive Blood & Lipid Panel (Baseline)",
+    "collection_date": "2026-03-12T08:00:00Z",
+    "result_date": "2026-03-12T15:30:00Z",
+    "status": "COMPLETED",
+    "test_results": [
+      {
+        "test_parameter": "Hemoglobin",
+        "value": 11.2,
+        "unit": "g/dL",
+        "reference_range": "13.5 - 17.5",
+        "status": "LOW",
+        "flagged": true
+      },
+      {
+        "test_parameter": "Total Cholesterol",
+        "value": 228.0,
+        "unit": "mg/dL",
+        "reference_range": "< 200",
+        "status": "HIGH",
+        "flagged": true
+      },
+      {
+        "test_parameter": "HDL Cholesterol",
+        "value": 41.0,
+        "unit": "mg/dL",
+        "reference_range": "> 40",
+        "status": "NORMAL",
+        "flagged": false
+      },
+      {
+        "test_parameter": "LDL Cholesterol",
+        "value": 155.0,
+        "unit": "mg/dL",
+        "reference_range": "< 100",
+        "status": "HIGH",
+        "flagged": true
+      },
+      {
+        "test_parameter": "Triglycerides",
+        "value": 185.0,
+        "unit": "mg/dL",
+        "reference_range": "< 150",
+        "status": "HIGH",
+        "flagged": true
+      },
+      {
+        "test_parameter": "Fasting Blood Sugar",
+        "value": 98.0,
+        "unit": "mg/dL",
+        "reference_range": "70 - 99",
+        "status": "NORMAL",
+        "flagged": false
+      },
+      {
+        "test_parameter": "Serum Creatinine",
+        "value": 0.98,
+        "unit": "mg/dL",
+        "reference_range": "0.7 - 1.3",
+        "status": "NORMAL",
+        "flagged": false
+      }
+    ],
+    "lab_technician_notes": "Baseline lipid workup. Fasting status confirmed (12 hours).",
+    "summary": "Baseline assessment: Elevated total cholesterol (228 mg/dL) and LDL (155 mg/dL), mild anemia (Hb 11.2 g/dL)."
   },
   {
     "report_id": "LABR-1002",
     "patient_id": "PAT-1002",
     "doctor_id": "DOC-102",
     "lab_id": "LAB-001",
-    "test_name": "Thyroid Profile (T3, T4, TSH)",
-    "collection_date": "2024-07-19T07:30:00Z",
-    "result_date": "2024-07-19T14:00:00Z",
+    "test_name": "Comprehensive Thyroid Function Panel",
+    "collection_date": "2026-08-10T07:30:00Z",
+    "result_date": "2026-08-10T14:00:00Z",
     "status": "COMPLETED",
     "test_results": [
       {
-        "test_parameter": "TSH",
-        "value": 6.2,
+        "test_parameter": "Thyroid Stimulating Hormone (TSH)",
+        "value": 5.85,
         "unit": "uIU/mL",
-        "reference_range": "0.4 - 4.2",
+        "reference_range": "0.4 - 4.0",
         "status": "HIGH",
         "flagged": true
       },
       {
-        "test_parameter": "Free T4",
-        "value": 1.1,
+        "test_parameter": "Free Thyroxine (FT4)",
+        "value": 1.05,
         "unit": "ng/dL",
         "reference_range": "0.8 - 1.8",
+        "status": "NORMAL",
+        "flagged": false
+      },
+      {
+        "test_parameter": "Free Triiodothyronine (FT3)",
+        "value": 2.8,
+        "unit": "pg/mL",
+        "reference_range": "2.3 - 4.2",
         "status": "NORMAL",
         "flagged": false
       }
     ],
     "lab_technician_notes": "All control runs within expected range.",
-    "summary": "TSH elevated at 6.2 uIU/mL indicating subclinical hypothyroidism."
+    "summary": "TSH elevated at 5.85 uIU/mL indicating subclinical hypothyroidism."
+  },
+  {
+    "report_id": "LABR-1025",
+    "patient_id": "PAT-1025",
+    "doctor_id": "DOC-101",
+    "lab_id": "LAB-001",
+    "test_name": "Complete Blood Count & Metabolic Profile",
+    "collection_date": "2026-09-01T08:00:00Z",
+    "result_date": "2026-09-01T14:30:00Z",
+    "status": "COMPLETED",
+    "test_results": [
+      {
+        "test_parameter": "Hemoglobin",
+        "value": 13.2,
+        "unit": "g/dL",
+        "reference_range": "12.0 - 15.5",
+        "status": "NORMAL",
+        "flagged": false
+      },
+      {
+        "test_parameter": "Total Cholesterol",
+        "value": 175.0,
+        "unit": "mg/dL",
+        "reference_range": "< 200",
+        "status": "NORMAL",
+        "flagged": false
+      },
+      {
+        "test_parameter": "Fasting Blood Sugar",
+        "value": 88.0,
+        "unit": "mg/dL",
+        "reference_range": "70 - 99",
+        "status": "NORMAL",
+        "flagged": false
+      },
+      {
+        "test_parameter": "Serum Creatinine",
+        "value": 0.85,
+        "unit": "mg/dL",
+        "reference_range": "0.6 - 1.2",
+        "status": "NORMAL",
+        "flagged": false
+      }
+    ],
+    "lab_technician_notes": "Specimen integrity preserved. Fasting verified.",
+    "summary": "Normal hematology and metabolic values. All parameters within target range."
   }
 ]

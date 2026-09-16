@@ -74,7 +74,7 @@ export const InsuranceResultCard: React.FC<InsuranceResultCardProps> = ({ data, 
   }
 
   // Policy verification / Coverage
-  const policyId = policy.policy_id || data?.policy_id || 'POL-701';
+  const policyId = policy.policy_id || data?.policy_id || 'N/A';
   const provider = policy.provider_name || 'Health Insurance Provider';
   const planType = policy.plan_type || data?.plan_type || 'Comprehensive Coverage';
   const status = policy.status || data?.status || 'ACTIVE';

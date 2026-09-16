@@ -19,6 +19,7 @@ import {
   Stethoscope,
 } from 'lucide-react';
 import { PageHeader, SectionHeader } from '../../components/common/SharedComponents';
+import { WorkspaceHeader } from '../../components/common/WorkspaceHeader';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { DataTable } from '../../components/ui/DataTable';
@@ -283,11 +284,20 @@ export const ReceptionistWorkspace: React.FC<ReceptionistWorkspaceProps> = ({
   ];
 
   return (
-    <div style={{ padding: '2rem', maxWidth: 1280, margin: '0 auto' }}>
-      <PageHeader
-        title="Reception & Patient Intake"
-        subtitle="MEDION Hospital Network (HOSP-001) • Patient registration, doctor triage, and schedule management"
-        badge={<Badge variant="green">Reception Desk 01 • Online</Badge>}
+    <div style={{ padding: '1.5rem 2rem', maxWidth: 1400, margin: '0 auto' }}>
+      <WorkspaceHeader
+        title="Reception & Patient Intake Desk"
+        subtitle="MEDION Hospital Network • Outpatient Registration, Arrivals Triage & Schedule Management"
+        facility="MEDION Main Campus Hospital (HOSP-001)"
+        department="Central Outpatient Reception & Admissions"
+        statusText="Reception Desk 01 • Active"
+        statusVariant="active"
+        metrics={[
+          { label: "Today's Bookings", value: `${appointments.length} Scheduled` },
+          { label: 'Checked In', value: `${appointments.filter((a) => a.status === 'COMPLETED').length} Arrived`, accent: 'var(--clinical-green)' },
+          { label: 'Waiting Room', value: `${appointments.filter((a) => a.status === 'SCHEDULED').length} Waiting` },
+          { label: 'Doctors in Clinic', value: `${doctors.length} Available` },
+        ]}
         actions={
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <Button

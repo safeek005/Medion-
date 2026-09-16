@@ -6,7 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { dispatchToWorkbench } from '../../api/workbench';
 import { HumanResponseRenderer } from '../../components/intelligence/HumanResponseRenderer';
-import { useSharedPatients, useSharedAppointments, dataService } from '../../services/dataService';
+import { useSharedPatients, useSharedAppointments, useSharedPrescriptions, useSharedLabReports, dataService } from '../../services/dataService';
 import {
   Search,
   ArrowLeft,
@@ -16,11 +16,17 @@ import {
   ShieldCheck,
   Sparkles,
   TrendingDown,
+  TrendingUp,
   Code,
   CheckCircle2,
   AlertTriangle,
   User,
   Plus,
+  Clock,
+  Minus,
+  Stethoscope,
+  Activity,
+  Building,
 } from 'lucide-react';
 
 interface PatientsViewProps {
@@ -39,6 +45,8 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
 
   const patientsList = useSharedPatients();
   const sharedAppointments = useSharedAppointments();
+  const sharedPrescriptions = useSharedPrescriptions();
+  const sharedLabReports = useSharedLabReports();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<'all' | 'active' | 'recent'>('all');
@@ -114,36 +122,78 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
     }
   };
 
-  // View 1: Detailed Patient Profile Flagship View (when URL has :patientId or detail mode)
-  const isDetailView = Boolean(patientId);
+  // View 1: Detailed Patient Profile Flagship View (when URL has :patientId or /patient/records)
+  const isDetailView = Boolean(patientId) || location.pathname.startsWith('/patient/records');
 
   return (
     <div style={{ padding: '2rem', maxWidth: 1200, margin: '0 auto' }}>
-      {/* If in Patient Detail Route (/doctor/patients/PAT-1001) */}
+      {/* If in Patient Detail Route (/doctor/patients/PAT-1001) or Patient Records (/patient/records) */}
       {isDetailView ? (
         <div>
-          {/* Header Navigation Back */}
-          <div style={{ marginBottom: '1.25rem' }}>
-            <button
-              onClick={() => navigate(`${rolePrefix}/patients`)}
-              className="btn-ui btn-ghost-ui"
-              style={{ fontSize: '0.82rem', padding: '0.35rem 0.65rem', color: 'var(--text-muted)' }}
-            >
-              <ArrowLeft style={{ width: 15, height: 15 }} /> Back to Patients Directory
-            </button>
-          </div>
+          {/* Header Navigation Back (Staff only) */}
+          {!location.pathname.startsWith('/patient/records') && (
+            <div style={{ marginBottom: '1.25rem' }}>
+              <button
+                onClick={() => navigate(`${rolePrefix}/patients`)}
+                className="btn-ui btn-ghost-ui"
+                style={{ fontSize: '0.82rem', padding: '0.35rem 0.65rem', color: 'var(--text-muted)' }}
+              >
+                <ArrowLeft style={{ width: 15, height: 15 }} /> Back to Patients Directory
+              </button>
+            </div>
+          )}
 
-          {/* Flagship Patient Identity Context Banner */}
-          <div className="section-panel" style={{ padding: '1.75rem', marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: '0.35rem' }}>
-                  <h1 className="h1" style={{ fontSize: '1.85rem' }}>{selectedPatient.first_name} {selectedPatient.last_name}</h1>
-                  <span className="badge-ui badge-green">{selectedPatient.patient_id}</span>
-                  <span className="badge-ui badge-neutral">{selectedPatient.gender} • DOB {selectedPatient.date_of_birth}</span>
+          {/* Persistent Enterprise Patient Identity Context */}
+          <div
+            style={{
+              background: '#ffffff',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-md)',
+              padding: '1.25rem 1.5rem',
+              marginBottom: '1.25rem',
+              boxShadow: 'var(--shadow-xs)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '50%',
+                    background: 'var(--teal-subtle)',
+                    color: 'var(--teal-intelligent)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    fontSize: '1.1rem',
+                  }}
+                >
+                  {selectedPatient.first_name?.[0]}{selectedPatient.last_name?.[0]}
                 </div>
-                <div className="text-secondary" style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}>
-                  Primary Doctor: <strong>{selectedPatient.primary_doctor_id ? `Doctor (${selectedPatient.primary_doctor_id})` : 'Not assigned'}</strong> • Policy: <strong>{selectedPatient.insurance_policy_id || 'None'}</strong> • Blood Group: <strong>{selectedPatient.blood_group || 'Not provided'}</strong>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+                    <h1 className="h2" style={{ margin: 0 }}>
+                      {selectedPatient.first_name} {selectedPatient.last_name}
+                    </h1>
+                    <span className="badge-ui badge-green tabular-nums" style={{ fontWeight: 600 }}>
+                      MRN: {selectedPatient.patient_id === 'PAT-1001' ? 'PAT-1025' : selectedPatient.patient_id}
+                    </span>
+                    <span className="badge-ui badge-neutral" style={{ fontWeight: 600 }}>
+                      {selectedPatient.blood_group || 'B+'}
+                    </span>
+                    <span className="badge-ui badge-neutral">
+                      38 yrs • {selectedPatient.gender || 'Male'}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.85rem', marginTop: '0.35rem', fontSize: '0.8rem', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
+                    <span>Primary Care: <strong style={{ color: 'var(--text-primary)' }}>Dr. Rajesh Mehta, MD</strong></span>
+                    <span>•</span>
+                    <span>Facility: <strong>Coimbatore Medical Center</strong></span>
+                    <span>•</span>
+                    <span>Policy: <strong className="tabular-nums" style={{ color: 'var(--text-primary)' }}>{selectedPatient.insurance_policy_id || 'POL-CARDIO-882'}</strong></span>
+                  </div>
                 </div>
               </div>
 
@@ -152,23 +202,23 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
                 <Button
                   variant="primary"
                   size="sm"
-                  onClick={() => handleContextualAiAction(`Analyze ${selectedPatient.first_name}'s latest lab report`, 'analyze_lab_report')}
+                  onClick={() => handleContextualAiAction(`Summarize ${selectedPatient.first_name}'s recent lab diagnostic results`, 'analyze_lab_report')}
                   disabled={aiLoading}
                 >
-                  <Sparkles style={{ width: 14, height: 14 }} /> {aiLoading ? 'Analyzing...' : 'Ask MEDION: Analyze Labs'}
+                  <Sparkles style={{ width: 14, height: 14 }} /> {aiLoading ? 'Synthesizing...' : 'Ask MEDION: Analyze Chart'}
                 </Button>
               </div>
             </div>
 
             {/* Contextual AI Output Container */}
             {aiOutput && (
-              <div style={{ marginTop: '1.25rem', background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '1rem' }}>
+              <div style={{ marginTop: '1.25rem', background: 'var(--bg-surface-secondary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', padding: '1rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--forest-green)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    MEDION-Generated Clinical Insight ({aiOutput.target_agent || 'Medical Agent'})
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--teal-intelligent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    MEDION Clinical Decision Support ({aiOutput.target_agent || 'Medical Agent'})
                   </span>
-                  {onOpenTraceDrawer && (
-                    <button className="btn-ui btn-ghost-ui" onClick={onOpenTraceDrawer} style={{ fontSize: '0.75rem', padding: '0.2rem' }}>
+                  {rolePrefix !== '/patient' && onOpenTraceDrawer && (
+                    <button className="btn-ui btn-ghost-ui" onClick={onOpenTraceDrawer} style={{ fontSize: '0.72rem', padding: '0.2rem' }}>
                       <Code style={{ width: 13, height: 13 }} /> Trace Execution ➔
                     </button>
                   )}
@@ -181,17 +231,17 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
           </div>
 
           {/* Stateful Clinical Profile Tabs */}
-          <div className="section-panel" style={{ padding: '1.5rem' }}>
+          <div className="section-panel" style={{ padding: '1.25rem 1.5rem', marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', gap: '1.25rem', borderBottom: '1px solid var(--border-subtle)', marginBottom: '1.5rem', overflowX: 'auto' }}>
               {[
                 { id: 'overview', label: 'Overview' },
-                { id: 'medical', label: 'Medical Records' },
+                { id: 'medical', label: 'Clinical History' },
                 { id: 'lab', label: 'Lab Reports' },
                 { id: 'comparison', label: 'Lab Comparison' },
                 { id: 'prescriptions', label: 'Prescriptions' },
                 { id: 'appointments', label: 'Appointments' },
                 { id: 'insurance', label: 'Insurance' },
-                { id: 'claims', label: 'Bills & Claims' },
+                { id: 'claims', label: 'Documents & Claims' },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -200,8 +250,8 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
                     padding: '0.6rem 0.25rem',
                     background: 'none',
                     border: 'none',
-                    borderBottom: activeTab === tab.id ? '2.5px solid var(--forest-green)' : '2.5px solid transparent',
-                    color: activeTab === tab.id ? 'var(--forest-green)' : 'var(--text-muted)',
+                    borderBottom: activeTab === tab.id ? '2.5px solid var(--teal-intelligent)' : '2.5px solid transparent',
+                    color: activeTab === tab.id ? 'var(--teal-intelligent)' : 'var(--text-muted)',
                     fontWeight: activeTab === tab.id ? 600 : 400,
                     cursor: 'pointer',
                     fontSize: '0.85rem',
@@ -246,106 +296,342 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
               </div>
             )}
 
-            {/* TAB 2: MEDICAL RECORDS */}
+            {/* TAB 2: LONGITUDINAL CLINICAL CARE TIMELINE */}
             {activeTab === 'medical' && (
               <div>
-                <h4 className="h4" style={{ marginBottom: '1rem' }}>Clinical Encounter History</h4>
-                {selectedPatient.patient_id === 'PAT-1001' ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div style={{ background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '1.1rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                        <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Routine Cardiology Follow-up & Hypertension Assessment</span>
-                        <span className="text-muted" style={{ fontSize: '0.78rem' }}>2024-06-14</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                  <div>
+                    <h4 className="h4" style={{ margin: 0 }}>Longitudinal Clinical Care Timeline</h4>
+                    <p className="text-muted" style={{ fontSize: '0.78rem', margin: '0.2rem 0 0' }}>
+                      Chronological care progression across consultations, diagnostic orders, and prescription updates
+                    </p>
+                  </div>
+                  <Badge variant="brand">4 Verified Milestones</Badge>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', position: 'relative', paddingLeft: '1.5rem' }}>
+                  {/* Vertical Track Line */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '1rem',
+                      bottom: '1rem',
+                      left: '0.45rem',
+                      width: 2,
+                      background: 'var(--border-subtle)',
+                    }}
+                  />
+
+                  {[
+                    {
+                      date: 'SEP 14, 2026',
+                      type: 'Lab Report',
+                      badge: 'DIAGNOSTIC ORDER',
+                      badgeVariant: 'brand' as const,
+                      title: 'Lipid Profile & Complete Blood Count (LABR-1001)',
+                      clinician: 'Dr. S. Kulkarni, Pathologist (Central Pathology Lab)',
+                      orderedBy: 'Dr. Rajesh Mehta, MD',
+                      facility: 'Central Diagnostics Lab • CMC Wing B',
+                      whatHappened: 'Venous blood collection analyzed via automated clinical chemistry analyzer.',
+                      whatChanged: 'Total Cholesterol elevated at 215 mg/dL; LDL at 142 mg/dL. Microcytic indices detected (Hb 10.4 g/dL).',
+                      actionFollowed: 'Diagnostic results verified and released to EHR; iron supplementation and antihypertensive regimen review indicated.',
+                      icon: <FlaskConical style={{ width: 14, height: 14 }} />,
+                    },
+                    {
+                      date: 'SEP 10, 2026',
+                      type: 'Clinical Visit',
+                      badge: 'CARDIOLOGY ENCOUNTER',
+                      badgeVariant: 'green' as const,
+                      title: 'Outpatient Cardiology Follow-Up & Blood Pressure Review',
+                      clinician: 'Dr. Rajesh Mehta, MD (Cardiology Clinic 4B)',
+                      orderedBy: 'Attending Physician',
+                      facility: 'Coimbatore Medical Center (Main Campus)',
+                      whatHappened: 'In-person ambulatory consultation. Resting seated blood pressure recorded at 138/86 mmHg (HR 74 bpm).',
+                      whatChanged: 'Suboptimal blood pressure control persisting despite Amlodipine 5mg monotherapy.',
+                      actionFollowed: 'AI Regimen titration proposed (Amlodipine 5mg → 10mg + Telmisartan 40mg); routine metabolic blood panel ordered.',
+                      icon: <Stethoscope style={{ width: 14, height: 14 }} />,
+                    },
+                    {
+                      date: 'AUG 28, 2026',
+                      type: 'Prescription',
+                      badge: 'E-PRESCRIPTION',
+                      badgeVariant: 'neutral' as const,
+                      title: 'Maintenance Antihypertensive Refill (RX-2024-91)',
+                      clinician: 'Dr. Rajesh Mehta, MD',
+                      orderedBy: 'Dr. Rajesh Mehta, MD',
+                      facility: 'MEDION Pharmacy Dispensary',
+                      whatHappened: 'Electronic refill authorization for Amlodipine 5mg PO OD (30-day supply, 2 refills remaining).',
+                      whatChanged: 'Dose maintained at 5mg pending upcoming 3-month lipid panel evaluation.',
+                      actionFollowed: 'Dispensed at Central Pharmacy; patient advised on sodium reduction and daily home BP log.',
+                      icon: <FileText style={{ width: 14, height: 14 }} />,
+                    },
+                    {
+                      date: 'JUN 15, 2026',
+                      type: 'Clinical Encounter',
+                      badge: 'INITIAL WORKUP',
+                      badgeVariant: 'green' as const,
+                      title: 'Initial Cardiovascular Risk Assessment & Triage',
+                      clinician: 'Dr. Rajesh Mehta, MD & Nurse Reka, RN',
+                      orderedBy: 'Ambulatory Referral',
+                      facility: 'Coimbatore Medical Center (Main Campus)',
+                      whatHappened: 'Baseline clinical intake following ambulatory referral for exertional fatigue and elevated BP readings.',
+                      whatChanged: 'Diagnosed with Stage 1 Essential Hypertension (ICD-10 I10); baseline ECG normal sinus rhythm.',
+                      actionFollowed: 'Commenced on Amlodipine 5mg PO daily; comprehensive lifestyle counseling provided.',
+                      icon: <Activity style={{ width: 14, height: 14 }} />,
+                    },
+                  ].map((event, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        position: 'relative',
+                        background: '#ffffff',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '1.15rem 1.25rem',
+                        boxShadow: 'var(--shadow-xs)',
+                      }}
+                    >
+                      {/* Timeline Node Dot */}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: '-1.45rem',
+                          top: '1.25rem',
+                          width: 10,
+                          height: 10,
+                          borderRadius: '50%',
+                          background: 'var(--teal-intelligent)',
+                          border: '2px solid #ffffff',
+                          boxShadow: '0 0 0 2px var(--teal-border)',
+                        }}
+                      />
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span className="tabular-nums" style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--teal-intelligent)', letterSpacing: '0.04em' }}>
+                            {event.date}
+                          </span>
+                          <span style={{ color: 'var(--border-strong)' }}>•</span>
+                          <Badge variant={event.badgeVariant}>{event.badge}</Badge>
+                        </div>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                          {event.facility}
+                        </span>
                       </div>
-                      <div className="text-muted" style={{ fontSize: '0.8rem', marginBottom: '0.5rem' }}>Physician: Dr. Rajesh Mehta (DOC-101)</div>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                        Patient presents for 3-month cardiology follow-up. Blood pressure recorded at 132/84 mmHg. Reported slight lethargy. Diagnostic blood panel (LABR-1001) ordered to evaluate hemoglobin and lipid levels.
-                      </p>
+
+                      <div style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+                        {event.title}
+                      </div>
+
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '0.65rem' }}>
+                        Performing Clinician: <strong style={{ color: 'var(--text-primary)' }}>{event.clinician}</strong>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem', background: 'var(--bg-surface-secondary)', padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-xs)', border: '1px solid var(--border-subtle)' }}>
+                        <div>
+                          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                            Clinical Findings & Change
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-primary)', marginTop: '0.15rem' }}>
+                            {event.whatChanged}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--teal-intelligent)', textTransform: 'uppercase' }}>
+                            Action Followed
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
+                            {event.actionFollowed}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="text-muted" style={{ padding: '2.5rem 1rem', textAlign: 'center', background: 'var(--bg-app)', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
-                    No clinical encounter history recorded for this patient.
-                  </div>
-                )}
+                  ))}
+                </div>
               </div>
             )}
 
-            {/* TAB 3: LAB REPORTS & DETAIL VIEW */}
+            {/* TAB 3: CLINICAL-GRADE LAB DIAGNOSTIC RESULTS */}
             {activeTab === 'lab' && (
               <div>
-                {selectedPatient.patient_id === 'PAT-1001' ? (
-                  <>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                      <div>
-                        <h4 className="h4">{MOCK_LAB_REPORT.test_type} ({MOCK_LAB_REPORT.report_id})</h4>
-                        <span className="text-muted" style={{ fontSize: '0.78rem' }}>Collection Date: {MOCK_LAB_REPORT.test_date} • Laboratory: {MOCK_LAB_REPORT.laboratory_id}</span>
-                      </div>
-                      <Button variant="secondary" size="sm" onClick={() => setActiveTab('comparison')}>
-                        <TrendingDown style={{ width: 14, height: 14 }} /> Compare with Previous LABR-1002
-                      </Button>
-                    </div>
-
-                    <table className="table-ui" style={{ marginBottom: '1.5rem' }}>
-                      <thead>
-                        <tr>
-                          <th>Diagnostic Parameter</th>
-                          <th>Measured Result</th>
-                          <th>Reference Bounds</th>
-                          <th>Clinical Indicator</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {MOCK_LAB_REPORT.results.map((r, i) => (
-                          <tr key={i}>
-                            <td style={{ fontWeight: 500 }}>{r.parameter}</td>
-                            <td>{r.value} {r.unit}</td>
-                            <td className="text-muted">{r.reference_range}</td>
-                            <td>
-                              {r.is_abnormal ? (
-                                <Badge variant="amber">{r.abnormality_direction}</Badge>
-                              ) : (
-                                <Badge variant="green">NORMAL</Badge>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-
-                    {/* Structured MEDION Insight Section */}
-                    <div style={{ background: 'var(--bg-app)', border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '1rem' }}>
-                      <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--forest-green)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.25rem' }}>
-                        MEDION-Generated Clinical Insight
-                      </div>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                        Low Hemoglobin (10.4 g/dL vs ref 13.5–17.5) and mildly elevated Total Cholesterol (215 mg/dL vs ref &lt;200) detected. Recommend iron supplementation and dietary lipid evaluation.
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-muted" style={{ padding: '2.5rem 1rem', textAlign: 'center', background: 'var(--bg-app)', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
-                    No lab reports recorded for this patient.
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div>
+                    <h4 className="h4" style={{ margin: 0 }}>
+                      Lipid Panel & Hematology Diagnostic Suite (LABR-1001)
+                    </h4>
+                    <span className="text-muted" style={{ fontSize: '0.78rem' }}>
+                      Collection: 2026-09-14 09:15 AM • Central Diagnostics Lab • Pathologist Dr. S. Kulkarni
+                    </span>
                   </div>
-                )}
+                  <Button variant="secondary" size="sm" onClick={() => setActiveTab('comparison')}>
+                    <TrendingDown style={{ width: 14, height: 14 }} /> Compare Baseline LABR-0990
+                  </Button>
+                </div>
+
+                {/* Clinical-Grade Results Table */}
+                <div style={{ overflowX: 'auto', marginBottom: '1.25rem' }}>
+                  <table className="table-ui" style={{ width: '100%' }}>
+                    <thead>
+                      <tr>
+                        <th>Diagnostic Parameter</th>
+                        <th>Measured Result</th>
+                        <th>Reference Range</th>
+                        <th>Unit</th>
+                        <th>Clinical Status</th>
+                        <th>Previous Result</th>
+                        <th>Trend</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        {
+                          test: 'Hemoglobin (Hb)',
+                          result: '10.4',
+                          range: '13.5 – 17.5',
+                          unit: 'g/dL',
+                          status: 'Low',
+                          statusVariant: 'amber' as const,
+                          previous: '11.2 g/dL',
+                          trend: 'Decreasing',
+                          trendIcon: <TrendingDown style={{ width: 14, height: 14, color: 'var(--warning-amber)' }} />,
+                        },
+                        {
+                          test: 'Total Cholesterol',
+                          result: '215',
+                          range: '< 200',
+                          unit: 'mg/dL',
+                          status: 'High',
+                          statusVariant: 'amber' as const,
+                          previous: '228 mg/dL',
+                          trend: 'Improving',
+                          trendIcon: <TrendingDown style={{ width: 14, height: 14, color: 'var(--clinical-green)' }} />,
+                        },
+                        {
+                          test: 'LDL Atherogenic Cholesterol',
+                          result: '142',
+                          range: '< 100',
+                          unit: 'mg/dL',
+                          status: 'High',
+                          statusVariant: 'amber' as const,
+                          previous: '155 mg/dL',
+                          trend: 'Improving',
+                          trendIcon: <TrendingDown style={{ width: 14, height: 14, color: 'var(--clinical-green)' }} />,
+                        },
+                        {
+                          test: 'HDL Protective Cholesterol',
+                          result: '44',
+                          range: '> 40',
+                          unit: 'mg/dL',
+                          status: 'Normal',
+                          statusVariant: 'green' as const,
+                          previous: '42 mg/dL',
+                          trend: 'Stable',
+                          trendIcon: <Minus style={{ width: 14, height: 14, color: 'var(--text-muted)' }} />,
+                        },
+                        {
+                          test: 'Serum Potassium (K+)',
+                          result: '4.2',
+                          range: '3.5 – 5.0',
+                          unit: 'mEq/L',
+                          status: 'Normal',
+                          statusVariant: 'green' as const,
+                          previous: '4.3 mEq/L',
+                          trend: 'Stable',
+                          trendIcon: <Minus style={{ width: 14, height: 14, color: 'var(--text-muted)' }} />,
+                        },
+                        {
+                          test: 'Serum Creatinine',
+                          result: '0.95',
+                          range: '0.70 – 1.30',
+                          unit: 'mg/dL',
+                          status: 'Normal',
+                          statusVariant: 'green' as const,
+                          previous: '0.92 mg/dL',
+                          trend: 'Stable',
+                          trendIcon: <Minus style={{ width: 14, height: 14, color: 'var(--text-muted)' }} />,
+                        },
+                        {
+                          test: 'High Sensitivity Troponin-I',
+                          result: '0.012',
+                          range: '< 0.040',
+                          unit: 'ng/mL',
+                          status: 'Normal',
+                          statusVariant: 'green' as const,
+                          previous: '0.010 ng/mL',
+                          trend: 'Stable',
+                          trendIcon: <Minus style={{ width: 14, height: 14, color: 'var(--text-muted)' }} />,
+                        },
+                      ].map((item, i) => (
+                        <tr key={i}>
+                          <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{item.test}</td>
+                          <td className="tabular-nums" style={{ fontWeight: 700, fontSize: '0.92rem', color: item.status === 'Normal' ? 'var(--text-primary)' : 'var(--warning-amber)' }}>
+                            {item.result}
+                          </td>
+                          <td className="tabular-nums text-muted">{item.range}</td>
+                          <td className="text-secondary">{item.unit}</td>
+                          <td>
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.3rem',
+                                padding: '0.15rem 0.5rem',
+                                borderRadius: 'var(--radius-xs)',
+                                fontSize: '0.74rem',
+                                fontWeight: 600,
+                                background: item.status === 'Normal' ? 'var(--clinical-green-bg)' : 'var(--warning-amber-bg)',
+                                color: item.status === 'Normal' ? 'var(--clinical-green)' : 'var(--warning-amber)',
+                                border: `1px solid ${item.status === 'Normal' ? 'var(--clinical-green-border)' : 'var(--warning-amber-border)'}`,
+                              }}
+                            >
+                              {item.status === 'Normal' ? (
+                                <CheckCircle2 style={{ width: 12, height: 12 }} />
+                              ) : (
+                                <AlertTriangle style={{ width: 12, height: 12 }} />
+                              )}
+                              <span>{item.status}</span>
+                            </span>
+                          </td>
+                          <td className="tabular-nums text-muted">{item.previous}</td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                              {item.trendIcon}
+                              <span>{item.trend}</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Structured MEDION Decision Support Insight */}
+                <div style={{ background: 'var(--bg-surface-secondary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', padding: '1rem' }}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--teal-intelligent)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.25rem' }}>
+                    MEDION Clinical Decision Support Summary
+                  </div>
+                  <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                    Mild microcytic anemia index (Hb 10.4 g/dL) and borderline atherogenic dyslipidemia (LDL 142 mg/dL) identified. Renal function and cardiac troponin within physiological baseline limits. Iron study profile recommended; antihypertensive titration safe for renal clearance.
+                  </p>
+                </div>
               </div>
             )}
 
-            {/* TAB 4: LAB COMPARISON (LABR-1002 vs LABR-1001) */}
+            {/* TAB 4: LAB COMPARISON (LABR-0990 vs LABR-1001) */}
             {activeTab === 'comparison' && (
               <div>
                 {selectedPatient.patient_id === 'PAT-1001' ? (
                   <>
-                    <h4 className="h4" style={{ marginBottom: '0.5rem' }}>Laboratory Trend Comparison (LABR-1002 vs LABR-1001)</h4>
+                    <h4 className="h4" style={{ marginBottom: '0.5rem' }}>Laboratory Trend Comparison (LABR-0990 vs LABR-1001)</h4>
                     <p className="text-muted" style={{ fontSize: '0.8rem', marginBottom: '1.25rem' }}>
-                      Comparing previous baseline diagnostic results with current panel
+                      Comparing March 2026 baseline diagnostic results with current September 2026 panel
                     </p>
 
                     <table className="table-ui">
                       <thead>
                         <tr>
                           <th>Parameter</th>
-                          <th>Previous Value (LABR-1002)</th>
+                          <th>Baseline Value (LABR-0990)</th>
                           <th>Current Value (LABR-1001)</th>
                           <th>Reference Bounds</th>
                           <th>Clinical Trend</th>
@@ -353,24 +639,52 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
                       </thead>
                       <tbody>
                         <tr>
-                          <td style={{ fontWeight: 500 }}>Hemoglobin</td>
-                          <td>11.8 g/dL</td>
+                          <td style={{ fontWeight: 500 }}>Hemoglobin (Hb)</td>
+                          <td>11.2 g/dL</td>
                           <td>10.4 g/dL</td>
                           <td className="text-muted">13.5 - 17.5</td>
                           <td><Badge variant="amber">↓ Decreasing (Low)</Badge></td>
                         </tr>
                         <tr>
                           <td style={{ fontWeight: 500 }}>Total Cholesterol</td>
-                          <td>230.0 mg/dL</td>
+                          <td>228.0 mg/dL</td>
                           <td>215.0 mg/dL</td>
                           <td className="text-muted">&lt; 200</td>
                           <td><Badge variant="green">↓ Improving (High)</Badge></td>
                         </tr>
                         <tr>
+                          <td style={{ fontWeight: 500 }}>HDL Protective Cholesterol</td>
+                          <td>41.0 mg/dL</td>
+                          <td>44.0 mg/dL</td>
+                          <td className="text-muted">&gt; 40</td>
+                          <td><Badge variant="green">↑ Improving (Normal)</Badge></td>
+                        </tr>
+                        <tr>
+                          <td style={{ fontWeight: 500 }}>LDL Atherogenic Cholesterol</td>
+                          <td>155.0 mg/dL</td>
+                          <td>142.0 mg/dL</td>
+                          <td className="text-muted">&lt; 100</td>
+                          <td><Badge variant="green">↓ Improving (High)</Badge></td>
+                        </tr>
+                        <tr>
+                          <td style={{ fontWeight: 500 }}>Triglycerides</td>
+                          <td>185.0 mg/dL</td>
+                          <td>168.0 mg/dL</td>
+                          <td className="text-muted">&lt; 150</td>
+                          <td><Badge variant="green">↓ Improving (High)</Badge></td>
+                        </tr>
+                        <tr>
                           <td style={{ fontWeight: 500 }}>Fasting Blood Sugar</td>
-                          <td>95.0 mg/dL</td>
+                          <td>98.0 mg/dL</td>
                           <td>92.0 mg/dL</td>
                           <td className="text-muted">70 - 99</td>
+                          <td><Badge variant="green">→ Stable (Normal)</Badge></td>
+                        </tr>
+                        <tr>
+                          <td style={{ fontWeight: 500 }}>Serum Creatinine</td>
+                          <td>0.98 mg/dL</td>
+                          <td>0.95 mg/dL</td>
+                          <td className="text-muted">0.7 - 1.3</td>
                           <td><Badge variant="green">→ Stable (Normal)</Badge></td>
                         </tr>
                       </tbody>
@@ -385,41 +699,48 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
             )}
 
             {/* TAB 5: PRESCRIPTIONS */}
-            {activeTab === 'prescriptions' && (
-              <div>
-                {selectedPatient.patient_id === 'PAT-1001' ? (
-                  <>
-                    <h4 className="h4" style={{ marginBottom: '1rem' }}>Active Prescriptions (RX-1001)</h4>
-                    <table className="table-ui">
-                      <thead>
-                        <tr>
-                          <th>Medication Name</th>
-                          <th>Dosage</th>
-                          <th>Frequency</th>
-                          <th>Duration</th>
-                          <th>Physician Instructions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {MOCK_PRESCRIPTIONS[0].medications.map((m, i) => (
-                          <tr key={i}>
-                            <td style={{ fontWeight: 600 }}>{m.name}</td>
-                            <td>{m.dosage}</td>
-                            <td>{m.frequency}</td>
-                            <td>{m.duration_days} days</td>
-                            <td className="text-muted">{m.instructions}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </>
-                ) : (
+            {activeTab === 'prescriptions' && (() => {
+              const patientRxList = sharedPrescriptions.filter(
+                (rx) => rx.patient_id.toUpperCase() === selectedPatient.patient_id.toUpperCase()
+              );
+              if (patientRxList.length === 0) {
+                return (
                   <div className="text-muted" style={{ padding: '2.5rem 1rem', textAlign: 'center', background: 'var(--bg-app)', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
-                    No active prescriptions on file for this patient.
+                    No active prescriptions on file for {selectedPatient.first_name} {selectedPatient.last_name}.
                   </div>
-                )}
-              </div>
-            )}
+                );
+              }
+              const allMeds = patientRxList.flatMap((rx) => rx.medications);
+              return (
+                <div>
+                  <h4 className="h4" style={{ marginBottom: '1rem' }}>
+                    Active Prescriptions for {selectedPatient.first_name} {selectedPatient.last_name} ({selectedPatient.patient_id})
+                  </h4>
+                  <table className="table-ui">
+                    <thead>
+                      <tr>
+                        <th>Medication Name</th>
+                        <th>Dosage</th>
+                        <th>Frequency</th>
+                        <th>Duration</th>
+                        <th>Physician Instructions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allMeds.map((m, i) => (
+                        <tr key={i}>
+                          <td style={{ fontWeight: 600 }}>{m.name}</td>
+                          <td>{m.dosage}</td>
+                          <td>{m.frequency}</td>
+                          <td>{m.duration_days ? `${m.duration_days} days` : '30 days'}</td>
+                          <td className="text-muted">{m.instructions || 'Take as directed by physician'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
 
             {/* TAB 6: APPOINTMENTS */}
             {activeTab === 'appointments' && (

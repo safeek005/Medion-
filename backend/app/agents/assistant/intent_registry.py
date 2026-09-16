@@ -73,7 +73,9 @@ ACTION_REGISTRY: Dict[str, Dict[str, Any]] = {
         "keywords": [
             "medical summary", "clinical summary", "patient medical summary", "doctor summary",
             "summarize patient", "summarize lab", "summarize report", "summary of my medical",
-            "summary of medical reports", "give me a summary of my medical reports"
+            "summary of medical reports", "give me a summary of my medical reports",
+            "summarize lab results", "summarize recent lab results", "lab results summary",
+            "summarize labs", "lab summary", "clinical brief", "soap summary"
         ]
     },
     "explain_lab_report": {
@@ -157,5 +159,17 @@ ACTION_REGISTRY: Dict[str, Dict[str, Any]] = {
         "action": "get_claim_status",
         "required_params": ["claim_id"],
         "keywords": ["claim status", "check claim", "claim progress", "view claim", "what is the status of my claim", "what is my claim status"]
+    },
+    "settle_claim": {
+        "agent": "insurance",
+        "action": "settle_claim",
+        "required_params": ["claim_id"],
+        "keywords": ["settle claim", "settlement", "payout claim", "settle", "settle claim clm"]
+    },
+    "adjudicate_claim": {
+        "agent": "insurance",
+        "action": "adjudicate_claim",
+        "required_params": ["claim_id", "decision"],
+        "keywords": ["adjudicate claim", "approve claim", "reject claim", "deny claim", "adjudicate", "adjudicate claim clm"]
     }
 }

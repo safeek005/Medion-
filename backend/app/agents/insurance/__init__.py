@@ -21,7 +21,7 @@ class InsuranceAgent(BaseAgent):
 
     def execute(self, action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         action_clean = action.lower().strip()
-        if action_clean == "verify_insurance":
+        if action_clean in ["verify_insurance", "check_coverage"]:
             return insurance_service.verify_insurance(payload)
         elif action_clean == "get_coverage":
             return insurance_service.get_coverage(payload)
@@ -31,9 +31,15 @@ class InsuranceAgent(BaseAgent):
             return insurance_service.submit_claim(payload)
         elif action_clean == "get_claim_status":
             return insurance_service.get_claim_status(payload)
+        elif action_clean == "create_insurance_claim":
+            return insurance_service.create_insurance_claim(payload)
+        elif action_clean == "adjudicate_claim":
+            return insurance_service.adjudicate_claim(payload)
+        elif action_clean == "settle_claim":
+            return insurance_service.settle_claim(payload)
         else:
             raise ValueError(
                 f"Action '{action}' is not supported by Insurance Agent. "
-                "Supported actions: verify_insurance, get_coverage, prepare_claim, submit_claim, get_claim_status."
+                "Supported actions: verify_insurance, get_coverage, prepare_claim, submit_claim, get_claim_status, create_insurance_claim, adjudicate_claim, settle_claim."
             )
 

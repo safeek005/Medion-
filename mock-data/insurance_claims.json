@@ -8,8 +8,8 @@
     "claim_amount": 5775.0,
     "approved_amount": 5197.5,
     "status": "APPROVED",
-    "submitted_date": "2024-06-16T10:00:00Z",
-    "processed_date": "2024-06-18T14:30:00Z",
+    "submitted_date": "2026-09-12T10:00:00Z",
+    "processed_date": "2026-09-14T14:30:00Z",
     "adjudication_notes": "10% copay applied per policy terms (POL-701)."
   },
   {
@@ -21,8 +21,21 @@
     "claim_amount": 2520.0,
     "approved_amount": 0.0,
     "status": "UNDER_REVIEW",
-    "submitted_date": "2024-07-21T09:00:00Z",
+    "submitted_date": "2026-09-15T09:00:00Z",
     "processed_date": null,
     "adjudication_notes": "Awaiting initial eligibility & diagnosis validation."
+  },
+  {
+    "claim_id": "CLM-1025",
+    "patient_id": "PAT-1025",
+    "policy_id": "POL-725",
+    "provider_id": "INS-501",
+    "bill_id": "BILL-1025",
+    "claim_amount": 850.0,
+    "approved_amount": 850.0,
+    "status": "APPROVED",
+    "submitted_date": "2026-09-16T08:30:00Z",
+    "processed_date": "2026-09-16T11:00:00Z",
+    "adjudication_notes": "Prescription and diagnostic consultation pre-authorized and approved per policy terms (POL-725)."
   }
 ]

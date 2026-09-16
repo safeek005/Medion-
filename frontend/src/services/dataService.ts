@@ -4,6 +4,8 @@ import {
   MOCK_PATIENTS_LIST,
   MOCK_APPOINTMENTS,
   MOCK_LAB_REPORT,
+  MOCK_LAB_REPORT_ARUN_BASELINE,
+  MOCK_LAB_REPORT_KAVYA,
   MOCK_PRESCRIPTIONS,
   MOCK_NOTIFICATIONS,
   PrescriptionItem,
@@ -13,7 +15,7 @@ import { getSupabaseClient, isSupabaseConfigured } from './supabaseClient';
 
 // Keys for browser persistent storage
 const DB_VERSION_KEY = 'medion_db_version';
-const CURRENT_DB_VERSION = '2.3.0';
+const CURRENT_DB_VERSION = '2.6.0';
 
 const STORAGE_KEYS = {
   PATIENTS: 'medion_db_patients',
@@ -57,25 +59,25 @@ export const INITIAL_DOCTORS = [
     specialty: 'General Medicine',
     hospital_id: 'HOSP-002',
     phone: '+91 9123456782',
-    email: 'dr.suresh@cityhospital.org',
+    email: 'dr.suresh@medionhealth.org',
     available_days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-    available_slots: ['09:00-09:30', '09:30-10:00', '10:00-10:30', '11:00-11:30'],
+    available_slots: ['10:00-10:30', '11:00-11:30', '12:00-12:30', '15:00-15:30'],
   },
 ];
 
-// Default Policies
+// Default Insurance Policies (Grounded in Master Data Layer)
 export const INITIAL_POLICIES = [
   {
     policy_id: 'POL-701',
     patient_id: 'PAT-1001',
     provider_name: 'Star Health & Allied Insurance',
-    policy_number: 'SH-COMP-2024-88912',
+    policy_number: 'SH-CARD-2024-88492',
     plan_type: 'Comprehensive Family Floater',
     status: 'ACTIVE',
     coverage_limit: 500000,
     remaining_coverage: 485000,
     copay_percentage: 10,
-    valid_until: '2025-12-31',
+    valid_until: '2027-12-31',
   },
   {
     policy_id: 'POL-702',
@@ -87,7 +89,7 @@ export const INITIAL_POLICIES = [
     coverage_limit: 300000,
     remaining_coverage: 290000,
     copay_percentage: 15,
-    valid_until: '2025-10-30',
+    valid_until: '2027-12-31',
   },
   {
     policy_id: 'POL-703',
@@ -99,7 +101,19 @@ export const INITIAL_POLICIES = [
     coverage_limit: 750000,
     remaining_coverage: 720000,
     copay_percentage: 20,
-    valid_until: '2025-08-15',
+    valid_until: '2027-12-31',
+  },
+  {
+    policy_id: 'POL-725',
+    patient_id: 'PAT-1025',
+    provider_name: 'Star Health & Allied Insurance',
+    policy_number: 'SH-GOLD-2024-1025',
+    plan_type: 'Star Health Gold Comprehensive',
+    status: 'ACTIVE',
+    coverage_limit: 600000,
+    remaining_coverage: 580000,
+    copay_percentage: 10,
+    valid_until: '2027-12-31',
   },
 ];
 
@@ -118,18 +132,33 @@ export const INITIAL_CLAIMS = [
     processed_date: '2024-05-18T14:30:00Z',
     adjudication_notes: 'Approved after 10% standard copay deduction.',
   },
+  {
+    claim_id: 'CLM-1025',
+    patient_id: 'PAT-1025',
+    policy_id: 'POL-725',
+    provider_id: 'INS-501',
+    bill_id: 'BILL-1025',
+    claim_amount: 850,
+    approved_amount: 850,
+    status: 'APPROVED',
+    submitted_date: '2026-09-16T08:30:00Z',
+    processed_date: '2026-09-16T11:00:00Z',
+    adjudication_notes: 'Prescription and diagnostic consultation pre-authorized and approved per policy terms (POL-725).',
+  },
 ];
 
 // Default Lab Reports
 export const INITIAL_LAB_REPORTS: LabReportItem[] = [
   MOCK_LAB_REPORT,
+  MOCK_LAB_REPORT_ARUN_BASELINE,
+  MOCK_LAB_REPORT_KAVYA,
   {
     report_id: 'LABR-1002',
     patient_id: 'PAT-1002',
     laboratory_id: 'LAB-001',
     doctor_id: 'DOC-102',
     test_type: 'Thyroid Profile (T3, T4, TSH)',
-    test_date: '2024-07-19',
+    test_date: '2026-08-10',
     status: 'COMPLETED',
     results: [
       { parameter: 'TSH', value: 6.2, unit: 'uIU/mL', reference_range: '0.4 - 4.2', is_abnormal: true, abnormality_direction: 'HIGH' },
@@ -196,9 +225,12 @@ class SharedDataService {
       const storedVersion = window.localStorage.getItem(DB_VERSION_KEY);
       if (storedVersion !== CURRENT_DB_VERSION) {
         console.info(`[MEDION DataLayer] Migrating storage from ${storedVersion || 'legacy'} to ${CURRENT_DB_VERSION}. Purging stale cache.`);
-        // Purge old patient and context cache contaminated with mock defaults
+        // Purge old patient, appointments, prescriptions, policies, labs and context cache contaminated with mock defaults
         window.localStorage.removeItem(STORAGE_KEYS.PATIENTS);
         window.localStorage.removeItem(STORAGE_KEYS.APPOINTMENTS);
+        window.localStorage.removeItem(STORAGE_KEYS.PRESCRIPTIONS);
+        window.localStorage.removeItem(STORAGE_KEYS.POLICIES);
+        window.localStorage.removeItem(STORAGE_KEYS.LAB_REPORTS);
         window.localStorage.removeItem(STORAGE_KEYS.CONTEXT);
         window.localStorage.setItem(DB_VERSION_KEY, CURRENT_DB_VERSION);
       } else {
@@ -316,6 +348,13 @@ class SharedDataService {
       if (!cErr && claims && claims.length > 0) {
         setStorageItem(STORAGE_KEYS.CLAIMS, claims);
         emitDbChange({ table: 'claims', action: 'create' });
+      }
+
+      // 7. Fetch Prescriptions
+      const { data: rxList, error: rxErr } = await sb.from('prescriptions').select('*').order('created_at', { ascending: false });
+      if (!rxErr && rxList && rxList.length > 0) {
+        setStorageItem(STORAGE_KEYS.PRESCRIPTIONS, rxList);
+        emitDbChange({ table: 'prescriptions', action: 'create' });
       }
     } catch (err) {
       console.warn('[MEDION DataLayer] Supabase sync caught:', err);
@@ -657,6 +696,68 @@ class SharedDataService {
   }
 
   // ----------------------------------------------------
+  // PRESCRIPTIONS
+  // ----------------------------------------------------
+
+  getPrescriptions(): any[] {
+    return getStorageItem<any[]>(STORAGE_KEYS.PRESCRIPTIONS, MOCK_PRESCRIPTIONS);
+  }
+
+  getPrescriptionsByPatientId(patientId: string): any[] {
+    const list = this.getPrescriptions();
+    return list.filter((rx: any) => rx.patient_id?.toUpperCase() === patientId.toUpperCase());
+  }
+
+  generatePrescriptionId(): string {
+    const list = this.getPrescriptions();
+    let maxId = 4000;
+    list.forEach((rx: any) => {
+      const match = (rx.prescription_id || '').match(/RX-(\d+)/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxId) maxId = num;
+      }
+    });
+    return `RX-${maxId + 1}`;
+  }
+
+  addPrescription(rxData: any): any {
+    const list = this.getPrescriptions();
+    const newRx = {
+      prescription_id: rxData.prescription_id || this.generatePrescriptionId(),
+      patient_id: rxData.patient_id || 'PAT-1001',
+      doctor_id: rxData.doctor_id || 'DOC-101',
+      prescribed_date: rxData.prescribed_date || new Date().toISOString().split('T')[0],
+      medications: rxData.medications || [],
+      instructions: rxData.instructions || '',
+      status: rxData.status || 'ACTIVE',
+      created_at: rxData.created_at || new Date().toISOString(),
+      updated_at: rxData.updated_at || new Date().toISOString(),
+    };
+
+    const existingIdx = list.findIndex((rx: any) => rx.prescription_id === newRx.prescription_id);
+    let updatedList: any[];
+    if (existingIdx >= 0) {
+      updatedList = [...list];
+      updatedList[existingIdx] = newRx;
+    } else {
+      updatedList = [newRx, ...list];
+    }
+
+    setStorageItem(STORAGE_KEYS.PRESCRIPTIONS, updatedList);
+    emitDbChange({ table: 'prescriptions', action: 'create', data: newRx });
+
+    const sb = getSupabaseClient();
+    if (sb) {
+      sb.from('prescriptions').upsert(newRx).then(({ error }) => {
+        if (error) console.warn('[MEDION Supabase] Prescription upsert failed:', error.message);
+      });
+    }
+
+    return newRx;
+  }
+
+  // ----------------------------------------------------
   // INSURANCE & CLAIMS
   // ----------------------------------------------------
 
@@ -666,7 +767,7 @@ class SharedDataService {
 
   getPolicyByPatientId(patientId: string) {
     const policies = this.getPolicies();
-    return policies.find((p) => p.patient_id.toUpperCase() === patientId.toUpperCase()) || policies[0];
+    return policies.find((p) => p.patient_id.toUpperCase() === patientId.toUpperCase()) || null;
   }
 
   getClaims(): typeof INITIAL_CLAIMS {
@@ -853,5 +954,20 @@ export function useSharedPolicies() {
   }, []);
 
   return policies;
+}
+
+export function useSharedPrescriptions() {
+  const [prescriptions, setPrescriptions] = useState<any[]>(() => dataService.getPrescriptions());
+
+  useEffect(() => {
+    const unsubscribe = dataService.subscribe((event) => {
+      if (event.table === 'prescriptions' || event.action === 'reset') {
+        setPrescriptions(dataService.getPrescriptions());
+      }
+    });
+    return unsubscribe;
+  }, []);
+
+  return prescriptions;
 }
 

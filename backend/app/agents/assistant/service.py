@@ -12,7 +12,11 @@ class AssistantService:
         """
         message = payload.get("message") or payload.get("prompt") or payload.get("query", "")
         user_role = (payload.get("user_role") or payload.get("portal_source") or "doctor").lower().strip()
-        context = payload.get("conversation_context") or payload.get("previous_context") or {}
+        context = dict(payload.get("conversation_context") or payload.get("previous_context") or {})
+        if "patient_id" not in context and (payload.get("caller_patient_id") or payload.get("patient_id")):
+            context["patient_id"] = payload.get("caller_patient_id") or payload.get("patient_id")
+        if "caller_patient_id" not in context and payload.get("caller_patient_id"):
+            context["caller_patient_id"] = payload.get("caller_patient_id")
 
         if not message:
             raise ValueError("Field 'message' (or 'prompt') is required for interpret_request.")
@@ -27,6 +31,98 @@ class AssistantService:
         params = {**payload, **parsed.get("required_parameters", {})}
         for k in ["message", "prompt", "query", "user_role", "portal_source", "conversation_context", "previous_context"]:
             params.pop(k, None)
+
+        # RBAC and Cross-Patient Checks for Patient Portal
+        if user_role == "patient":
+            caller_pid = (
+                payload.get("caller_patient_id") or
+                payload.get("authenticated_patient_id") or
+                context.get("patient_id") or
+                params.get("caller_patient_id") or
+                payload.get("patient_id") or
+                params.get("patient_id") or
+                "PAT-1025"
+            )
+
+            # Block queries for other patients by name or ID
+            msg_lower = message.lower()
+            other_names = ["arun", "priya", "vikram", "sneha", "kavita", "ananya", "mohammed", "pat-1001", "pat-1002", "pat-1003", "pat-1004", "pat-1005", "pat-1006", "pat-1007", "pat-1008"]
+            for oname in other_names:
+                if oname in msg_lower and oname not in caller_pid.lower():
+                    denied_msg = f"Access Denied: You are authenticated as patient '{caller_pid}' and cannot access or query records for other patients."
+                    return {
+                        **parsed,
+                        "success": False,
+                        "target_agent": "assistant",
+                        "target_action": "access_denied",
+                        "summary": denied_msg,
+                        "formatted_text": denied_msg,
+                        "result_data": {"success": False, "error": denied_msg},
+                        "needs_clarification": False
+                    }
+
+            # Administrative actions check
+            admin_intent_keywords = [
+                "settle claim", "adjudicate claim", "reject claim", "approve prescription",
+                "create prescription", "formulary", "list all patients", "all appointments",
+                "department schedule", "daily schedule", "physician roster"
+            ]
+            for kw in admin_intent_keywords:
+                if kw in msg_lower:
+                    denied_msg = f"Access Denied: Administrative and clinical operations like '{kw}' are restricted to authorized healthcare staff."
+                    return {
+                        **parsed,
+                        "success": False,
+                        "target_agent": "assistant",
+                        "target_action": "access_denied",
+                        "summary": denied_msg,
+                        "formatted_text": denied_msg,
+                        "result_data": {"success": False, "error": denied_msg},
+                        "needs_clarification": False
+                    }
+
+            patient_forbidden = {
+                "insurance": {"adjudicate_claim", "settle_claim", "reject_claim", "prepare_claim", "submit_claim", "process_preauthorization", "get_all_claims"},
+                "medical": {"approve_prescription", "update_prescription", "create_prescription", "flag_abnormal_results"},
+                "patient": {"list_all_patients", "delete_patient", "register_patient"},
+                "appointment": {"update_appointment_status", "complete_appointment", "list_all_appointments", "get_daily_schedule"},
+                "admin": {"view_dashboard", "manage_users"},
+                "nurse": {"view_dashboard"},
+                "lab": {"view_dashboard"}
+            }
+            if target_agent in ["admin", "nurse", "lab", "hospital"] or target_action in patient_forbidden.get(target_agent, set()):
+                denied_msg = f"Access Denied: The requested action '{target_action}' on '{target_agent}' is restricted to authorized healthcare staff and cannot be performed from the Patient Portal."
+                return {
+                    **parsed,
+                    "success": False,
+                    "target_agent": target_agent,
+                    "target_action": target_action,
+                    "action_performed": target_action,
+                    "summary": denied_msg,
+                    "formatted_text": denied_msg,
+                    "result_data": {"success": False, "error": denied_msg},
+                    "needs_clarification": False
+                }
+
+            # Enforce caller_pid on appointment and patient actions
+            if target_agent in ["appointment", "patient", "medical"]:
+                params["caller_patient_id"] = caller_pid
+                params["patient_id"] = caller_pid
+
+            target_pid = params.get("patient_id")
+            if caller_pid and target_pid and str(caller_pid).strip().upper() != str(target_pid).strip().upper():
+                denied_msg = f"Access Denied: You are authenticated as {caller_pid} and cannot view or access health records for patient {target_pid}."
+                return {
+                    **parsed,
+                    "success": False,
+                    "target_agent": target_agent,
+                    "target_action": target_action,
+                    "action_performed": target_action,
+                    "summary": denied_msg,
+                    "formatted_text": denied_msg,
+                    "result_data": {"success": False, "error": denied_msg},
+                    "needs_clarification": False
+                }
 
         # If clarification is needed (ambiguous or missing required fields)
         if is_ambiguous or len(missing_params) > 0 or target_agent == "assistant":

@@ -3,6 +3,7 @@ import json
 import logging
 from pathlib import Path
 from typing import Dict, Any, List, Optional
+from datetime import datetime, timezone
 import urllib.request
 import urllib.error
 import urllib.parse
@@ -118,9 +119,16 @@ class SupabaseDatabaseService:
 
     def update_patient(self, patient_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         pid_enc = urllib.parse.quote(patient_id)
-        res = self._request(f"patients?patient_id=eq.{pid_enc}", method="PATCH", data=updates)
-        if isinstance(res, list) and len(res) > 0:
-            return res[0]
+        allowed_fields = {
+            "first_name", "last_name", "dob", "gender", "blood_group",
+            "phone", "email", "address", "emergency_contact",
+            "primary_doctor_id", "insurance_policy_id"
+        }
+        filtered = {k: v for k, v in updates.items() if k in allowed_fields and v is not None}
+        if filtered:
+            res = self._request(f"patients?patient_id=eq.{pid_enc}", method="PATCH", data=filtered)
+            if isinstance(res, list) and len(res) > 0:
+                return res[0]
         return self.find_one("patients", "patient_id", patient_id)
 
     # --------------------------------------------------------------------------
@@ -172,7 +180,7 @@ class SupabaseDatabaseService:
         
         # Query active booked appointments for this doctor on target date
         existing_apts = self.get_collection(
-            f"appointments?doctor_id=eq.{doc_enc}&or=(appointment_date.eq.{date_enc},date.eq.{date_enc})&status=in.(BOOKED,CONFIRMED,SCHEDULED)"
+            f"appointments?doctor_id=eq.{doc_enc}&appointment_date=eq.{date_enc}&status=in.(BOOKED,CONFIRMED,SCHEDULED)"
         )
 
         booked_slots = {
@@ -212,17 +220,72 @@ class SupabaseDatabaseService:
         return f"CLM-{max_id + 1}"
 
     def add_claim(self, claim_data: Dict[str, Any]) -> Dict[str, Any]:
-        res = self._request("insurance_claims", method="POST", data=claim_data)
+        allowed = {
+            "claim_id", "patient_id", "policy_id", "provider_id", "bill_id",
+            "claim_amount", "approved_amount", "status", "submitted_date",
+            "processed_date", "adjudication_notes", "created_at", "updated_at"
+        }
+        filtered = {k: v for k, v in claim_data.items() if k in allowed}
+        res = self._request("insurance_claims", method="POST", data=filtered)
         if isinstance(res, list) and len(res) > 0:
             return res[0]
         return claim_data
 
     def update_claim(self, claim_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        allowed = {
+            "patient_id", "policy_id", "provider_id", "bill_id",
+            "claim_amount", "approved_amount", "status", "submitted_date",
+            "processed_date", "adjudication_notes", "updated_at"
+        }
+        filtered = {k: v for k, v in updates.items() if k in allowed}
         cid_enc = urllib.parse.quote(claim_id)
-        res = self._request(f"insurance_claims?claim_id=eq.{cid_enc}", method="PATCH", data=updates)
+        res = self._request(f"insurance_claims?claim_id=eq.{cid_enc}", method="PATCH", data=filtered)
         if isinstance(res, list) and len(res) > 0:
             return res[0]
         return self.find_one("insurance_claims", "claim_id", claim_id)
+
+    def update_appointment_status(self, appointment_id: str, status: str) -> Optional[Dict[str, Any]]:
+        return self.update_appointment(appointment_id, {
+            "status": status,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        })
+
+    # --------------------------------------------------------------------------
+    # PRESCRIPTIONS CRUD
+    # --------------------------------------------------------------------------
+
+    def generate_prescription_id(self) -> str:
+        res = self._request("prescriptions?select=prescription_id&order=created_at.desc&limit=50")
+        max_id = 4000
+        if isinstance(res, list):
+            for item in res:
+                rx_id = item.get("prescription_id", "")
+                if rx_id.startswith("RX-"):
+                    try:
+                        num = int(rx_id.split("-")[1])
+                        if num > max_id:
+                            max_id = num
+                    except ValueError:
+                        pass
+        return f"RX-{max_id + 1}"
+
+    def add_prescription(self, prescription_data: Dict[str, Any]) -> Dict[str, Any]:
+        res = self._request("prescriptions", method="POST", data=prescription_data)
+        if isinstance(res, list) and len(res) > 0:
+            return res[0]
+        return prescription_data
+
+    def update_prescription(self, prescription_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        rx_enc = urllib.parse.quote(prescription_id)
+        res = self._request(f"prescriptions?prescription_id=eq.{rx_enc}", method="PATCH", data=updates)
+        if isinstance(res, list) and len(res) > 0:
+            return res[0]
+        return self.find_one("prescriptions", "prescription_id", prescription_id)
+
+    def get_prescriptions(self, patient_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        if patient_id:
+            return self.find_many("prescriptions", "patient_id", patient_id)
+        return self.get_collection("prescriptions?order=created_at.desc")
 
     # --------------------------------------------------------------------------
     # PATIENT AGGREGATE HISTORY

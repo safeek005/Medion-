@@ -55,5 +55,24 @@
     "primary_doctor_id": "DOC-101",
     "insurance_policy_id": "POL-703",
     "created_at": "2024-03-01T14:20:00Z"
+  },
+  {
+    "patient_id": "PAT-1025",
+    "first_name": "Kavya",
+    "last_name": "Sharma",
+    "dob": "1994-06-18",
+    "gender": "Female",
+    "blood_group": "B+",
+    "phone": "+91 9845012345",
+    "email": "kavya.sharma@example.com",
+    "address": "12 Richmond Town, Bengaluru, Karnataka",
+    "emergency_contact": {
+      "name": "Rohan Sharma",
+      "relationship": "Spouse",
+      "phone": "+91 9845012346"
+    },
+    "primary_doctor_id": "DOC-101",
+    "insurance_policy_id": "POL-725",
+    "created_at": "2024-04-10T10:00:00Z"
   }
 ]

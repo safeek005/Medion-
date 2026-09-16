@@ -225,4 +225,22 @@ class PatientService:
             "summary": f"Aggregated full history for patient {patient_id} ({len(history['medical_records'])} medical records, {len(history['lab_reports'])} lab reports, {len(history['appointments'])} appointments)."
         }
 
+    def get_patient_prescriptions(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Action: get_patient_prescriptions
+        Retrieves authorized prescriptions for a patient.
+        """
+        patient_id = payload.get("patient_id")
+        if not patient_id:
+            raise ValueError("Field 'patient_id' is required for get_patient_prescriptions.")
+
+        prescriptions = mock_db.find_many("prescriptions", "patient_id", patient_id)
+        return {
+            "success": True,
+            "patient_id": patient_id,
+            "count": len(prescriptions),
+            "prescriptions": prescriptions,
+            "summary": f"Retrieved {len(prescriptions)} prescription(s) for patient {patient_id}."
+        }
+
 patient_service = PatientService()

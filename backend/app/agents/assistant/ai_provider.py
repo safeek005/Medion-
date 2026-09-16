@@ -124,7 +124,7 @@ class SNSWorkbenchProvider(AIProvider):
                     "User-Agent": "MEDION-Healthcare-Agent/2.0"
                 }
             )
-            with urllib.request.urlopen(req, timeout=4) as response:
+            with urllib.request.urlopen(req, timeout=1.5) as response:
                 status_code = response.getcode()
                 raw_body = response.read().decode("utf-8")
                 res_json = json.loads(raw_body)
@@ -182,12 +182,10 @@ class DeterministicFallbackProvider(AIProvider):
 
         # Context role inheritance for patient portal or context
         if "patient_id" not in extracted:
-            if context and context.get("patient_id"):
-                extracted["patient_id"] = context.get("patient_id")
+            if context and (context.get("caller_patient_id") or context.get("patient_id") or context.get("authenticated_patient_id")):
+                extracted["patient_id"] = context.get("caller_patient_id") or context.get("patient_id") or context.get("authenticated_patient_id")
             elif user_role == "patient":
-                extracted["patient_id"] = "PAT-1001"
-            elif intent == "book_appointment" and "date" in extracted and "time_slot" in extracted:
-                extracted["patient_id"] = "PAT-1001"
+                extracted["patient_id"] = "PAT-1025"
 
         provider_info = {
             "provider_name": "MEDION Deterministic Healthcare Engine (Offline / Fallback)",

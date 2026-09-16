@@ -10,7 +10,8 @@ logger = logging.getLogger("medion.database")
 
 SUPABASE_TABLES = {
     "patients", "doctors", "appointments", "insurance_policies",
-    "insurance_claims", "lab_reports", "medical_records", "prescriptions"
+    "insurance_claims", "lab_reports", "medical_records", "prescriptions",
+    "tasks", "vitals", "lab_orders", "audit_logs"
 }
 
 def get_database_mode() -> str:
@@ -51,7 +52,8 @@ class MockDatabaseService:
             "patients", "doctors", "nurses", "hospitals", "laboratories",
             "insurance_providers", "insurance_policies", "appointments",
             "medical_records", "lab_reports", "prescriptions", "bills",
-            "insurance_claims", "notifications"
+            "insurance_claims", "notifications", "tasks", "vitals", 
+            "lab_orders", "audit_logs"
         ]
         for ds in datasets:
             file_path = self.data_dir / f"{ds}.json"
@@ -274,6 +276,14 @@ class MockDatabaseService:
                 apt[field] = val
         return apt
 
+    def update_appointment_status(self, appointment_id: str, status: str) -> Optional[Dict[str, Any]]:
+        mode = get_database_mode()
+        if mode == "supabase":
+            if not supabase_db.is_configured():
+                raise RuntimeError("Database unavailable: DATABASE_MODE is 'supabase' but Supabase credentials are not configured.")
+            return supabase_db.update_appointment_status(appointment_id, status)
+        return self.update_appointment(appointment_id, {"status": status})
+
     def find_available_slots(self, doctor_id: str, date: str) -> List[Dict[str, Any]]:
         """Determines available slots for a doctor on a given date."""
         mode = get_database_mode()
@@ -344,6 +354,28 @@ class MockDatabaseService:
         self._cache["insurance_claims"].append(claim)
         return claim
 
+    def generate_prescription_id(self) -> str:
+        """Generates the next sequential RX-xxxx prescription ID."""
+        prescriptions = self.get_collection("prescriptions")
+        max_id_num = 1000
+        for rx in prescriptions:
+            rid = rx.get("prescription_id", "")
+            if rid.startswith("RX-"):
+                try:
+                    num = int(rid.split("-")[1])
+                    if num > max_id_num:
+                        max_id_num = num
+                except ValueError:
+                    pass
+        return f"RX-{max_id_num + 1}"
+
+    def add_prescription(self, prescription: Dict[str, Any]) -> Dict[str, Any]:
+        """Persists a new prescription order to the collection."""
+        if "prescriptions" not in self._cache:
+            self._cache["prescriptions"] = self.get_collection("prescriptions")
+        self._cache["prescriptions"].append(prescription)
+        return prescription
+
     def update_claim(self, claim_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Updates claim status, approved amount, or adjudication notes."""
         mode = get_database_mode()
@@ -365,5 +397,99 @@ class MockDatabaseService:
             if field in allowed_fields and val is not None:
                 claim[field] = val
         return claim
+
+    # Additions for Core Automations
+    def add_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
+        if "tasks" not in self._cache:
+            self._cache["tasks"] = []
+        self._cache["tasks"].append(task)
+        return task
+
+    def update_task(self, task_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        task = self.find_one("tasks", "task_id", task_id, skip_remote=True)
+        if not task:
+            return None
+        task.update(updates)
+        return task
+
+    def add_vital(self, vital: Dict[str, Any]) -> Dict[str, Any]:
+        if "vitals" not in self._cache:
+            self._cache["vitals"] = []
+        self._cache["vitals"].append(vital)
+        return vital
+
+    def add_lab_order(self, order: Dict[str, Any]) -> Dict[str, Any]:
+        if "lab_orders" not in self._cache:
+            self._cache["lab_orders"] = []
+        self._cache["lab_orders"].append(order)
+        return order
+
+    def update_lab_order(self, order_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        order = self.find_one("lab_orders", "order_id", order_id, skip_remote=True)
+        if not order:
+            return None
+        order.update(updates)
+        return order
+
+    # Prescriptions Management
+    def generate_prescription_id(self) -> str:
+        mode = get_database_mode()
+        if mode == "supabase":
+            if not supabase_db.is_configured():
+                raise RuntimeError("Database unavailable: DATABASE_MODE is 'supabase' but Supabase credentials are not configured.")
+            return supabase_db.generate_prescription_id()
+
+        prescriptions = self.get_collection("prescriptions")
+        max_id_num = 4000
+        for rx in prescriptions:
+            rid = rx.get("prescription_id", "")
+            if rid.startswith("RX-"):
+                try:
+                    num = int(rid.split("-")[1])
+                    if num > max_id_num:
+                        max_id_num = num
+                except ValueError:
+                    pass
+        return f"RX-{max_id_num + 1}"
+
+    def add_prescription(self, prescription: Dict[str, Any]) -> Dict[str, Any]:
+        mode = get_database_mode()
+        if mode == "supabase":
+            if not supabase_db.is_configured():
+                raise RuntimeError("Database unavailable: DATABASE_MODE is 'supabase' but Supabase credentials are not configured.")
+            remote = supabase_db.add_prescription(prescription)
+            if "prescriptions" not in self._cache:
+                self._cache["prescriptions"] = []
+            self._cache["prescriptions"].append(remote)
+            return remote
+
+        if "prescriptions" not in self._cache:
+            self._cache["prescriptions"] = []
+        self._cache["prescriptions"].append(prescription)
+        return prescription
+
+    def update_prescription(self, prescription_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        mode = get_database_mode()
+        if mode == "supabase":
+            if not supabase_db.is_configured():
+                raise RuntimeError("Database unavailable: DATABASE_MODE is 'supabase' but Supabase credentials are not configured.")
+            remote = supabase_db.update_prescription(prescription_id, updates)
+            if remote:
+                cached = self.find_one("prescriptions", "prescription_id", prescription_id, skip_remote=True)
+                if cached:
+                    cached.update(updates)
+            return remote
+
+        rx = self.find_one("prescriptions", "prescription_id", prescription_id, skip_remote=True)
+        if not rx:
+            return None
+        rx.update(updates)
+        return rx
+
+    def add_audit_log(self, log: Dict[str, Any]) -> Dict[str, Any]:
+        if "audit_logs" not in self._cache:
+            self._cache["audit_logs"] = []
+        self._cache["audit_logs"].append(log)
+        return log
 
 mock_db = MockDatabaseService()

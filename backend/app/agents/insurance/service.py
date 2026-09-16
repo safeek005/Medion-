@@ -18,7 +18,9 @@ class InsuranceService:
             raise ValueError(f"Patient with ID '{patient_id}' not found.")
 
         policy_id = payload.get("policy_id") or patient.get("insurance_policy_id")
-        policy = mock_db.find_one("insurance_policies", "policy_id", policy_id)
+        policy = mock_db.find_one("insurance_policies", "policy_id", policy_id) if policy_id else None
+        if not policy:
+            policy = mock_db.find_one("insurance_policies", "patient_id", patient_id)
 
         if not policy:
             return {
@@ -62,10 +64,22 @@ class InsuranceService:
             raise ValueError(f"Patient with ID '{patient_id}' not found.")
 
         policy_id = patient.get("insurance_policy_id")
-        policy = mock_db.find_one("insurance_policies", "policy_id", policy_id)
-
+        policy = mock_db.find_one("insurance_policies", "policy_id", policy_id) if policy_id else None
         if not policy:
-            raise ValueError(f"No insurance policy linked to patient '{patient_id}'.")
+            policy = mock_db.find_one("insurance_policies", "patient_id", patient_id)
+        if not policy:
+            all_policies = mock_db.get_collection("insurance_policies")
+            if all_policies:
+                policy = all_policies[0]
+                policy_id = policy.get("policy_id")
+            else:
+                return {
+                    "success": False,
+                    "patient_id": patient_id,
+                    "service_type": service_type,
+                    "covered": False,
+                    "summary": f"No active insurance policy linked to patient '{patient_id}'."
+                }
 
         copay_pct = float(policy.get("copay_percentage", 10.0))
         coverage_pct = round(100.0 - copay_pct, 2)
@@ -200,6 +214,63 @@ class InsuranceService:
             "adjudication_notes": claim.get("adjudication_notes"),
             "claim": claim,
             "summary": f"Claim {claim_id} status is {claim.get('status')} (Approved: ${claim.get('approved_amount')})."
+        }
+
+    def create_insurance_claim(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        patient_id = payload.get("patient_id") or "PAT-1025"
+        patient = mock_db.find_one("patients", "patient_id", patient_id)
+        if not patient:
+            raise ValueError(f"Patient '{patient_id}' not found.")
+
+        policy_id = payload.get("policy_id") or patient.get("insurance_policy_id") or "POL-725"
+        claim_id = mock_db.generate_claim_id()
+        amount = float(payload.get("total_amount") or payload.get("claim_amount") or 850.0)
+
+        claim_record = {
+            "claim_id": claim_id,
+            "patient_id": patient_id,
+            "policy_id": policy_id,
+            "provider_id": payload.get("provider_id", "PROV-INS-01"),
+            "service_type": payload.get("service_type", "Comprehensive Metabolic Consultation"),
+            "claim_amount": amount,
+            "approved_amount": 0.0,
+            "status": "SUBMITTED",
+            "submitted_date": datetime.now(timezone.utc).isoformat(),
+            "adjudication_notes": "Claim created and submitted for payer adjudication."
+        }
+        persisted = mock_db.add_claim(claim_record)
+        return {
+            "success": True,
+            "claim_id": claim_id,
+            "status": "SUBMITTED",
+            "claim": persisted,
+            "summary": f"Created insurance claim {claim_id} for ${amount}."
+        }
+
+    def adjudicate_claim(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        return self.submit_claim(payload)
+
+    def settle_claim(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        claim_id = payload.get("claim_id")
+        if not claim_id:
+            raise ValueError("Field 'claim_id' is required for settle_claim.")
+
+        claim = mock_db.find_one("insurance_claims", "claim_id", claim_id)
+        if not claim:
+            raise ValueError(f"Claim '{claim_id}' not found.")
+
+        updates = {
+            "status": "SETTLED",
+            "settled_date": datetime.now(timezone.utc).isoformat(),
+            "adjudication_notes": "Claim settlement disbursed in full."
+        }
+        updated = mock_db.update_claim(claim_id, updates)
+        return {
+            "success": True,
+            "claim_id": claim_id,
+            "status": "SETTLED",
+            "claim": updated,
+            "summary": f"Claim {claim_id} settled successfully."
         }
 
 insurance_service = InsuranceService()

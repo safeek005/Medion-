@@ -5,6 +5,7 @@ import { executeAssistantAction, dispatchWorkbench } from '../../api/medionApi';
 import { Button } from '../../components/ui/Button';
 import { HumanResponseRenderer } from '../../components/intelligence/HumanResponseRenderer';
 import { dataService } from '../../services/dataService';
+import { useAuth } from '../../services/authService';
 
 interface MessageItem {
   id: string;
@@ -30,6 +31,7 @@ const PROCESSING_STEPS = [
 ];
 
 export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceGenerated, onOpenTraceDrawer }) => {
+  const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [processingStepIdx, setProcessingStepIdx] = useState(0);
@@ -42,11 +44,14 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
         // ignore fallback
       }
     }
+    const welcomeText = role === 'patient'
+      ? 'Hello! I am MEDION Patient Health Assistant. I can help explain your diagnostic lab results, review your active medications, verify upcoming consultations, or check your insurance benefits.'
+      : 'Hello! I am MEDION Healthcare Multi-Agent Intelligence. You can ask me to register patients, book or reschedule appointments, review laboratory reports, verify insurance policies, or track claims.';
     return [
       {
         id: 'msg-welcome',
         sender: 'medion',
-        text: 'Hello! I am MEDION Healthcare Multi-Agent Intelligence. You can ask me to register patients, book or reschedule appointments, review laboratory reports, verify insurance policies, or track claims.',
+        text: welcomeText,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         targetAgent: 'orchestrator'
       }
@@ -124,27 +129,73 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
       ];
     }
 
+    if (role === 'patient') {
+      return [
+        { label: 'Explain My Lab Results', prompt: 'Explain my latest lab results.' },
+        { label: 'Medication Side Effects', prompt: 'What are the side effects of my active medications?' },
+        { label: 'Next Appointment', prompt: 'When is my next cardiology appointment?' },
+        { label: 'Insurance Coverage', prompt: 'Is my Star Health insurance coverage active?' },
+      ];
+    }
+
+    if (role === 'doctor') {
+      return [
+        { label: 'Summarize Lab Results', prompt: "Summarize Arun Kumar's recent lab results." },
+        { label: 'Check Drug Interactions', prompt: 'Check drug interactions for Amlodipine + Atorvastatin.' },
+        { label: 'Critical Lab Alerts', prompt: "Show today's critical lab alerts." },
+        { label: 'Titration Plan', prompt: 'Draft medication titration plan for Stage 1 HTN.' },
+      ];
+    }
+
+    if (role === 'nurse') {
+      return [
+        { label: 'Overdue Vitals', prompt: 'Show patients with overdue vitals.' },
+        { label: '12:00 PM eMAR Due', prompt: 'List 12:00 PM scheduled eMAR medications.' },
+        { label: 'SBAR Handover', prompt: 'Draft SBAR clinical handover for Ward 3B.' },
+        { label: 'IV Cannula Protocol', prompt: 'Check IV cannula inspection protocol.' },
+      ];
+    }
+
+    if (role === 'hospital') {
+      return [
+        { label: 'Hospital Capacity', prompt: "Summarize today's hospital capacity." },
+        { label: 'Department Bottlenecks', prompt: 'Report departmental bottlenecks.' },
+        { label: 'ICU Occupancy', prompt: 'Check ICU critical bed occupancy status.' },
+        { label: 'Pending Claims', prompt: 'Summarize pending insurance claims volume.' },
+      ];
+    }
+
+    if (role === 'lab') {
+      return [
+        { label: 'Critical Lab Results', prompt: 'Show critical lab results requiring review.' },
+        { label: 'Flag Abnormal Values', prompt: 'Flag abnormal values across pending specimens.' },
+        { label: 'Summarize Lipid Panel', prompt: 'Summarize lipid panel for LABR-1001.' },
+        { label: 'Compare Previous', prompt: 'Compare previous results for Arun Kumar.' },
+      ];
+    }
+
+    if (role === 'insurance') {
+      return [
+        { label: 'Pending Preauthorizations', prompt: 'Show pending preauthorization requests.' },
+        { label: 'Verify Policy Eligibility', prompt: 'Audit Star Health cashless policy eligibility.' },
+        { label: 'Claim Settled Ratio', prompt: 'Calculate settled vs queried claim ratio.' },
+        { label: 'Inspect Claim CLM-1001', prompt: 'Review claim CLM-1001 adjudication evidence.' },
+      ];
+    }
+
     if (role === 'receptionist') {
       return [
-        { label: 'Register Patient Harini', prompt: 'Register a new patient Harini S, female, phone 9876543210' },
+        { label: 'Register Patient', prompt: 'Register a new patient Safeek, male, phone 9566036555' },
         { label: 'Check Dr Rajesh Slots', prompt: 'When is Dr Rajesh available?' },
-        { label: 'Check Dr Anita Slots', prompt: 'When is Dr Anita available?' },
         { label: 'Book Appointment', prompt: 'Book Arun Kumar with Dr Rajesh tomorrow at 10 AM' },
-        { label: 'Cancel APT-1001', prompt: 'Cancel appointment APT-1001' },
-        { label: 'Find Patient Arun', prompt: 'Find patient Arun Kumar' },
+        { label: 'Cancel Appointment', prompt: 'Cancel appointment APT-1001' },
       ];
     }
 
     return [
-      { label: 'Register Patient Safeek', prompt: 'Register a new patient Safeek' },
-      { label: 'Book with Dr Rajesh', prompt: 'Book Arun Kumar with Dr Rajesh tomorrow at 10 AM' },
-      { label: 'Check Dr Rajesh Slots', prompt: 'When is Dr Rajesh available?' },
-      { label: 'Cancel APT-1001', prompt: 'Cancel appointment APT-1001' },
-      { label: 'Analyze Lab Report', prompt: "Analyze Arun Kumar's latest laboratory report (LABR-1001)" },
-      { label: 'Explain Lab Results', prompt: 'Explain LABR-1001 in simple language' },
-      { label: 'Verify Insurance', prompt: 'Is my insurance active?' },
-      { label: 'Submit Claim', prompt: 'Submit claim CLM-1001' },
-      { label: 'Find Arun Kumar', prompt: 'Find Arun Kumar' }
+      { label: 'Explain Lab Results', prompt: 'Explain my latest lab results.' },
+      { label: 'Hospital Capacity', prompt: "Summarize today's hospital capacity." },
+      { label: 'Critical Reviews', prompt: 'Show critical lab results requiring review.' },
     ];
   };
 
@@ -172,10 +223,16 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
     const startTime = performance.now();
 
     try {
+      const patientIdToUse = user?.id || 'PAT-1025';
       const res = await executeAssistantAction(textToSend, role, {
         previous_context: activeCtx,
         conversation_context: activeCtx,
-        ...(role === 'patient' ? { patient_id: 'PAT-1001' } : {})
+        ...(role === 'patient' ? {
+          patient_id: patientIdToUse,
+          caller_patient_id: patientIdToUse,
+          authenticated_patient_id: patientIdToUse,
+          user_role: 'patient',
+        } : {})
       });
       const duration = Math.round(performance.now() - startTime);
 
@@ -194,7 +251,7 @@ export const AiWorkspaceView: React.FC<AiWorkspaceViewProps> = ({ role, onTraceG
           missing_fields: outData.missing_parameters || [],
           patient_name: outData.patient_name,
           doctor_id: outData.doctor_id,
-          patient_id: outData.patient_id || (role === 'patient' ? 'PAT-1001' : undefined)
+          patient_id: outData.patient_id || (role === 'patient' ? patientIdToUse : undefined)
         };
         setConversationContext(nextCtx);
         dataService.setConversationContext(nextCtx);

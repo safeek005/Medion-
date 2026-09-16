@@ -17,10 +17,21 @@ export async function dispatchToWorkbench(request: WorkbenchRequest): Promise<Wo
   const primaryUrl = WORKBENCH_WEBHOOK_URL;
   const fallbackUrl = '/api/workbench/dispatch';
 
+  const extraFields: Record<string, any> = { ...(request as any) };
+  delete extraFields.workflow_id;
+  delete extraFields.agent_target;
+  delete extraFields.action;
+  delete extraFields.portal_source;
+  delete extraFields.payload;
+
   // Ensure unique workflow ID if not explicitly provided
   const finalPayload: WorkbenchRequest = {
     ...request,
     workflow_id: request.workflow_id || generateWorkflowId(request.portal_source || 'app'),
+    payload: {
+      ...extraFields,
+      ...(request.payload || {}),
+    },
   };
 
   const tryFetch = async (targetUrl: string): Promise<Response> => {

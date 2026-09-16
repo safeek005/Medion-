@@ -18,11 +18,14 @@ import {
   Filter,
   Plus,
   Lock,
+  Layers,
 } from 'lucide-react';
 import { PageHeader, SectionHeader } from '../../components/common/SharedComponents';
+import { WorkspaceHeader } from '../../components/common/WorkspaceHeader';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { DataTable } from '../../components/ui/DataTable';
+import { MOCK_HOSPITAL_METRICS } from '../../data/mockDatasets';
 import {
   useSharedAppointments,
   useSharedPatients,
@@ -37,7 +40,7 @@ interface HospitalAdminWorkspaceProps {
 }
 
 export const HospitalAdminWorkspace: React.FC<HospitalAdminWorkspaceProps> = ({ onTraceGenerated }) => {
-  const [activeTab, setActiveTab] = useState<'organization' | 'operations' | 'bi' | 'security'>('organization');
+  const [activeTab, setActiveTab] = useState<'command' | 'clinical' | 'triage' | 'organization' | 'operations' | 'bi' | 'security'>('command');
 
   // Shared Data Sources
   const appointments = useSharedAppointments();
@@ -150,45 +153,495 @@ export const HospitalAdminWorkspace: React.FC<HospitalAdminWorkspaceProps> = ({ 
     },
   ];
 
+  // Surgical Theatre Suite Data
+  const orTheatres = [
+    { id: 'OR-1', name: 'Suite 1 (Cardiothoracic)', status: 'ACTIVE', procedure: 'Coronary Artery Bypass (CABG)', lead: 'Dr. Rajesh Mehta', elapsed: '2h 15m / 3h 00m', progress: 75 },
+    { id: 'OR-2', name: 'Suite 2 (Orthopedic / Trauma)', status: 'ACTIVE', procedure: 'Total Knee Arthroplasty', lead: 'Dr. A. Joshi', elapsed: '1h 10m / 2h 00m', progress: 58 },
+    { id: 'OR-3', name: 'Suite 3 (Neurosurgery)', status: 'ACTIVE', procedure: 'Craniotomy & Tumor Resection', lead: 'Dr. S. Verma', elapsed: '3h 40m / 4h 30m', progress: 81 },
+    { id: 'OR-4', name: 'Suite 4 (General / Colorectal)', status: 'TURNOVER', procedure: 'Sterilization & Tray Prep', lead: 'Charge Tech Sunita', elapsed: '14m / 25m TAT', progress: 56 },
+    { id: 'OR-5', name: 'Suite 5 (Minimally Invasive / Lap)', status: 'ACTIVE', procedure: 'Laparoscopic Cholecystectomy', lead: 'Dr. Suresh Rao', elapsed: '35m / 1h 15m', progress: 46 },
+    { id: 'OR-6', name: 'Suite 6 (Pediatric / ENT)', status: 'ACTIVE', procedure: 'Tympanoplasty & Myringotomy', lead: 'Dr. Anita Deshmukh', elapsed: '45m / 1h 00m', progress: 75 },
+    { id: 'OR-7', name: 'Suite 7 (Vascular / Endovascular)', status: 'TURNOVER', procedure: 'Decontamination Cycle Active', lead: 'Sterile Processing Team', elapsed: '08m / 25m TAT', progress: 32 },
+    { id: 'OR-8', name: 'Suite 8 (Emergency Dedicated STAT)', status: 'STANDBY', procedure: 'Standby for Polytrauma / Code Red', lead: 'Trauma On-Call Team', elapsed: 'Immediate Readiness', progress: 100 },
+  ];
+
   return (
-    <div style={{ padding: '2rem', maxWidth: 1280, margin: '0 auto' }}>
-      <PageHeader
-        title="MEDION Command Center"
-        subtitle="MEDION Hospital Network (HOSP-001) • Executive Operations, Clinical Staff Roster & Intelligence"
-        badge={<Badge variant="green">HOSP-001 Operational</Badge>}
+    <div style={{ padding: '1.75rem 2.25rem', maxWidth: 1280, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      <WorkspaceHeader
+        title="Hospital Operations"
+        subtitle="Coimbatore Medical Center • Main Campus • Real-Time Command Center"
+        facility="Coimbatore Medical Center (Main Campus)"
+        department="Enterprise Operations Command & System Governance"
+        statusText="Surge Protocol: Tier 2 Active (ICU 95%)"
+        statusVariant="critical"
+        metrics={[
+          { label: 'Licensed Beds', value: '382/450 (84.8%)' },
+          { label: 'ICU Critical Occupancy', value: '38/40 (95%)', accent: 'var(--status-danger)' },
+          { label: 'ED Wait Time', value: '18m (14 Waiting)' },
+          { label: 'OR Utilization', value: '6 of 8 ORs Active' },
+        ]}
         actions={
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <Button
+              variant={activeTab === 'command' ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={() => setActiveTab('command')}
+            >
+              <Activity style={{ width: 14, height: 14 }} /> Executive Deck
+            </Button>
+            <Button
+              variant={activeTab === 'clinical' ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={() => setActiveTab('clinical')}
+            >
+              <Users style={{ width: 14, height: 14 }} /> Clinical Matrix
+            </Button>
+            <Button
+              variant={activeTab === 'triage' ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={() => setActiveTab('triage')}
+            >
+              <Activity style={{ width: 14, height: 14 }} /> Capacity & Triage
+            </Button>
             <Button
               variant={activeTab === 'organization' ? 'primary' : 'secondary'}
               size="sm"
               onClick={() => setActiveTab('organization')}
             >
-              <Users style={{ width: 14, height: 14 }} /> Organization Roster
+              <Building2 style={{ width: 14, height: 14 }} /> Personnel
             </Button>
             <Button
               variant={activeTab === 'operations' ? 'primary' : 'secondary'}
               size="sm"
               onClick={() => setActiveTab('operations')}
             >
-              <Activity style={{ width: 14, height: 14 }} /> Clinical Operations
+              <Layers style={{ width: 14, height: 14 }} /> Dept Load
             </Button>
             <Button
               variant={activeTab === 'bi' ? 'primary' : 'secondary'}
               size="sm"
               onClick={() => setActiveTab('bi')}
             >
-              <BarChart3 style={{ width: 14, height: 14 }} /> Business Intelligence
+              <BarChart3 style={{ width: 14, height: 14 }} /> Financial BI
             </Button>
             <Button
               variant={activeTab === 'security' ? 'primary' : 'secondary'}
               size="sm"
               onClick={() => setActiveTab('security')}
             >
-              <Shield style={{ width: 14, height: 14 }} /> Security & Audit
+              <Shield style={{ width: 14, height: 14 }} /> Security
             </Button>
           </div>
         }
       />
+
+      {/* TAB 0: FLAGSHIP OPERATIONS COMMAND DECK */}
+      {activeTab === 'command' && (
+        <div>
+          {/* Operational Bottleneck Exception Banner */}
+          <div
+            style={{
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.35)',
+              borderRadius: 8,
+              padding: '0.85rem 1.15rem',
+              marginBottom: '1.25rem',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '0.85rem',
+            }}
+          >
+            <AlertTriangle style={{ width: 18, height: 18, color: 'var(--status-danger)', marginTop: 2, flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--status-danger)', letterSpacing: '0.3px' }}>
+                  OPERATIONAL ALERTS (Coimbatore Medical Center • 3 Active Surge & Safety Exceptions)
+                </span>
+                <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Updated 45s ago via Telemetry Stream</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.65rem', marginTop: '0.45rem' }}>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', background: 'var(--bg-card)', padding: '0.45rem 0.65rem', borderRadius: 6, border: '1px solid var(--border-subtle)' }}>
+                  <strong style={{ color: 'var(--status-danger)' }}>• ICU Cap (95%):</strong> 38/40 occupied. Recommend Step-down transfer evaluation for Beds 402 and 405.
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', background: 'var(--bg-card)', padding: '0.45rem 0.65rem', borderRadius: 6, border: '1px solid var(--border-subtle)' }}>
+                  <strong style={{ color: '#f59e0b' }}>• STAT Troponin TAT:</strong> 34 mins (Bench: 30m). Central Pathology Analyzer #2 undergoing auto-calibration.
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', background: 'var(--bg-card)', padding: '0.45rem 0.65rem', borderRadius: 6, border: '1px solid var(--border-subtle)' }}>
+                  <strong style={{ color: '#f59e0b' }}>• ED Inpatient Bed Hold:</strong> 3 patients admitted awaiting bed turnover in Inpatient Ward 3B.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 7 Top Executive Command Metrics Strip (Section 16) */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+              gap: '0.85rem',
+              marginBottom: '1.25rem',
+            }}
+          >
+            {[
+              { label: 'Patients Today', val: '184', sub: '88 OPD • 96 IPD', color: 'var(--text-primary)' },
+              { label: 'Admissions', val: '28', sub: 'Today (8 Pending Bed)', color: 'var(--teal-intelligent)' },
+              { label: 'Discharges', val: '22', sub: '18 Cleared • 4 Pending', color: 'var(--clinical-green)' },
+              { label: 'Appointments', val: '142', sub: 'Master Schedule', color: 'var(--text-primary)' },
+              { label: 'Bed Occupancy', val: '84.8%', sub: '382 / 450 Occupied', color: 'var(--warning-amber)' },
+              { label: 'Critical Results', val: '3', sub: 'STAT Panic Alert', color: 'var(--danger-red)' },
+              { label: 'Pending Claims', val: '14', sub: '$184,200 Under Review', color: 'var(--teal-intelligent)' },
+            ].map((m, i) => (
+              <div key={i} className="metric-strip-card" style={{ padding: '0.85rem 1rem' }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
+                  {m.label}
+                </span>
+                <div className="tabular-nums" style={{ fontSize: '1.45rem', fontWeight: 800, color: m.color, marginTop: '0.15rem' }}>
+                  {m.val}
+                </div>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{m.sub}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* MEDION Multi-Agent Swarm Orchestration Telemetry */}
+          <div className="section-panel">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+              <div>
+                <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                  MEDION Multi-Agent Swarm Orchestration Health
+                </h4>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  Active autonomous nodes, deterministic routing latency, and human-in-the-loop oversight
+                </span>
+              </div>
+              <Badge variant="brand">ALL 5 NODES HEALTHY</Badge>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '0.75rem' }}>
+              <div style={{ background: 'var(--bg-elevated)', padding: '0.75rem', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Active Swarm Nodes</div>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--color-primary-light)', margin: '0.2rem 0' }}>5 / 5 Online</div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>Medical, Lab, Rx, Claim, Patient</div>
+              </div>
+
+              <div style={{ background: 'var(--bg-elevated)', padding: '0.75rem', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Workflow Throughput</div>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0.2rem 0' }}>142 / hr</div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--color-primary-light)' }}>↑ 18% peak hospital surge</div>
+              </div>
+
+              <div style={{ background: 'var(--bg-elevated)', padding: '0.75rem', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Avg Agent Latency</div>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0.2rem 0' }}>380 ms</div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--color-primary-light)' }}>Deterministic state machine</div>
+              </div>
+
+              <div style={{ background: 'var(--bg-elevated)', padding: '0.75rem', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Decision Validation</div>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--color-primary-light)', margin: '0.2rem 0' }}>99.4%</div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>Zero ungrounded hallucinations</div>
+              </div>
+
+              <div style={{ background: 'var(--bg-elevated)', padding: '0.75rem', borderRadius: 8, border: '1px solid rgba(245, 158, 11, 0.35)' }}>
+                <div style={{ fontSize: '0.7rem', color: '#f59e0b', textTransform: 'uppercase', fontWeight: 600 }}>Human-In-The-Loop</div>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#f59e0b', margin: '0.2rem 0' }}>3 Pending</div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>Awaiting physician countersign</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: CLINICAL MATRIX */}
+      {activeTab === 'clinical' && (
+        <div>
+          {/* Department Operations Command Matrix */}
+          <div className="section-panel" style={{ padding: '1.25rem 1.5rem', marginBottom: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                  Department Operations Command Matrix
+                </h4>
+                <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                  Patient volume, on-duty clinical staffing, throughput status, and active operational bottlenecks
+                </span>
+              </div>
+              <Badge variant="brand">5 Major Clinical Departments</Badge>
+            </div>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table className="table-ui" style={{ width: '100%' }}>
+                <thead>
+                  <tr>
+                    <th>Department</th>
+                    <th>Patient Load</th>
+                    <th>Capacity</th>
+                    <th>Staff</th>
+                    <th>Operational Status</th>
+                    <th>Bottleneck</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    {
+                      dept: 'Emergency',
+                      patients: '34 Active Triage',
+                      capacity: '92% Surge',
+                      staff: '8 MDs • 14 RNs on duty',
+                      status: 'Surge Tier 2',
+                      statusVariant: 'red' as const,
+                      tasks: '2 STAT cardiac read-backs, 3 inpatient bed holds',
+                    },
+                    {
+                      dept: 'Cardiology',
+                      patients: '28 Patients (12 OPD, 16 IPD)',
+                      capacity: '85% Utilized',
+                      staff: '5 Cardiologists • 9 RNs',
+                      status: 'Normal Capacity',
+                      statusVariant: 'green' as const,
+                      tasks: '4 echo reviews, 1 medication titration proposal',
+                    },
+                    {
+                      dept: 'Neurology',
+                      patients: '19 Patients (Ward 4A)',
+                      capacity: '70% Utilized',
+                      staff: '4 Neurologists • 6 RNs',
+                      status: 'Optimal',
+                      statusVariant: 'green' as const,
+                      tasks: '2 MRI scan evaluations, 1 EEG telemetry review',
+                    },
+                    {
+                      dept: 'Orthopedics',
+                      patients: '22 Patients (OR Suite)',
+                      capacity: '88% High Load',
+                      staff: '6 Surgeons • 8 RNs',
+                      status: 'High OR Load (87.5%)',
+                      statusVariant: 'amber' as const,
+                      tasks: '3 post-op recovery check-ins, 1 surgical turnover',
+                    },
+                    {
+                      dept: 'General Medicine',
+                      patients: '46 Patients (Wards 2A & 2B)',
+                      capacity: '94% High Vol',
+                      staff: '7 Physicians • 12 RNs',
+                      status: 'High Volume',
+                      statusVariant: 'amber' as const,
+                      tasks: '5 discharge summaries pending, 4 lab panels ordered',
+                    },
+                  ].map((dept, idx) => (
+                    <tr key={idx}>
+                      <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{dept.dept}</td>
+                      <td className="tabular-nums" style={{ fontWeight: 600 }}>{dept.patients}</td>
+                      <td>
+                        <span style={{ fontWeight: 700, fontSize: '0.8rem', color: dept.capacity.includes('Surge') || dept.capacity.includes('94%') ? 'var(--danger-red)' : 'var(--teal-intelligent)' }}>
+                          {dept.capacity}
+                        </span>
+                      </td>
+                      <td style={{ fontSize: '0.82rem' }}>{dept.staff}</td>
+                      <td>
+                        <Badge variant={dept.statusVariant}>{dept.status}</Badge>
+                      </td>
+                      <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{dept.tasks}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: CAPACITY & TRIAGE */}
+      {activeTab === 'triage' && (
+        <div>
+          {/* Core Operations Deck Grid: Bed Surge + ED Triage */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
+            {/* Live Hospital Capacity Card */}
+            <div className="section-panel" style={{ margin: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <div>
+                  <h4 style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                    Hospital Capacity (Beds, ICU, Emergency, Operating Rooms)
+                  </h4>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Real-time sensor & eMAR occupancy telemetry</span>
+                </div>
+                <Badge variant="amber">84.8% CAPACITY</Badge>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                {/* Total Capacity Bar */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', marginBottom: '0.25rem' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Total Licensed Inpatient Beds</span>
+                    <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>382 / 450 (68 Available)</span>
+                  </div>
+                  <div style={{ width: '100%', height: 7, background: 'var(--bg-elevated)', borderRadius: 4, overflow: 'hidden' }}>
+                    <div style={{ width: '84.8%', height: '100%', background: 'var(--status-warning)', borderRadius: 4 }} />
+                  </div>
+                </div>
+
+                {/* Sub-units Breakdown */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.25rem' }}>
+                  <div style={{ background: 'var(--bg-elevated)', padding: '0.5rem 0.65rem', borderRadius: 6, border: '1px solid var(--border-subtle)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--status-danger)' }}>ICU Critical Care</span>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--status-danger)' }}>95.0%</span>
+                    </div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>38 / 40 Beds</div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--status-danger)', fontWeight: 600 }}>SURGE CODE ACTIVATED</div>
+                  </div>
+
+                  <div style={{ background: 'var(--bg-elevated)', padding: '0.5rem 0.65rem', borderRadius: 6, border: '1px solid var(--border-subtle)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Step-Down Intermediate</span>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-primary)' }}>84.0%</span>
+                    </div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>42 / 50 Beds</div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--color-primary-light)' }}>8 Beds Ready for Admission</div>
+                  </div>
+
+                  <div style={{ background: 'var(--bg-elevated)', padding: '0.5rem 0.65rem', borderRadius: 6, border: '1px solid var(--border-subtle)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Medical / Surgical Floor</span>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-primary)' }}>83.6%</span>
+                    </div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>276 / 330 Beds</div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--color-primary-light)' }}>54 Beds Available</div>
+                  </div>
+
+                  <div style={{ background: 'var(--bg-elevated)', padding: '0.5rem 0.65rem', borderRadius: 6, border: '1px solid var(--border-subtle)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Emergency Observation</span>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-primary)' }}>86.7%</span>
+                    </div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>26 / 30 Bays</div>
+                    <div style={{ fontSize: '0.65rem', color: '#f59e0b' }}>4 Rapid Turn Bays Open</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ED Emergency Throughput & Acuity */}
+            <div className="section-panel" style={{ margin: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <div>
+                  <h4 style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                    Emergency Dept (ED) Throughput
+                  </h4>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Active triage queue & patient wait-time telemetry</span>
+                </div>
+                <Badge variant="green">AVERAGE WAIT: 18m</Badge>
+              </div>
+
+              {/* Waiting Count & Acuity Pills */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '0.6rem', borderRadius: 6, textAlign: 'center' }}>
+                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--status-danger)' }}>2</div>
+                  <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--status-danger)' }}>RED STAT</div>
+                  <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>Immediate / 0m wait</div>
+                </div>
+
+                <div style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '0.6rem', borderRadius: 6, textAlign: 'center' }}>
+                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#f59e0b' }}>5</div>
+                  <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#f59e0b' }}>AMBER URGENT</div>
+                  <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>Avg wait: 12 mins</div>
+                </div>
+
+                <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.6rem', borderRadius: 6, textAlign: 'center' }}>
+                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-primary-light)' }}>7</div>
+                  <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--color-primary-light)' }}>GREEN STABLE</div>
+                  <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>Avg wait: 24 mins</div>
+                </div>
+              </div>
+
+              {/* Throughput Metrics */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.74rem' }}>
+                <div style={{ background: 'var(--bg-elevated)', padding: '0.5rem 0.65rem', borderRadius: 6, border: '1px solid var(--border-subtle)' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Admissions Today:</span>{' '}
+                  <strong style={{ color: 'var(--text-primary)' }}>42 Patients</strong>
+                </div>
+                <div style={{ background: 'var(--bg-elevated)', padding: '0.5rem 0.65rem', borderRadius: 6, border: '1px solid var(--border-subtle)' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Left Without Being Seen:</span>{' '}
+                  <strong style={{ color: 'var(--color-primary-light)' }}>0.8% (Target &lt;2%)</strong>
+                </div>
+                <div style={{ background: 'var(--bg-elevated)', padding: '0.5rem 0.65rem', borderRadius: 6, border: '1px solid var(--border-subtle)' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Door-to-Doctor Time:</span>{' '}
+                  <strong style={{ color: 'var(--text-primary)' }}>14.2 Mins</strong>
+                </div>
+                <div style={{ background: 'var(--bg-elevated)', padding: '0.5rem 0.65rem', borderRadius: 6, border: '1px solid var(--border-subtle)' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Ambulance Offload Time:</span>{' '}
+                  <strong style={{ color: 'var(--text-primary)' }}>9.5 Mins</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Surgical Suite Operations Matrix (8 OR Theatres) */}
+          <div className="section-panel" style={{ marginBottom: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+              <div>
+                <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                  Surgical Suite Operations Matrix (8 Operating Theatres)
+                </h4>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  Suite utilization: 87.5% • 28 Procedures Scheduled Today • 19 Completed • 6 Active Now • 2 Turnover
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <span className="priority-badge-critical" style={{ fontSize: '0.66rem' }}>6 ACTIVE CASES</span>
+                <span className="priority-badge-warning" style={{ fontSize: '0.66rem' }}>2 TURNOVER / STERILE</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.65rem' }}>
+              {orTheatres.map((or) => (
+                <div
+                  key={or.id}
+                  style={{
+                    background: 'var(--bg-elevated)',
+                    border: or.status === 'ACTIVE' ? '1px solid rgba(110, 231, 183, 0.35)' : or.status === 'TURNOVER' ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid var(--border-subtle)',
+                    borderRadius: 8,
+                    padding: '0.75rem 0.85rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                    <span style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-primary)' }}>{or.name}</span>
+                    <span
+                      style={{
+                        fontSize: '0.62rem',
+                        fontWeight: 700,
+                        padding: '0.12rem 0.45rem',
+                        borderRadius: 4,
+                        background: or.status === 'ACTIVE' ? 'rgba(16, 185, 129, 0.15)' : or.status === 'TURNOVER' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+                        color: or.status === 'ACTIVE' ? 'var(--color-primary-light)' : or.status === 'TURNOVER' ? '#f59e0b' : '#60a5fa',
+                      }}
+                    >
+                      {or.status}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500, marginBottom: '0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {or.procedure}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                    <span>Lead: {or.lead}</span>
+                    <span>{or.elapsed}</span>
+                  </div>
+                  <div style={{ width: '100%', height: 4, background: 'var(--bg-card)', borderRadius: 2, overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        width: `${or.progress}%`,
+                        height: '100%',
+                        background: or.status === 'ACTIVE' ? 'var(--color-primary-light)' : or.status === 'TURNOVER' ? '#f59e0b' : '#60a5fa',
+                        borderRadius: 2,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* TAB 1: ORGANIZATION ROSTER */}
       {activeTab === 'organization' && (
