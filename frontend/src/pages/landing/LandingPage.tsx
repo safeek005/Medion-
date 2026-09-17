@@ -213,31 +213,41 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onExplore, onSignIn })
             transition: 'transform 0.05s linear',
           }}
         >
+          {/* Version & Environment Pill Badges */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+            <span style={{ padding: '0.3rem 0.85rem', borderRadius: 20, backgroundColor: 'rgba(110, 231, 183, 0.15)', border: '1px solid rgba(110, 231, 183, 0.35)', color: '#6ee7b7', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              MEDION V2.0 • AI Healthcare Operations Platform
+            </span>
+            <span style={{ padding: '0.3rem 0.85rem', borderRadius: 20, backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.35)', color: '#fca5a5', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              SYNTHETIC DEMO ENVIRONMENT
+            </span>
+          </div>
+
           <h1
             style={{
               fontSize: 'clamp(2.5rem, 5.5vw, 4.25rem)',
               lineHeight: 1.12,
               marginBottom: '1.5rem',
               letterSpacing: '-0.04em',
-              fontWeight: 700,
+              fontWeight: 800,
               color: '#ffffff',
             }}
           >
-            Healthcare, intelligently connected.
+            One Intelligent Platform.<br />Every Healthcare Workflow.
           </h1>
 
           <p
             style={{
-              fontSize: 'clamp(1.05rem, 2vw, 1.2rem)',
+              fontSize: 'clamp(1.05rem, 2vw, 1.25rem)',
               lineHeight: 1.6,
               marginBottom: '2.5rem',
-              maxWidth: 780,
+              maxWidth: 820,
               margin: '0 auto 2.5rem',
-              color: 'rgba(255, 255, 255, 0.9)',
+              color: 'rgba(255, 255, 255, 0.92)',
               fontWeight: 400,
             }}
           >
-            MEDION AGENT brings healthcare workflows, patient information, clinical intelligence, appointments, laboratory operations and insurance processes into one connected platform.
+            MEDION connects patients, doctors, nurses, laboratories, insurance teams and hospital operations through AI agents and real-time healthcare data.
           </p>
 
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -249,7 +259,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onExplore, onSignIn })
                 background: '#059669',
                 color: '#ffffff',
                 border: '1px solid rgba(110, 231, 183, 0.45)',
-                borderRadius: 4,
+                borderRadius: 6,
                 fontWeight: 600,
                 cursor: 'pointer',
                 display: 'inline-flex',
@@ -261,7 +271,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onExplore, onSignIn })
               onMouseEnter={(e) => (e.currentTarget.style.background = '#10b981')}
               onMouseLeave={(e) => (e.currentTarget.style.background = '#059669')}
             >
-              Explore MEDION <ArrowRight style={{ width: 16, height: 16 }} />
+              LAUNCH DEMO <ArrowRight style={{ width: 16, height: 16 }} />
             </button>
             <button
               onClick={handleScrollToOverview}
@@ -271,7 +281,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onExplore, onSignIn })
                 background: 'rgba(255, 255, 255, 0.1)',
                 color: '#ffffff',
                 border: '1px solid rgba(255, 255, 255, 0.25)',
-                borderRadius: 4,
+                borderRadius: 6,
                 fontWeight: 500,
                 cursor: 'pointer',
                 backdropFilter: 'blur(8px)',
@@ -280,7 +290,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onExplore, onSignIn })
               onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.18)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
             >
-              View Platform Architecture
+              EXPLORE MEDION
             </button>
           </div>
         </div>

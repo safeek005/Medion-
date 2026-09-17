@@ -2,225 +2,239 @@
   {
     "report_id": "LABR-1001",
     "patient_id": "PAT-1001",
-    "doctor_id": "DOC-101",
+    "patient_name": "Arun Kumar",
     "lab_id": "LAB-001",
+    "doctor_id": "DOC-101",
     "test_name": "Comprehensive Blood & Lipid Panel",
-    "collection_date": "2026-09-10T08:00:00Z",
-    "result_date": "2026-09-10T16:30:00Z",
+    "report_date": "2026-09-14",
+    "date": "14 Sep 2026",
     "status": "COMPLETED",
+    "critical_panic": false,
+    "specimen_id": "SPEC-8821",
     "test_results": [
-      {
-        "test_parameter": "Hemoglobin",
-        "value": 10.4,
-        "unit": "g/dL",
-        "reference_range": "13.5 - 17.5",
-        "status": "LOW",
-        "flagged": true
-      },
-      {
-        "test_parameter": "Total Cholesterol",
-        "value": 215.0,
-        "unit": "mg/dL",
-        "reference_range": "< 200",
-        "status": "HIGH",
-        "flagged": true
-      },
-      {
-        "test_parameter": "HDL Cholesterol",
-        "value": 44.0,
-        "unit": "mg/dL",
-        "reference_range": "> 40",
-        "status": "NORMAL",
-        "flagged": false
-      },
-      {
-        "test_parameter": "LDL Cholesterol",
-        "value": 142.0,
-        "unit": "mg/dL",
-        "reference_range": "< 100",
-        "status": "HIGH",
-        "flagged": true
-      },
-      {
-        "test_parameter": "Triglycerides",
-        "value": 168.0,
-        "unit": "mg/dL",
-        "reference_range": "< 150",
-        "status": "HIGH",
-        "flagged": true
-      },
-      {
-        "test_parameter": "Fasting Blood Sugar",
-        "value": 92.0,
-        "unit": "mg/dL",
-        "reference_range": "70 - 99",
-        "status": "NORMAL",
-        "flagged": false
-      },
-      {
-        "test_parameter": "Serum Creatinine",
-        "value": 0.95,
-        "unit": "mg/dL",
-        "reference_range": "0.7 - 1.3",
-        "status": "NORMAL",
-        "flagged": false
-      }
+      { "test_parameter": "Hemoglobin", "value": 10.4, "unit": "g/dL", "reference_range": "13.5 - 17.5", "is_abnormal": true, "abnormality_direction": "LOW" },
+      { "test_parameter": "Total Cholesterol", "value": 238.0, "unit": "mg/dL", "reference_range": "< 200", "is_abnormal": true, "abnormality_direction": "HIGH" },
+      { "test_parameter": "LDL-C (Direct)", "value": 152.0, "unit": "mg/dL", "reference_range": "< 100", "is_abnormal": true, "abnormality_direction": "HIGH" },
+      { "test_parameter": "Triglycerides", "value": 185.0, "unit": "mg/dL", "reference_range": "< 150", "is_abnormal": true, "abnormality_direction": "HIGH" },
+      { "test_parameter": "Fasting Plasma Glucose", "value": 95.0, "unit": "mg/dL", "reference_range": "70 - 99", "is_abnormal": false, "abnormality_direction": "NORMAL" }
     ],
-    "lab_technician_notes": "Specimen verified. Borderline dyslipidemia and mild anemia noted.",
-    "summary": "Mild microcytic anemia index (Hb 10.4 g/dL) and atherogenic dyslipidemia (LDL 142 mg/dL, Triglycerides 168 mg/dL) identified. Renal markers stable."
-  },
-  {
-    "report_id": "LABR-0990",
-    "patient_id": "PAT-1001",
-    "doctor_id": "DOC-101",
-    "lab_id": "LAB-001",
-    "test_name": "Comprehensive Blood & Lipid Panel (Baseline)",
-    "collection_date": "2026-03-12T08:00:00Z",
-    "result_date": "2026-03-12T15:30:00Z",
-    "status": "COMPLETED",
-    "test_results": [
-      {
-        "test_parameter": "Hemoglobin",
-        "value": 11.2,
-        "unit": "g/dL",
-        "reference_range": "13.5 - 17.5",
-        "status": "LOW",
-        "flagged": true
-      },
-      {
-        "test_parameter": "Total Cholesterol",
-        "value": 228.0,
-        "unit": "mg/dL",
-        "reference_range": "< 200",
-        "status": "HIGH",
-        "flagged": true
-      },
-      {
-        "test_parameter": "HDL Cholesterol",
-        "value": 41.0,
-        "unit": "mg/dL",
-        "reference_range": "> 40",
-        "status": "NORMAL",
-        "flagged": false
-      },
-      {
-        "test_parameter": "LDL Cholesterol",
-        "value": 155.0,
-        "unit": "mg/dL",
-        "reference_range": "< 100",
-        "status": "HIGH",
-        "flagged": true
-      },
-      {
-        "test_parameter": "Triglycerides",
-        "value": 185.0,
-        "unit": "mg/dL",
-        "reference_range": "< 150",
-        "status": "HIGH",
-        "flagged": true
-      },
-      {
-        "test_parameter": "Fasting Blood Sugar",
-        "value": 98.0,
-        "unit": "mg/dL",
-        "reference_range": "70 - 99",
-        "status": "NORMAL",
-        "flagged": false
-      },
-      {
-        "test_parameter": "Serum Creatinine",
-        "value": 0.98,
-        "unit": "mg/dL",
-        "reference_range": "0.7 - 1.3",
-        "status": "NORMAL",
-        "flagged": false
-      }
+    "biomarkers": [
+      { "name": "Total Cholesterol", "value": "238", "range": "< 200", "unit": "mg/dL", "is_abnormal": true },
+      { "name": "LDL-C (Direct)", "value": "152", "range": "< 100", "unit": "mg/dL", "is_abnormal": true },
+      { "name": "HDL-C", "value": "45", "range": "> 40", "unit": "mg/dL", "is_abnormal": false },
+      { "name": "Triglycerides", "value": "185", "range": "< 150", "unit": "mg/dL", "is_abnormal": true },
+      { "name": "Fasting Plasma Glucose", "value": "95", "range": "70 - 99", "unit": "mg/dL", "is_abnormal": false }
     ],
-    "lab_technician_notes": "Baseline lipid workup. Fasting status confirmed (12 hours).",
-    "summary": "Baseline assessment: Elevated total cholesterol (228 mg/dL) and LDL (155 mg/dL), mild anemia (Hb 11.2 g/dL)."
+    "impression": "Moderate hypercholesterolemia with elevated LDL-C. Statins titration advised.",
+    "created_at": "2026-09-14T10:00:00Z"
   },
   {
     "report_id": "LABR-1002",
     "patient_id": "PAT-1002",
-    "doctor_id": "DOC-102",
+    "patient_name": "Sneha Sharma",
     "lab_id": "LAB-001",
-    "test_name": "Comprehensive Thyroid Function Panel",
-    "collection_date": "2026-08-10T07:30:00Z",
-    "result_date": "2026-08-10T14:00:00Z",
-    "status": "COMPLETED",
+    "doctor_id": "DOC-102",
+    "test_name": "HbA1c & Glycemic Panel",
+    "report_date": "2026-09-15",
+    "date": "15 Sep 2026",
+    "status": "VERIFIED_AND_RELEASED",
+    "critical_panic": false,
+    "specimen_id": "SPEC-8822",
     "test_results": [
-      {
-        "test_parameter": "Thyroid Stimulating Hormone (TSH)",
-        "value": 5.85,
-        "unit": "uIU/mL",
-        "reference_range": "0.4 - 4.0",
-        "status": "HIGH",
-        "flagged": true
-      },
-      {
-        "test_parameter": "Free Thyroxine (FT4)",
-        "value": 1.05,
-        "unit": "ng/dL",
-        "reference_range": "0.8 - 1.8",
-        "status": "NORMAL",
-        "flagged": false
-      },
-      {
-        "test_parameter": "Free Triiodothyronine (FT3)",
-        "value": 2.8,
-        "unit": "pg/mL",
-        "reference_range": "2.3 - 4.2",
-        "status": "NORMAL",
-        "flagged": false
-      }
+      { "test_parameter": "Glycated Hemoglobin (HbA1c)", "value": 8.2, "unit": "%", "reference_range": "< 5.7", "is_abnormal": true, "abnormality_direction": "HIGH" },
+      { "test_parameter": "Fasting Blood Sugar", "value": 148.0, "unit": "mg/dL", "reference_range": "70 - 99", "is_abnormal": true, "abnormality_direction": "HIGH" },
+      { "test_parameter": "Post-Prandial Sugar", "value": 210.0, "unit": "mg/dL", "reference_range": "< 140", "is_abnormal": true, "abnormality_direction": "HIGH" },
+      { "test_parameter": "Serum TSH", "value": 5.8, "unit": "mIU/L", "reference_range": "0.4 - 4.2", "is_abnormal": true, "abnormality_direction": "HIGH" }
     ],
-    "lab_technician_notes": "All control runs within expected range.",
-    "summary": "TSH elevated at 5.85 uIU/mL indicating subclinical hypothyroidism."
+    "biomarkers": [
+      { "name": "Glycated Hemoglobin (HbA1c)", "value": "8.2", "range": "< 5.7", "unit": "%", "is_abnormal": true },
+      { "name": "Fasting Blood Sugar", "value": "148", "range": "70 - 99", "unit": "mg/dL", "is_abnormal": true },
+      { "name": "Post-Prandial Sugar", "value": "210", "range": "< 140", "unit": "mg/dL", "is_abnormal": true },
+      { "name": "Serum TSH", "value": "5.8", "range": "0.4 - 4.2", "unit": "mIU/L", "is_abnormal": true }
+    ],
+    "impression": "Suboptimal glycemic control (HbA1c 8.2%) and elevated TSH. Adjust diabetes treatment.",
+    "created_at": "2026-09-15T11:30:00Z"
   },
   {
-    "report_id": "LABR-1025",
-    "patient_id": "PAT-1025",
-    "doctor_id": "DOC-101",
-    "lab_id": "LAB-001",
-    "test_name": "Complete Blood Count & Metabolic Profile",
-    "collection_date": "2026-09-01T08:00:00Z",
-    "result_date": "2026-09-01T14:30:00Z",
+    "report_id": "LABR-1003",
+    "patient_id": "PAT-1003",
+    "patient_name": "Vikram Singh",
+    "lab_id": "LAB-002",
+    "doctor_id": "DOC-104",
+    "test_name": "Inflammatory Markers & Mineral Panel",
+    "report_date": "2026-09-12",
+    "date": "12 Sep 2026",
     "status": "COMPLETED",
+    "critical_panic": false,
+    "specimen_id": "SPEC-8823",
     "test_results": [
-      {
-        "test_parameter": "Hemoglobin",
-        "value": 13.2,
-        "unit": "g/dL",
-        "reference_range": "12.0 - 15.5",
-        "status": "NORMAL",
-        "flagged": false
-      },
-      {
-        "test_parameter": "Total Cholesterol",
-        "value": 175.0,
-        "unit": "mg/dL",
-        "reference_range": "< 200",
-        "status": "NORMAL",
-        "flagged": false
-      },
-      {
-        "test_parameter": "Fasting Blood Sugar",
-        "value": 88.0,
-        "unit": "mg/dL",
-        "reference_range": "70 - 99",
-        "status": "NORMAL",
-        "flagged": false
-      },
-      {
-        "test_parameter": "Serum Creatinine",
-        "value": 0.85,
-        "unit": "mg/dL",
-        "reference_range": "0.6 - 1.2",
-        "status": "NORMAL",
-        "flagged": false
-      }
+      { "test_parameter": "Erythrocyte Sedimentation Rate (ESR)", "value": 28.0, "unit": "mm/hr", "reference_range": "< 20", "is_abnormal": true, "abnormality_direction": "HIGH" },
+      { "test_parameter": "C-Reactive Protein (CRP)", "value": 6.4, "unit": "mg/L", "reference_range": "< 3.0", "is_abnormal": true, "abnormality_direction": "HIGH" },
+      { "test_parameter": "Serum Calcium", "value": 9.2, "unit": "mg/dL", "reference_range": "8.5 - 10.2", "is_abnormal": false, "abnormality_direction": "NORMAL" }
     ],
-    "lab_technician_notes": "Specimen integrity preserved. Fasting verified.",
-    "summary": "Normal hematology and metabolic values. All parameters within target range."
+    "biomarkers": [
+      { "name": "ESR", "value": "28", "range": "< 20", "unit": "mm/hr", "is_abnormal": true },
+      { "name": "C-Reactive Protein (CRP)", "value": "6.4", "range": "< 3.0", "unit": "mg/L", "is_abnormal": true },
+      { "name": "Serum Calcium", "value": "9.2", "range": "8.5 - 10.2", "unit": "mg/dL", "is_abnormal": false }
+    ],
+    "impression": "Mild elevation in inflammatory markers consistent with joint osteoarthritic changes.",
+    "created_at": "2026-09-12T14:15:00Z"
+  },
+  {
+    "report_id": "LABR-1004",
+    "patient_id": "PAT-1004",
+    "patient_name": "Priya Nair",
+    "lab_id": "LAB-001",
+    "doctor_id": "DOC-105",
+    "test_name": "Serum IgE & Allergy Panel",
+    "report_date": "2026-09-10",
+    "date": "10 Sep 2026",
+    "status": "COMPLETED",
+    "critical_panic": false,
+    "specimen_id": "SPEC-8824",
+    "test_results": [
+      { "test_parameter": "Total IgE", "value": 340.0, "unit": "IU/mL", "reference_range": "< 100", "is_abnormal": true, "abnormality_direction": "HIGH" },
+      { "test_parameter": "Absolute Eosinophil Count", "value": 520.0, "unit": "cells/mcL", "reference_range": "40 - 440", "is_abnormal": true, "abnormality_direction": "HIGH" }
+    ],
+    "biomarkers": [
+      { "name": "Total IgE", "value": "340", "range": "< 100", "unit": "IU/mL", "is_abnormal": true },
+      { "name": "Absolute Eosinophil Count", "value": "520", "range": "40 - 440", "unit": "cells/mcL", "is_abnormal": true }
+    ],
+    "impression": "Elevated IgE and eosinophilia consistent with active allergic eczema.",
+    "created_at": "2026-09-10T09:45:00Z"
+  },
+  {
+    "report_id": "LABR-1005",
+    "patient_id": "PAT-1005",
+    "patient_name": "Rajesh Patel",
+    "lab_id": "LAB-002",
+    "doctor_id": "DOC-103",
+    "test_name": "Complete Blood Count & Vitamin Profile",
+    "report_date": "2026-09-11",
+    "date": "11 Sep 2026",
+    "status": "COMPLETED",
+    "critical_panic": false,
+    "specimen_id": "SPEC-8825",
+    "test_results": [
+      { "test_parameter": "Hemoglobin", "value": 13.8, "unit": "g/dL", "reference_range": "13.0 - 17.0", "is_abnormal": false, "abnormality_direction": "NORMAL" },
+      { "test_parameter": "25-OH Vitamin D", "value": 14.2, "unit": "ng/mL", "reference_range": "30 - 100", "is_abnormal": true, "abnormality_direction": "LOW" }
+    ],
+    "biomarkers": [
+      { "name": "Hemoglobin", "value": "13.8", "range": "13.0 - 17.0", "unit": "g/dL", "is_abnormal": false },
+      { "name": "25-OH Vitamin D", "value": "14.2", "range": "30 - 100", "unit": "ng/mL", "is_abnormal": true }
+    ],
+    "impression": "Vitamin D deficiency noted. Supplementation recommended.",
+    "created_at": "2026-09-11T16:00:00Z"
+  },
+  {
+    "report_id": "LABR-1006",
+    "patient_id": "PAT-1006",
+    "patient_name": "Ananya Sen",
+    "lab_id": "LAB-001",
+    "doctor_id": "DOC-106",
+    "test_name": "Serum Electrolyte & Magnesium Panel",
+    "report_date": "2026-09-13",
+    "date": "13 Sep 2026",
+    "status": "COMPLETED",
+    "critical_panic": false,
+    "specimen_id": "SPEC-8826",
+    "test_results": [
+      { "test_parameter": "Serum Sodium", "value": 139.0, "unit": "mEq/L", "reference_range": "135 - 145", "is_abnormal": false, "abnormality_direction": "NORMAL" },
+      { "test_parameter": "Serum Magnesium", "value": 1.9, "unit": "mg/dL", "reference_range": "1.7 - 2.2", "is_abnormal": false, "abnormality_direction": "NORMAL" }
+    ],
+    "biomarkers": [
+      { "name": "Serum Sodium", "value": "139", "range": "135 - 145", "unit": "mEq/L", "is_abnormal": false },
+      { "name": "Serum Magnesium", "value": "1.9", "range": "1.7 - 2.2", "unit": "mg/dL", "is_abnormal": false }
+    ],
+    "impression": "Normal serum electrolyte profile.",
+    "created_at": "2026-09-13T12:20:00Z"
+  },
+  {
+    "report_id": "LABR-1007",
+    "patient_id": "PAT-1007",
+    "patient_name": "Tariq Ahmed",
+    "lab_id": "LAB-001",
+    "doctor_id": "DOC-107",
+    "test_name": "Arterial Blood Gas & Eosinophil Count",
+    "report_date": "2026-09-14",
+    "date": "14 Sep 2026",
+    "status": "COMPLETED",
+    "critical_panic": false,
+    "specimen_id": "SPEC-8827",
+    "test_results": [
+      { "test_parameter": "pO2", "value": 88.0, "unit": "mmHg", "reference_range": "80 - 100", "is_abnormal": false, "abnormality_direction": "NORMAL" },
+      { "test_parameter": "Absolute Eosinophils", "value": 480.0, "unit": "cells/mcL", "reference_range": "40 - 440", "is_abnormal": true, "abnormality_direction": "HIGH" }
+    ],
+    "biomarkers": [
+      { "name": "pO2", "value": "88", "range": "80 - 100", "unit": "mmHg", "is_abnormal": false },
+      { "name": "Absolute Eosinophils", "value": "480", "range": "40 - 440", "unit": "cells/mcL", "is_abnormal": true }
+    ],
+    "impression": "Airway allergic reactivity evidenced by mild eosinophilia.",
+    "created_at": "2026-09-14T08:30:00Z"
+  },
+  {
+    "report_id": "LABR-1008",
+    "patient_id": "PAT-1008",
+    "patient_name": "Deepa Joshi",
+    "lab_id": "LAB-002",
+    "doctor_id": "DOC-108",
+    "test_name": "Liver Function & H. Pylori Test",
+    "report_date": "2026-09-15",
+    "date": "15 Sep 2026",
+    "status": "COMPLETED",
+    "critical_panic": false,
+    "specimen_id": "SPEC-8828",
+    "test_results": [
+      { "test_parameter": "ALT (SGPT)", "value": 24.0, "unit": "U/L", "reference_range": "7 - 56", "is_abnormal": false, "abnormality_direction": "NORMAL" }
+    ],
+    "biomarkers": [
+      { "name": "ALT (SGPT)", "value": "24", "range": "7 - 56", "unit": "U/L", "is_abnormal": false }
+    ],
+    "impression": "Normal liver enzymes; negative for H. Pylori infection.",
+    "created_at": "2026-09-15T15:10:00Z"
+  },
+  {
+    "report_id": "LABR-1009",
+    "patient_id": "PAT-1009",
+    "patient_name": "Kabir Das",
+    "lab_id": "LAB-002",
+    "doctor_id": "DOC-109",
+    "test_name": "Nasal Swab Culture & Sensitivity",
+    "report_date": "2026-09-13",
+    "date": "13 Sep 2026",
+    "status": "COMPLETED",
+    "critical_panic": false,
+    "specimen_id": "SPEC-8829",
+    "test_results": [
+      { "test_parameter": "Serum IgE", "value": 90.0, "unit": "IU/mL", "reference_range": "< 100", "is_abnormal": false, "abnormality_direction": "NORMAL" }
+    ],
+    "biomarkers": [
+      { "name": "Serum IgE", "value": "90", "range": "< 100", "unit": "IU/mL", "is_abnormal": false }
+    ],
+    "impression": "No pathogenic bacterial growth isolated.",
+    "created_at": "2026-09-13T10:30:00Z"
+  },
+  {
+    "report_id": "LABR-1010",
+    "patient_id": "PAT-1010",
+    "patient_name": "Lakshmi Menon",
+    "lab_id": "LAB-001",
+    "doctor_id": "DOC-103",
+    "test_name": "Bone Mineral Density Markers & Serum Creatinine",
+    "report_date": "2026-09-14",
+    "date": "14 Sep 2026",
+    "status": "COMPLETED",
+    "critical_panic": false,
+    "specimen_id": "SPEC-8830",
+    "test_results": [
+      { "test_parameter": "Serum Calcium", "value": 9.4, "unit": "mg/dL", "reference_range": "8.5 - 10.2", "is_abnormal": false, "abnormality_direction": "NORMAL" },
+      { "test_parameter": "Serum Creatinine", "value": 0.9, "unit": "mg/dL", "reference_range": "0.6 - 1.1", "is_abnormal": false, "abnormality_direction": "NORMAL" }
+    ],
+    "biomarkers": [
+      { "name": "Serum Calcium", "value": "9.4", "range": "8.5 - 10.2", "unit": "mg/dL", "is_abnormal": false },
+      { "name": "Serum Creatinine", "value": "0.9", "range": "0.6 - 1.1", "unit": "mg/dL", "is_abnormal": false }
+    ],
+    "impression": "Normal renal function and calcium homeostatic markers.",
+    "created_at": "2026-09-14T14:40:00Z"
   }
 ]

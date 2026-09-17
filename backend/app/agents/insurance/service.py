@@ -217,7 +217,9 @@ class InsuranceService:
         }
 
     def create_insurance_claim(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        patient_id = payload.get("patient_id") or "PAT-1025"
+        patient_id = payload.get("patient_id") or payload.get("caller_patient_id") or payload.get("authenticated_patient_id")
+        if not patient_id:
+            raise ValueError("Field 'patient_id' is required to create insurance claim. Please identify the patient.")
         patient = mock_db.find_one("patients", "patient_id", patient_id)
         if not patient:
             raise ValueError(f"Patient '{patient_id}' not found.")

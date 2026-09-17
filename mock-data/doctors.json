@@ -34,5 +34,77 @@
     "email": "dr.suresh@cityhospital.org",
     "available_days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
     "available_slots": ["09:00-09:30", "09:30-10:00", "10:00-10:30", "11:00-11:30"]
+  },
+  {
+    "doctor_id": "DOC-104",
+    "first_name": "Vikramaditya",
+    "last_name": "Roy",
+    "specialty": "Orthopedics",
+    "qualification": "MS (Orthopedics), MCh",
+    "hospital_id": "HOSP-001",
+    "phone": "+91 9123456783",
+    "email": "dr.roy@medionhealth.org",
+    "available_days": ["Monday", "Wednesday", "Thursday"],
+    "available_slots": ["10:00-10:30", "11:00-11:30", "15:00-15:30"]
+  },
+  {
+    "doctor_id": "DOC-105",
+    "first_name": "Kavita",
+    "last_name": "Iyer",
+    "specialty": "Dermatology",
+    "qualification": "MD (Dermatology, Venereology)",
+    "hospital_id": "HOSP-001",
+    "phone": "+91 9123456784",
+    "email": "dr.kavita@medionhealth.org",
+    "available_days": ["Tuesday", "Friday"],
+    "available_slots": ["10:00-10:30", "11:30-12:00", "16:00-16:30"]
+  },
+  {
+    "doctor_id": "DOC-106",
+    "first_name": "Pradeep",
+    "last_name": "Verma",
+    "specialty": "Neurology",
+    "qualification": "DM (Neurology)",
+    "hospital_id": "HOSP-002",
+    "phone": "+91 9123456785",
+    "email": "dr.verma@cityhospital.org",
+    "available_days": ["Monday", "Thursday"],
+    "available_slots": ["11:00-11:30", "14:00-14:30"]
+  },
+  {
+    "doctor_id": "DOC-107",
+    "first_name": "Sunita",
+    "last_name": "Kapoor",
+    "specialty": "Pulmonology",
+    "qualification": "MD (Pulmonary Medicine)",
+    "hospital_id": "HOSP-001",
+    "phone": "+91 9123456786",
+    "email": "dr.sunita@medionhealth.org",
+    "available_days": ["Wednesday", "Saturday"],
+    "available_slots": ["09:00-09:30", "10:30-11:00"]
+  },
+  {
+    "doctor_id": "DOC-108",
+    "first_name": "Ramesh",
+    "last_name": "Nambiar",
+    "specialty": "Gastroenterology",
+    "qualification": "DM (Gastroenterology)",
+    "hospital_id": "HOSP-001",
+    "phone": "+91 9123456787",
+    "email": "dr.nambiar@medionhealth.org",
+    "available_days": ["Tuesday", "Thursday"],
+    "available_slots": ["14:00-14:30", "15:30-16:00"]
+  },
+  {
+    "doctor_id": "DOC-109",
+    "first_name": "Meera",
+    "last_name": "Kulkarni",
+    "specialty": "ENT",
+    "qualification": "MS (Otorhinolaryngology)",
+    "hospital_id": "HOSP-002",
+    "phone": "+91 9123456788",
+    "email": "dr.meera@cityhospital.org",
+    "available_days": ["Monday", "Friday"],
+    "available_slots": ["10:00-10:30", "11:30-12:00"]
   }
 ]

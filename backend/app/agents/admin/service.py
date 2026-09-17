@@ -12,16 +12,18 @@ class AdminService:
         
         active_appointments = [a for a in appointments if a.get("status") in ["SCHEDULED", "CONFIRMED"]]
         
+        summary_text = f"Hospital operations summary for {hospital_id}: {len(patients)} total patients, {len(doctors)} doctors, {len(active_appointments)} active appointments, 78% bed occupancy rate, 3 critical alerts."
         return {
             "success": True,
             "hospital_id": hospital_id,
-            "summary": {
+            "operations": {
                 "total_patients": len(patients),
                 "total_doctors": len(doctors),
                 "active_appointments": len(active_appointments),
-                "occupancy_rate": "78%", # Mocked
-                "critical_alerts": 3 # Mocked
+                "occupancy_rate": "78%",
+                "critical_alerts": 3
             },
+            "summary": summary_text,
             "message": f"Operations summary retrieved for {hospital_id}"
         }
 

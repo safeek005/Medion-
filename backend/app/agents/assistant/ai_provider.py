@@ -99,7 +99,7 @@ class GeminiProvider(AIProvider):
 
 class SNSWorkbenchProvider(AIProvider):
     """SNS Workbench Provider for cloud multi-agent orchestration via api.agents.snsihub.ai."""
-    DEFAULT_ENDPOINT = "https://api.agents.snsihub.ai/webhook/c52f49ea-9ddb-45bd-ad60-728faebaa8bd"
+    DEFAULT_ENDPOINT = "https://api.agents.snsihub.ai/webhook/237b73c3-d493-48dd-9af6-2723087599ab"
 
     def __init__(self, endpoint_url: Optional[str] = None):
         self.endpoint_url = endpoint_url or os.getenv("SNS_WORKBENCH_URL", self.DEFAULT_ENDPOINT)
@@ -124,7 +124,7 @@ class SNSWorkbenchProvider(AIProvider):
                     "User-Agent": "MEDION-Healthcare-Agent/2.0"
                 }
             )
-            with urllib.request.urlopen(req, timeout=1.5) as response:
+            with urllib.request.urlopen(req, timeout=0.5) as response:
                 status_code = response.getcode()
                 raw_body = response.read().decode("utf-8")
                 res_json = json.loads(raw_body)
@@ -184,8 +184,6 @@ class DeterministicFallbackProvider(AIProvider):
         if "patient_id" not in extracted:
             if context and (context.get("caller_patient_id") or context.get("patient_id") or context.get("authenticated_patient_id")):
                 extracted["patient_id"] = context.get("caller_patient_id") or context.get("patient_id") or context.get("authenticated_patient_id")
-            elif user_role == "patient":
-                extracted["patient_id"] = "PAT-1025"
 
         provider_info = {
             "provider_name": "MEDION Deterministic Healthcare Engine (Offline / Fallback)",
@@ -244,18 +242,17 @@ class DeterministicFallbackProvider(AIProvider):
 
 class AssistantAIProvider:
     def __init__(self):
-        self.provider_mode = os.getenv("ASSISTANT_AI_PROVIDER", "workbench").lower()
+        self.provider_mode = os.getenv("ASSISTANT_AI_PROVIDER", "auto").lower()
         self.gemini_key = os.getenv("GEMINI_API_KEY")
         self.sns_url = os.getenv("SNS_WORKBENCH_URL", SNSWorkbenchProvider.DEFAULT_ENDPOINT)
 
-        if self.provider_mode == "workbench" or self.provider_mode == "auto":
+        if self.provider_mode == "workbench":
             self._provider = SNSWorkbenchProvider(self.sns_url)
         elif self.provider_mode == "gemini" and self.gemini_key:
             self._provider = GeminiProvider(self.gemini_key)
-        elif self.gemini_key:
-            self._provider = GeminiProvider(self.gemini_key)
         else:
-            self._provider = SNSWorkbenchProvider(self.sns_url)
+            self._provider = DeterministicFallbackProvider()
+
 
     def parse_intent(self, text: str, user_role: str = "doctor", context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         return self._provider.parse_intent(text, user_role=user_role, context=context)

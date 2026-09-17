@@ -21,12 +21,12 @@ def test_get_available_slots():
     agent = AppointmentAgent()
     payload = {
         "doctor_id": "DOC-101",
-        "date": "2026-09-16"
+        "date": "2026-09-18"
     }
     result = agent.execute("get_available_slots", payload)
     assert result["success"] is True
     assert result["count"] >= 1
-    # 10:00-10:30 is already booked in APT-1001 for 2026-09-16, so it should not be in available_slots
+    # 10:00-10:30 is already booked in APT-1001 for 2026-09-18, so it should not be in available_slots
     slots = [s["time_slot"] for s in result["available_slots"]]
     assert "10:00-10:30" not in slots
     assert "11:00-11:30" in slots
@@ -48,12 +48,12 @@ def test_book_appointment_success():
 
 def test_book_appointment_slot_conflict():
     agent = AppointmentAgent()
-    # Try to book 10:00-10:30 on 2026-09-16 which is already occupied by APT-1001
+    # Try to book 10:00-10:30 on 2026-09-18 which is already occupied by APT-1001
     payload = {
         "patient_id": "PAT-1002",
         "doctor_id": "DOC-101",
         "hospital_id": "HOSP-001",
-        "date": "2026-09-16",
+        "date": "2026-09-18",
         "time_slot": "10:00-10:30"
     }
     with pytest.raises(ValueError, match="already booked"):

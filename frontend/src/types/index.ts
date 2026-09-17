@@ -34,6 +34,17 @@ export interface PatientProfile {
   insurance_policy_id?: string | null;
   allergies?: string[] | string | null;
   chronic_conditions?: string[] | null;
+  vitals?: {
+    bp?: string;
+    pulse?: number | string;
+    spo2?: number | string;
+    temp?: string;
+    rr?: number | string;
+    weight?: string;
+    height?: string;
+    notes?: string;
+    last_taken?: string;
+  } | null;
   created_at?: string;
 }
 

@@ -33,14 +33,15 @@ DOCTOR_PATTERNS = [
 
 PATIENT_MAPPINGS = {
     "PAT-1001": ["pat-1001", "arun kumar", "arun"],
-    "PAT-1002": ["pat-1002", "sneha sharma", "sneha", "snesha"],
+    "PAT-1002": ["pat-1002", "sneha sharma", "sneha"],
     "PAT-1003": ["pat-1003", "vikram singh", "vikram"],
-    "PAT-1004": ["pat-1004", "priya sharma", "priya"],
-    "PAT-1005": ["pat-1005", "kavita iyer", "kavita"],
-    "PAT-1006": ["pat-1006", "rajesh iyer"],
-    "PAT-1007": ["pat-1007", "ananya roy", "ananya"],
-    "PAT-1008": ["pat-1008", "mohammed farooq", "farooq"],
-    "PAT-1025": ["pat-1025", "kavya", "harini"]
+    "PAT-1004": ["pat-1004", "priya nair", "priya"],
+    "PAT-1005": ["pat-1005", "rajesh patel", "rajesh"],
+    "PAT-1006": ["pat-1006", "ananya sen", "ananya"],
+    "PAT-1007": ["pat-1007", "tariq ahmed", "tariq"],
+    "PAT-1008": ["pat-1008", "deepa joshi", "deepa"],
+    "PAT-1009": ["pat-1009", "kabir das", "kabir"],
+    "PAT-1010": ["pat-1010", "lakshmi menon", "lakshmi"]
 }
 
 class DeterministicParser:
@@ -349,6 +350,17 @@ class DeterministicParser:
         if any(w in text_lower for w in ["available", "slots", "availability", "when can i meet", "when can i see", "when is dr", "is dr", "free on", "free tomorrow", "check slots", "open slots", "is free"]):
             return "get_available_slots", 0.95, []
 
+        # Nurse Domain
+        if any(w in text_lower for w in ["record vitals", "record patient vitals", "log vitals", "take vitals", "enter vitals", "update vitals"]) or ("vitals for" in text_lower and ("record" in text_lower or "update" in text_lower or "take" in text_lower or "check" in text_lower)):
+            return "record_vitals", 0.95, []
+
+        if any(w in text_lower for w in ["nurse task", "nurse tasks", "my nurse tasks", "nursing tasks", "assigned patients", "vitals queue"]):
+            return "get_nurse_tasks", 0.95, []
+
+        # Admin Domain
+        if any(w in text_lower for w in ["hospital operation", "hospital operations", "operations summary", "bed utilization", "emergency department throughput", "hospital bed"]):
+            return "get_operations_summary", 0.95, []
+
         # Medical / Lab
         if any(w in text_lower for w in ["explain", "simple language", "simply", "patient-friendly"]):
             return "explain_lab_report", 0.95, []
@@ -370,7 +382,7 @@ class DeterministicParser:
         if any(w in text_lower for w in ["extract", "parse lab", "test parameters"]):
             return "extract_lab_report", 0.95, []
 
-        if any(w in text_lower for w in ["analyze", "abnormal", "blood report", "blood test", "lab report", "lab test", "findings", "metabolic panel", "lipid", "check what's wrong", "check what is wrong", "look abnormal", "looks weird"]):
+        if any(w in text_lower for w in ["analyze", "abnormal", "blood report", "blood test", "lab report", "lab test", "findings", "metabolic panel", "lipid", "check what's wrong", "check what is wrong", "look abnormal", "looks weird", "latest report", "show report", "latest lab report"]):
             return "analyze_lab_report", 0.95, []
 
         # Insurance
@@ -386,11 +398,14 @@ class DeterministicParser:
         if any(w in text_lower for w in ["claim status", "status of my claim", "status of claim", "track claim"]) or re.search(r'\bCLM-\d+\b', text, re.I):
             return "get_claim_status", 0.95, []
 
-        if any(w in text_lower for w in ["is my insurance valid", "is my insurance active", "verify insurance", "insurance eligibility", "is insured", "going on with my insurance"]):
+        if any(w in text_lower for w in ["is my insurance valid", "is my insurance active", "verify insurance", "insurance eligibility", "is insured", "going on with my insurance", "insurance policy", "check my insurance policy", "my insurance policy", "check policy"]):
             return "verify_insurance", 0.95, []
 
         # Patient Domain
-        if any(w in text_lower for w in ["medical history", "patient history", "full history", "clinical history"]):
+        if any(w in text_lower for w in ["prescription", "prescriptions", "medication", "medications", "active prescriptions", "my prescriptions"]):
+            return "get_patient_prescriptions", 0.95, []
+
+        if any(w in text_lower for w in ["medical history", "patient history", "full history", "clinical history", "history"]):
             return "get_patient_history", 0.95, []
 
         if (any(w in text_lower for w in ["update", "modify"]) and any(f in text_lower for f in ["phone", "number", "address", "contact", "details", "email", "patient", "profile", "safeek", "pat-"])) or any(w in text_lower for w in ["update patient", "modify patient", "update phone", "change address"]):
@@ -405,6 +420,7 @@ class DeterministicParser:
 
         if any(w in text_lower for w in ["profile", "show patient", "get patient", "show arun", "show sneha"]):
             return "get_patient", 0.90, []
+
 
         # Keyword matching fallback from ACTION_REGISTRY
         matches = []

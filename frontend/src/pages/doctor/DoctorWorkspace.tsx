@@ -167,107 +167,83 @@ export const DoctorWorkspace: React.FC<DoctorWorkspaceProps> = ({ onTraceGenerat
         },
       };
 
-  // Today's patient queue
-  const todayQueue = [
+  // Today's patient queue (Dynamically generated from live appointments & patients database)
+  const doctorAppointments = appointments.filter(
+    (a) => (a.doctor_id === 'DOC-101' || !a.doctor_id) && a.status !== 'CANCELLED'
+  );
+
+  const todayQueue = doctorAppointments.map((apt) => {
+    const p = patients.find((pat) => pat.patient_id.toUpperCase() === apt.patient_id?.toUpperCase());
+    const pName = p ? `${p.first_name} ${p.last_name}` : 'Patient';
+    const ageNum = p?.date_of_birth ? new Date().getFullYear() - new Date(p.date_of_birth).getFullYear() : (p?.dob ? new Date().getFullYear() - new Date(p.dob).getFullYear() : 45);
+
+    return {
+      id: apt.patient_id,
+      appointment_id: apt.appointment_id,
+      name: pName,
+      time: apt.time_slot || '10:00 AM',
+      age: ageNum || 45,
+      gender: p?.gender || 'Unspecified',
+      reason: apt.reason || 'Clinical Consultation',
+      priority: (apt.reason?.toLowerCase().includes('chest') || apt.reason?.toLowerCase().includes('stat')) ? 'STAT' : 'ROUTINE',
+      priorityVariant: (apt.reason?.toLowerCase().includes('chest') || apt.reason?.toLowerCase().includes('stat')) ? ('red' as const) : ('neutral' as const),
+      status: apt.status || 'SCHEDULED',
+      lastInteraction: `${apt.date} ${apt.time_slot}`,
+      currentConcern: apt.reason || 'Outpatient Consultation',
+      nextAction: 'Review chart & clinical summary',
+      unreadAction: 'AI Review Ready',
+    };
+  });
+
+  // Dynamic longitudinal patient vitals read directly from patient record (Nurse updated or baseline)
+  const patientVitalsData = (activePatient as any).vitals;
+  const currentVitals: VitalSignItem[] = [
     {
-      id: 'PAT-1001',
-      name: 'Arun Kumar',
-      time: '10:00 AM',
-      age: 42,
-      gender: 'Male',
-      reason: 'Cardiology Follow-Up & Lipid Panel',
-      priority: 'STAT',
-      priorityVariant: 'red' as const,
-      status: 'In Consultation Room 4B',
-      lastInteraction: 'Sep 15 16:30 (Nurse Vitals)',
-      currentConcern: 'Stage 1 HTN (138/88 mmHg) & Borderline High LDL (142 mg/dL)',
-      nextAction: 'Titrate Amlodipine & sign ARB order',
-      unreadAction: 'AI Rx Review',
+      id: 'v1',
+      name: 'Blood Pressure',
+      value: patientVitalsData?.bp || '120/80',
+      unit: 'mmHg',
+      status: (patientVitalsData?.bp?.includes('140') || patientVitalsData?.bp?.includes('150') || patientVitalsData?.bp?.includes('160')) ? 'elevated' : 'normal',
+      referenceRange: '< 120/80 mmHg',
+      measuredAt: patientVitalsData?.last_taken || 'Today',
     },
     {
-      id: 'PAT-1025',
-      name: 'Kavya Sharma',
-      time: '10:30 AM',
-      age: 28,
-      gender: 'Female',
-      reason: 'Preventive Care & Vitamin D Repletion Review',
-      priority: 'ROUTINE',
-      priorityVariant: 'neutral' as const,
-      status: 'Checked In / OPD Suite 4B',
-      lastInteraction: 'Sep 14 09:30 (Lab Vit-D/CBC)',
-      currentConcern: 'Severe Hypovitaminosis D (14.2 ng/mL) with fatigue',
-      nextAction: 'Review 8-week weekly loading protocol',
-      unreadAction: 'AI Rx Review',
+      id: 'v2',
+      name: 'Heart Rate',
+      value: patientVitalsData?.pulse || 76,
+      unit: 'bpm',
+      status: Number(patientVitalsData?.pulse || 76) > 100 ? 'critical' : 'normal',
+      referenceRange: '60 - 100 bpm',
+      measuredAt: patientVitalsData?.last_taken || 'Today',
     },
     {
-      id: 'PAT-1006',
-      name: 'Rajesh Iyer',
-      time: '11:30 AM',
-      age: 61,
-      gender: 'Male',
-      reason: 'Unstable Angina / Coronary Care Step-Down',
-      priority: 'STAT',
-      priorityVariant: 'red' as const,
-      status: 'ICCU Bed 201',
-      lastInteraction: 'Sep 16 09:15 (ECG Recorded)',
-      currentConcern: 'Elevated Troponin T (0.048 ng/mL) with chest tightness',
-      nextAction: 'Review repeat biomarker & schedule Cath Lab slot',
-      unreadAction: 'AI Rx Review',
+      id: 'v3',
+      name: 'SpO2 Oxygen Saturation',
+      value: patientVitalsData?.spo2 || 98,
+      unit: '%',
+      status: Number(patientVitalsData?.spo2 || 98) < 95 ? 'critical' : 'normal',
+      referenceRange: '95 - 100%',
+      measuredAt: patientVitalsData?.last_taken || 'Today',
     },
     {
-      id: 'PAT-1003',
-      name: 'Vikram Singh',
-      time: '11:00 AM',
-      age: 58,
-      gender: 'Male',
-      reason: 'Post-MI Inpatient Step-Down Review',
-      priority: 'URGENT',
-      priorityVariant: 'amber' as const,
-      status: 'Ward 3 East Bed 301-B',
-      lastInteraction: 'Sep 16 08:00 (Morning Rounding)',
-      currentConcern: 'Mild orthostatic dizziness post-ACE inhibitor dose',
-      nextAction: 'Check postural vitals & adjust morning diuretic',
+      id: 'v4',
+      name: 'Temperature',
+      value: patientVitalsData?.temp || '98.6',
+      unit: '°F',
+      status: 'normal',
+      referenceRange: '97.8 - 99.1°F',
+      measuredAt: patientVitalsData?.last_taken || 'Today',
     },
     {
-      id: 'PAT-1002',
-      name: 'Sneha Sharma',
-      time: '12:00 PM',
-      age: 33,
-      gender: 'Female',
-      reason: 'Thyroid Panel & Fatigue Evaluation',
-      priority: 'ROUTINE',
-      priorityVariant: 'neutral' as const,
-      status: 'Checked In / Waiting Area',
-      lastInteraction: 'Sep 10 (OPD Intake)',
-      currentConcern: 'Borderline elevated TSH (4.8 mIU/L), normal free T4',
-      nextAction: 'Clinical counseling on thyroid autoantibody screening',
+      id: 'v5',
+      name: 'Respiratory Rate',
+      value: patientVitalsData?.rr || 16,
+      unit: '/min',
+      status: 'normal',
+      referenceRange: '12 - 20 /min',
+      measuredAt: patientVitalsData?.last_taken || 'Today',
     },
   ];
-
-  // Dynamic longitudinal patient vitals
-  const currentVitals: VitalSignItem[] = selectedPatientId === 'PAT-1025'
-    ? [
-        { id: 'v1', name: 'Blood Pressure', value: '116/74', unit: 'mmHg', status: 'normal', referenceRange: '< 120/80 mmHg', measuredAt: 'Sep 14, 2026' },
-        { id: 'v2', name: 'Heart Rate', value: 72, unit: 'bpm', status: 'normal', referenceRange: '60 - 100 bpm', measuredAt: 'Sep 14, 2026' },
-        { id: 'v3', name: 'SpO2 Oxygen Saturation', value: 99, unit: '%', status: 'normal', referenceRange: '95 - 100%', measuredAt: 'Sep 14, 2026' },
-        { id: 'v4', name: 'Fasting Blood Sugar', value: 86, unit: 'mg/dL', status: 'normal', referenceRange: '70 - 99 mg/dL', measuredAt: 'Sep 14, 2026' },
-        { id: 'v5', name: '25-OH Vitamin D', value: 14.2, unit: 'ng/mL', status: 'critical', referenceRange: '30 - 100 ng/mL', measuredAt: 'Sep 14, 2026' },
-      ]
-    : selectedPatientId === 'PAT-1006'
-    ? [
-        { id: 'v1', name: 'Blood Pressure', value: '146/92', unit: 'mmHg', status: 'elevated', referenceRange: '< 120/80 mmHg', measuredAt: 'Sep 16, 2026' },
-        { id: 'v2', name: 'Heart Rate', value: 88, unit: 'bpm', status: 'normal', referenceRange: '60 - 100 bpm', measuredAt: 'Sep 16, 2026' },
-        { id: 'v3', name: 'SpO2 Oxygen Saturation', value: 96, unit: '%', status: 'normal', referenceRange: '95 - 100%', measuredAt: 'Sep 16, 2026' },
-        { id: 'v4', name: 'Cardiac Troponin T', value: 0.048, unit: 'ng/mL', status: 'critical', referenceRange: '< 0.014 ng/mL', measuredAt: 'Sep 16, 2026' },
-        { id: 'v5', name: 'Serum Creatinine', value: 1.1, unit: 'mg/dL', status: 'normal', referenceRange: '0.7 - 1.3 mg/dL', measuredAt: 'Sep 16, 2026' },
-      ]
-    : [
-        { id: 'v1', name: 'Blood Pressure', value: '138/88', unit: 'mmHg', status: 'elevated', referenceRange: '< 120/80 mmHg', measuredAt: 'Sep 15, 2026' },
-        { id: 'v2', name: 'Heart Rate', value: 78, unit: 'bpm', status: 'normal', referenceRange: '60 - 100 bpm', measuredAt: 'Sep 15, 2026' },
-        { id: 'v3', name: 'SpO2 Oxygen Saturation', value: 98, unit: '%', status: 'normal', referenceRange: '95 - 100%', measuredAt: 'Sep 15, 2026' },
-        { id: 'v4', name: 'Fasting Blood Sugar', value: 92, unit: 'mg/dL', status: 'normal', referenceRange: '70 - 99 mg/dL', measuredAt: 'Sep 14, 2026' },
-        { id: 'v5', name: 'Serum Creatinine', value: 0.95, unit: 'mg/dL', status: 'normal', referenceRange: '0.7 - 1.3 mg/dL', measuredAt: 'Sep 14, 2026' },
-      ];
 
   // Care timeline
   const doctorCareTimeline: TimelineEvent[] = [

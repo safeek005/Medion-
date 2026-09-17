@@ -1,0 +1,12 @@
+[
+  { "patient_id": "PAT-1001", "recorded_by": "NUR-201", "recorded_at": "2026-09-17T09:00:00Z", "blood_pressure": "142/90", "heart_rate": 78, "spo2": 98, "temperature": 98.4 },
+  { "patient_id": "PAT-1002", "recorded_by": "NUR-201", "recorded_at": "2026-09-17T09:15:00Z", "blood_pressure": "122/80", "heart_rate": 72, "spo2": 99, "temperature": 98.6 },
+  { "patient_id": "PAT-1003", "recorded_by": "NUR-202", "recorded_at": "2026-09-17T09:30:00Z", "blood_pressure": "130/84", "heart_rate": 76, "spo2": 98, "temperature": 98.2 },
+  { "patient_id": "PAT-1004", "recorded_by": "NUR-202", "recorded_at": "2026-09-17T09:45:00Z", "blood_pressure": "118/76", "heart_rate": 68, "spo2": 99, "temperature": 98.4 },
+  { "patient_id": "PAT-1005", "recorded_by": "NUR-201", "recorded_at": "2026-09-17T08:30:00Z", "blood_pressure": "126/82", "heart_rate": 74, "spo2": 98, "temperature": 98.5 },
+  { "patient_id": "PAT-1006", "recorded_by": "NUR-202", "recorded_at": "2026-09-17T10:00:00Z", "blood_pressure": "115/75", "heart_rate": 66, "spo2": 99, "temperature": 98.3 },
+  { "patient_id": "PAT-1007", "recorded_by": "NUR-201", "recorded_at": "2026-09-17T10:15:00Z", "blood_pressure": "124/80", "heart_rate": 82, "spo2": 96, "temperature": 98.7 },
+  { "patient_id": "PAT-1008", "recorded_by": "NUR-202", "recorded_at": "2026-09-17T10:30:00Z", "blood_pressure": "120/78", "heart_rate": 70, "spo2": 99, "temperature": 98.4 },
+  { "patient_id": "PAT-1009", "recorded_by": "NUR-201", "recorded_at": "2026-09-17T10:45:00Z", "blood_pressure": "122/78", "heart_rate": 74, "spo2": 98, "temperature": 98.6 },
+  { "patient_id": "PAT-1010", "recorded_by": "NUR-202", "recorded_at": "2026-09-17T11:00:00Z", "blood_pressure": "128/82", "heart_rate": 72, "spo2": 98, "temperature": 98.2 }
+]

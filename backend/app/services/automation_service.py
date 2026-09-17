@@ -728,7 +728,7 @@ class AutomationService:
 
     # 17. Claim Creation/Validation Automation
     def auto_17_claim_creation(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        patient_id = payload.get("patient_id") or "PAT-1025"
+        patient_id = payload.get("patient_id") or payload.get("caller_patient_id") or "PAT-1001"
         patient = mock_db.find_one("patients", "patient_id", patient_id)
         if not patient:
             raise ValueError(f"Patient '{patient_id}' not found.")
@@ -867,7 +867,7 @@ class AutomationService:
 
     # 20. End-to-End Care Coordination Automation
     def auto_20_care_coordination(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        patient_id = payload.get("patient_id") or "PAT-1025"
+        patient_id = payload.get("patient_id") or payload.get("caller_patient_id") or "PAT-1001"
         patient = mock_db.find_one("patients", "patient_id", patient_id) or mock_db.find_one("patients", "patient_id", "PAT-1001")
         pid = patient.get("patient_id", "PAT-1001")
         policy_id = patient.get("insurance_policy_id", "POL-725")

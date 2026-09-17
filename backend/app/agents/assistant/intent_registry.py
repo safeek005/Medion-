@@ -42,6 +42,26 @@ ACTION_REGISTRY: Dict[str, Dict[str, Any]] = {
             "clinical history", "arun kumar's medical history", "medical history for", "history for patient"
         ]
     },
+    "get_patient_prescriptions": {
+        "agent": "patient",
+        "action": "get_patient_prescriptions",
+        "required_params": [],
+        "keywords": [
+            "active prescriptions", "list my active prescriptions", "my active prescriptions",
+            "show active prescriptions", "show my prescriptions", "list prescriptions",
+            "active medications", "medication history", "my prescriptions", "prescriptions list"
+        ]
+    },
+    "get_active_prescriptions": {
+        "agent": "patient",
+        "action": "get_patient_prescriptions",
+        "required_params": [],
+        "keywords": [
+            "active prescriptions", "list my active prescriptions", "my active prescriptions",
+            "show active prescriptions", "show my prescriptions", "list prescriptions",
+            "active medications", "medication history", "my prescriptions", "prescriptions list"
+        ]
+    },
 
     # Medical Domain
     "extract_lab_report": {
@@ -134,13 +154,13 @@ ACTION_REGISTRY: Dict[str, Dict[str, Any]] = {
         "agent": "insurance",
         "action": "verify_insurance",
         "required_params": ["patient_id"],
-        "keywords": ["verify insurance", "check insurance", "insurance status", "is insured", "insurance eligibility", "is my insurance valid", "is my insurance active"]
+        "keywords": ["verify insurance", "check insurance", "insurance status", "is insured", "insurance eligibility", "is my insurance valid", "is my insurance active", "check my insurance policy", "insurance policy", "my insurance policy"]
     },
     "get_coverage": {
         "agent": "insurance",
         "action": "get_coverage",
         "required_params": ["patient_id"],
-        "keywords": ["check coverage", "get coverage", "policy coverage", "copay", "insurance coverage", "how much coverage", "how much insurance coverage"]
+        "keywords": ["check coverage", "get coverage", "policy coverage", "copay", "insurance coverage", "how much coverage", "how much insurance coverage", "policy"]
     },
     "prepare_claim": {
         "agent": "insurance",
@@ -171,5 +191,38 @@ ACTION_REGISTRY: Dict[str, Dict[str, Any]] = {
         "action": "adjudicate_claim",
         "required_params": ["claim_id", "decision"],
         "keywords": ["adjudicate claim", "approve claim", "reject claim", "deny claim", "adjudicate", "adjudicate claim clm"]
+    },
+
+    # Nurse Domain
+    "get_nurse_tasks": {
+        "agent": "nurse",
+        "action": "get_tasks",
+        "required_params": [],
+        "keywords": ["nurse tasks", "my nurse tasks", "show nurse tasks", "show my nurse tasks", "assigned patients", "nurse dashboard", "vitals queue", "nursing tasks"]
+    },
+    "record_vitals": {
+        "agent": "nurse",
+        "action": "record_vitals",
+        "required_params": ["patient_id"],
+        "keywords": [
+            "record vitals", "record patient vitals", "log vitals", "update vitals", "take vitals",
+            "record patient vitals for", "record vitals for", "vitals for arun", "vitals for rahul",
+            "record bp", "record blood pressure", "nurse vitals", "enter vitals"
+        ]
+    },
+    "administer_medication": {
+        "agent": "nurse",
+        "action": "administer_medication",
+        "required_params": ["patient_id", "medication_id"],
+        "keywords": ["administer medication", "give medication", "administer dose", "record medication given"]
+    },
+
+    # Admin Domain
+    "get_operations_summary": {
+        "agent": "admin",
+        "action": "get_operations_summary",
+        "required_params": [],
+        "keywords": ["hospital operations", "show hospital operations", "operations summary", "hospital bed utilization", "bed utilization", "emergency department throughput", "admin dashboard", "hospital metrics"]
     }
 }
+

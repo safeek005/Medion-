@@ -41,25 +41,39 @@ class AssistantService:
                 params.get("caller_patient_id") or
                 payload.get("patient_id") or
                 params.get("patient_id") or
-                "PAT-1025"
+                ""
             )
 
             # Block queries for other patients by name or ID
             msg_lower = message.lower()
-            other_names = ["arun", "priya", "vikram", "sneha", "kavita", "ananya", "mohammed", "pat-1001", "pat-1002", "pat-1003", "pat-1004", "pat-1005", "pat-1006", "pat-1007", "pat-1008"]
-            for oname in other_names:
-                if oname in msg_lower and oname not in caller_pid.lower():
-                    denied_msg = f"Access Denied: You are authenticated as patient '{caller_pid}' and cannot access or query records for other patients."
-                    return {
-                        **parsed,
-                        "success": False,
-                        "target_agent": "assistant",
-                        "target_action": "access_denied",
-                        "summary": denied_msg,
-                        "formatted_text": denied_msg,
-                        "result_data": {"success": False, "error": denied_msg},
-                        "needs_clarification": False
-                    }
+            all_synthetic_patients = {
+                "PAT-1001": ["arun", "pat-1001"],
+                "PAT-1002": ["sneha", "pat-1002"],
+                "PAT-1003": ["vikram", "pat-1003"],
+                "PAT-1004": ["priya", "pat-1004"],
+                "PAT-1005": ["rajesh", "pat-1005"],
+                "PAT-1006": ["ananya", "pat-1006"],
+                "PAT-1007": ["tariq", "pat-1007"],
+                "PAT-1008": ["deepa", "pat-1008"],
+                "PAT-1009": ["kabir", "pat-1009"],
+                "PAT-1010": ["lakshmi", "pat-1010"]
+            }
+            if caller_pid:
+                for other_id, aliases in all_synthetic_patients.items():
+                    if caller_pid.upper() != other_id.upper():
+                        for alias in aliases:
+                            if alias in msg_lower:
+                                denied_msg = f"Access Denied: You are authenticated as patient '{caller_pid}' and cannot access or query records for other patients."
+                                return {
+                                    **parsed,
+                                    "success": False,
+                                    "target_agent": "assistant",
+                                    "target_action": "access_denied",
+                                    "summary": denied_msg,
+                                    "formatted_text": denied_msg,
+                                    "result_data": {"success": False, "error": denied_msg},
+                                    "needs_clarification": False
+                                }
 
             # Administrative actions check
             admin_intent_keywords = [
@@ -163,18 +177,25 @@ class AssistantService:
             }
 
         # If intent routes to a specialized domain agent, execute it with verified parameters
-        if target_agent in ["medical", "patient", "appointment", "insurance"]:
+        if target_agent in ["medical", "patient", "appointment", "insurance", "nurse", "admin", "lab"]:
             from app.agents.patient.service import patient_service
             from app.agents.medical.service import medical_service
             from app.agents.appointment.service import appointment_service
             from app.agents.insurance.service import insurance_service
+            from app.agents.nurse.service import nurse_service
+            from app.agents.admin.service import admin_service
+            from app.agents.lab.service import lab_service
 
             domain_services = {
                 "patient": patient_service,
                 "medical": medical_service,
                 "appointment": appointment_service,
-                "insurance": insurance_service
+                "insurance": insurance_service,
+                "nurse": nurse_service,
+                "admin": admin_service,
+                "lab": lab_service
             }
+
 
             service = domain_services[target_agent]
             action_func = getattr(service, target_action, None)

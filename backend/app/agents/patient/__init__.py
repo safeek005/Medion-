@@ -34,8 +34,12 @@ class PatientAgent(BaseAgent):
             return patient_service.get_patient_history(payload)
         elif action_clean == "get_patient_prescriptions":
             return patient_service.get_patient_prescriptions(payload)
+        elif action_clean == "check_duplicate":
+            return patient_service.check_duplicate(payload)
+        elif action_clean == "ocr_extract_document":
+            return patient_service.ocr_extract_document(payload)
         else:
             raise ValueError(
                 f"Action '{action}' is not supported by Patient Agent. "
-                "Supported actions: register_patient, get_patient, search_patient, update_patient, get_patient_history, get_patient_prescriptions."
+                "Supported actions: register_patient, get_patient, search_patient, update_patient, get_patient_history, get_patient_prescriptions, check_duplicate, ocr_extract_document."
             )

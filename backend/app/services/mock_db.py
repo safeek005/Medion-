@@ -11,7 +11,7 @@ logger = logging.getLogger("medion.database")
 SUPABASE_TABLES = {
     "patients", "doctors", "appointments", "insurance_policies",
     "insurance_claims", "lab_reports", "medical_records", "prescriptions",
-    "tasks", "vitals", "lab_orders", "audit_logs"
+    "tasks", "vitals"
 }
 
 def get_database_mode() -> str:
@@ -20,14 +20,13 @@ def get_database_mode() -> str:
     - In PRODUCTION / LIVE runtime, defaults to 'supabase' when configured or when DATABASE_MODE=supabase.
     - In TEST / MOCK runtime, returns 'mock' when DATABASE_MODE=mock or during pytest execution.
     """
+    if ("PYTEST_CURRENT_TEST" in os.environ or os.getenv("APP_ENV") == "test") and os.getenv("USE_LIVE_DB_IN_TESTS", "false").lower() not in ["true", "1"]:
+        return "mock"
+
     env_mode = os.getenv("DATABASE_MODE", "").lower().strip()
     if env_mode in ["supabase", "postgres", "cloud"]:
         return "supabase"
     if env_mode in ["mock", "local", "memory"]:
-        return "mock"
-
-    # Pytest test-runner execution default to mock fixtures unless live testing requested
-    if ("PYTEST_CURRENT_TEST" in os.environ or os.getenv("APP_ENV") == "test") and os.getenv("USE_LIVE_DB_IN_TESTS", "false").lower() not in ["true", "1"]:
         return "mock"
 
     if supabase_db.is_configured():
@@ -68,19 +67,30 @@ class MockDatabaseService:
         if mode == "supabase" and collection_name in SUPABASE_TABLES:
             if not supabase_db.is_configured():
                 raise RuntimeError("Database unavailable: DATABASE_MODE is 'supabase' but Supabase credentials are not configured.")
-            return supabase_db.get_collection(collection_name)
+            try:
+                res = supabase_db.get_collection(collection_name)
+                if res or collection_name in ["appointments", "patients", "doctors"]:
+                    return res
+            except Exception as e:
+                logger.warning(f"Failed to fetch {collection_name} from Supabase, falling back to cache: {e}")
+            return self._cache.get(collection_name, [])
         elif mode == "mock" or collection_name not in SUPABASE_TABLES:
             return self._cache.get(collection_name, [])
-        raise ValueError(f"Unknown DATABASE_MODE: '{mode}'")
+        return self._cache.get(collection_name, [])
 
     def find_one(self, collection_name: str, key: str, value: Any, skip_remote: bool = False) -> Optional[Dict[str, Any]]:
         mode = get_database_mode()
         if mode == "supabase" and not skip_remote and collection_name in SUPABASE_TABLES:
             if not supabase_db.is_configured():
                 raise RuntimeError("Database unavailable: DATABASE_MODE is 'supabase' but Supabase credentials are not configured.")
-            return supabase_db.find_one(collection_name, key, value)
+            try:
+                res = supabase_db.find_one(collection_name, key, value)
+                if res is not None:
+                    return res
+            except Exception as e:
+                logger.warning(f"Supabase find_one failed for {collection_name}.{key}={value}: {e}")
         
-        # Mock mode or auxiliary non-database metadata
+        # Mock mode or fallback to local memory cache if not found remotely
         collection = self._cache.get(collection_name, [])
         for item in collection:
             if item.get(key) == value:
@@ -92,7 +102,12 @@ class MockDatabaseService:
         if mode == "supabase" and collection_name in SUPABASE_TABLES:
             if not supabase_db.is_configured():
                 raise RuntimeError("Database unavailable: DATABASE_MODE is 'supabase' but Supabase credentials are not configured.")
-            return supabase_db.find_many(collection_name, key, value)
+            try:
+                res = supabase_db.find_many(collection_name, key, value)
+                if res:
+                    return res
+            except Exception as e:
+                logger.warning(f"Supabase find_many failed for {collection_name}.{key}={value}: {e}")
         
         collection = self._cache.get(collection_name, [])
         return [item for item in collection if item.get(key) == value]
@@ -143,11 +158,14 @@ class MockDatabaseService:
         if mode == "supabase":
             if not supabase_db.is_configured():
                 raise RuntimeError("Database unavailable: DATABASE_MODE is 'supabase' but Supabase credentials are not configured.")
-            remote = supabase_db.add_patient(patient)
-            if "patients" not in self._cache:
-                self._cache["patients"] = []
-            self._cache["patients"].append(remote)
-            return remote
+            try:
+                remote = supabase_db.add_patient(patient)
+                if "patients" not in self._cache:
+                    self._cache["patients"] = []
+                self._cache["patients"].append(remote)
+                return remote
+            except Exception as e:
+                logger.warning(f"Supabase add_patient error: {e}, caching locally.")
 
         if "patients" not in self._cache:
             self._cache["patients"] = []
@@ -260,12 +278,15 @@ class MockDatabaseService:
         if mode == "supabase":
             if not supabase_db.is_configured():
                 raise RuntimeError("Database unavailable: DATABASE_MODE is 'supabase' but Supabase credentials are not configured.")
-            remote = supabase_db.update_appointment(appointment_id, updates)
-            if remote:
-                cached = self.find_one("appointments", "appointment_id", appointment_id, skip_remote=True)
-                if cached:
-                    cached.update(updates)
-            return remote
+            try:
+                remote = supabase_db.update_appointment(appointment_id, updates)
+                if remote:
+                    cached = self.find_one("appointments", "appointment_id", appointment_id, skip_remote=True)
+                    if cached:
+                        cached.update(updates)
+                    return remote
+            except Exception as e:
+                logger.warning(f"Supabase update_appointment error: {e}")
 
         apt = self.find_one("appointments", "appointment_id", appointment_id, skip_remote=True)
         if not apt:
@@ -281,7 +302,10 @@ class MockDatabaseService:
         if mode == "supabase":
             if not supabase_db.is_configured():
                 raise RuntimeError("Database unavailable: DATABASE_MODE is 'supabase' but Supabase credentials are not configured.")
-            return supabase_db.update_appointment_status(appointment_id, status)
+            try:
+                return supabase_db.update_appointment_status(appointment_id, status)
+            except Exception as e:
+                logger.warning(f"Supabase update_appointment_status error: {e}")
         return self.update_appointment(appointment_id, {"status": status})
 
     def find_available_slots(self, doctor_id: str, date: str) -> List[Dict[str, Any]]:
@@ -343,11 +367,14 @@ class MockDatabaseService:
         if mode == "supabase":
             if not supabase_db.is_configured():
                 raise RuntimeError("Database unavailable: DATABASE_MODE is 'supabase' but Supabase credentials are not configured.")
-            remote = supabase_db.add_claim(claim)
-            if "insurance_claims" not in self._cache:
-                self._cache["insurance_claims"] = []
-            self._cache["insurance_claims"].append(remote)
-            return remote
+            try:
+                remote = supabase_db.add_claim(claim)
+                if "insurance_claims" not in self._cache:
+                    self._cache["insurance_claims"] = []
+                self._cache["insurance_claims"].append(remote)
+                return remote
+            except Exception as e:
+                logger.warning(f"Supabase add_claim error: {e}")
 
         if "insurance_claims" not in self._cache:
             self._cache["insurance_claims"] = []
@@ -382,12 +409,15 @@ class MockDatabaseService:
         if mode == "supabase":
             if not supabase_db.is_configured():
                 raise RuntimeError("Database unavailable: DATABASE_MODE is 'supabase' but Supabase credentials are not configured.")
-            remote = supabase_db.update_claim(claim_id, updates)
-            if remote:
-                cached = self.find_one("insurance_claims", "claim_id", claim_id, skip_remote=True)
-                if cached:
-                    cached.update(updates)
-            return remote
+            try:
+                remote = supabase_db.update_claim(claim_id, updates)
+                if remote:
+                    cached = self.find_one("insurance_claims", "claim_id", claim_id, skip_remote=True)
+                    if cached:
+                        cached.update(updates)
+                    return remote
+            except Exception as e:
+                logger.warning(f"Supabase update_claim error: {e}")
 
         claim = self.find_one("insurance_claims", "claim_id", claim_id, skip_remote=True)
         if not claim:

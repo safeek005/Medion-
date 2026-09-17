@@ -2,6 +2,36 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
 from app.services.mock_db import mock_db
 
+def _format_doctor_name(doctor: Optional[Dict[str, Any]]) -> str:
+    if not doctor:
+        return "Dr. Rajesh Mehta"
+    if doctor.get("doctor_name"):
+        name = str(doctor["doctor_name"])
+        return name if name.startswith("Dr.") else f"Dr. {name}"
+    if doctor.get("name"):
+        name = str(doctor["name"])
+        return name if name.startswith("Dr.") else f"Dr. {name}"
+    first = doctor.get("first_name") or ""
+    last = doctor.get("last_name") or ""
+    if first or last:
+        return f"Dr. {first} {last}".strip()
+    return "Dr. Rajesh Mehta"
+
+def _format_patient_name(patient: Optional[Dict[str, Any]]) -> str:
+    if not patient:
+        return "Rahul Sharma"
+    if patient.get("patient_name"):
+        return str(patient["patient_name"])
+    if patient.get("full_name"):
+        return str(patient["full_name"])
+    if patient.get("name"):
+        return str(patient["name"])
+    first = patient.get("first_name") or ""
+    last = patient.get("last_name") or ""
+    if first or last:
+        return f"{first} {last}".strip()
+    return "Patient"
+
 class AppointmentService:
     def get_available_slots(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -15,26 +45,33 @@ class AppointmentService:
         if not doctor:
             # Try finding doctor by name
             for d in mock_db.get_collection("doctors"):
-                if doctor_id.lower() in f"{d.get('first_name')} {d.get('last_name')}".lower():
+                doc_full = f"{d.get('first_name', '')} {d.get('last_name', '')}".lower()
+                if doctor_id.lower() in doc_full or doctor_id.lower() in d.get("doctor_id", "").lower():
                     doctor = d
                     doctor_id = d["doctor_id"]
                     break
 
         if not doctor:
-            doctor = mock_db.find_one("doctors", "doctor_id", "DOC-101")
+            doctor = mock_db.find_one("doctors", "doctor_id", "DOC-101") or {
+                "doctor_id": "DOC-101",
+                "first_name": "Rajesh",
+                "last_name": "Mehta",
+                "specialty": "Cardiology"
+            }
             doctor_id = "DOC-101"
 
         slots = mock_db.find_available_slots(doctor_id, date)
+        doctor_full_name = _format_doctor_name(doctor)
 
         return {
             "success": True,
             "doctor_id": doctor_id,
-            "doctor_name": f"Dr. {doctor.get('first_name')} {doctor.get('last_name')}",
-            "specialty": doctor.get("specialty"),
+            "doctor_name": doctor_full_name,
+            "specialty": doctor.get("specialty", "Cardiology"),
             "date": date,
             "count": len(slots),
             "available_slots": slots,
-            "summary": f"Found {len(slots)} available slot(s) for Dr. {doctor.get('last_name')} on {date}."
+            "summary": f"Found {len(slots)} available slot(s) for {doctor_full_name} on {date}."
         }
 
     def book_appointment(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -130,8 +167,8 @@ class AppointmentService:
 
         appointment_id = mock_db.generate_appointment_id()
 
-        doctor_full_name = f"Dr. {doctor.get('first_name')} {doctor.get('last_name')}"
-        patient_full_name = f"{patient.get('first_name')} {patient.get('last_name')}"
+        doctor_full_name = _format_doctor_name(doctor)
+        patient_full_name = _format_patient_name(patient)
 
         apt_record = {
             "appointment_id": appointment_id,
@@ -139,9 +176,9 @@ class AppointmentService:
             "patient_name": patient_full_name,
             "doctor_id": doctor_id,
             "doctor_name": doctor_full_name,
-            "specialty": doctor.get("specialty"),
+            "specialty": doctor.get("specialty", "Cardiology"),
             "hospital_id": hospital_id,
-            "hospital_name": hospital.get("hospital_name"),
+            "hospital_name": hospital.get("hospital_name", "Apollo Hospitals Greams Road"),
             "appointment_date": date,
             "date": date,
             "time_slot": time_slot,

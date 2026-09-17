@@ -1,54 +1,140 @@
 [
   {
-    "prescription_id": "RX-1001",
+    "prescription_id": "RX-4001",
     "patient_id": "PAT-1001",
+    "patient_name": "Arun Kumar",
     "doctor_id": "DOC-101",
-    "issued_date": "2026-09-10",
-    "prescribed_date": "2026-09-10",
+    "doctor_name": "Dr. Rajesh Mehta",
+    "date": "15 Sep 2026",
     "status": "ACTIVE",
-    "instructions": "Titrated dual regimen approved by Dr. Rajesh Mehta, MD.",
-    "medications": [
-      {
-        "name": "Amlodipine",
-        "dosage": "10 mg",
-        "frequency": "Once daily (Morning)",
-        "duration_days": 30,
-        "instructions": "Take with water after breakfast"
-      },
-      {
-        "name": "Telmisartan",
-        "dosage": "40 mg",
-        "frequency": "Once daily (Morning)",
-        "duration_days": 30,
-        "instructions": "Take with water after breakfast"
-      },
-      {
-        "name": "Ferrous Ascorbate (Iron Supplement)",
-        "dosage": "100 mg",
-        "frequency": "Once daily (Night)",
-        "duration_days": 30,
-        "instructions": "Take after dinner"
-      }
+    "items": [
+      { "medication": "Amlodipine", "dosage": "5 mg", "frequency": "Once daily (Morning)", "duration": "90 days" },
+      { "medication": "Atorvastatin", "dosage": "20 mg", "frequency": "Once daily (Bedtime)", "duration": "90 days" }
     ],
-    "refills_remaining": 2
+    "created_at": "2026-09-15T11:00:00Z"
   },
   {
-    "prescription_id": "RX-1002",
+    "prescription_id": "RX-4002",
     "patient_id": "PAT-1002",
+    "patient_name": "Sneha Sharma",
     "doctor_id": "DOC-102",
-    "issued_date": "2026-08-10",
-    "prescribed_date": "2026-08-10",
+    "doctor_name": "Dr. Anita Deshmukh",
+    "date": "15 Sep 2026",
     "status": "ACTIVE",
-    "instructions": "Daily thyroid hormone replacement.",
-    "medications": [
-      {
-        "name": "Levothyroxine Sodium",
-        "dosage": "50 mcg",
-        "frequency": "Once daily (Early Morning)",
-        "duration_days": 60,
-        "instructions": "Take on empty stomach 30 mins before breakfast"
-      }
+    "items": [
+      { "medication": "Metformin Extended Release", "dosage": "500 mg", "frequency": "Twice daily (Post Meals)", "duration": "90 days" },
+      { "medication": "Levothyroxine Sodium", "dosage": "50 mcg", "frequency": "Once daily (Empty Stomach)", "duration": "90 days" }
     ],
-    "refills_remaining": 3
+    "created_at": "2026-09-15T12:00:00Z"
+  },
+  {
+    "prescription_id": "RX-4003",
+    "patient_id": "PAT-1003",
+    "patient_name": "Vikram Singh",
+    "doctor_id": "DOC-104",
+    "doctor_name": "Dr. Vikramaditya Roy",
+    "date": "12 Sep 2026",
+    "status": "ACTIVE",
+    "items": [
+      { "medication": "Glucosamine Sulfate", "dosage": "500 mg", "frequency": "Twice daily", "duration": "60 days" },
+      { "medication": "Paracetamol", "dosage": "650 mg", "frequency": "As needed for pain (Max 3/day)", "duration": "30 days" }
+    ],
+    "created_at": "2026-09-12T14:20:00Z"
+  },
+  {
+    "prescription_id": "RX-4004",
+    "patient_id": "PAT-1004",
+    "patient_name": "Priya Nair",
+    "doctor_id": "DOC-105",
+    "doctor_name": "Dr. Kavita Iyer",
+    "date": "10 Sep 2026",
+    "status": "ACTIVE",
+    "items": [
+      { "medication": "Hydrocortisone Cream 1%", "dosage": "Apply thin layer", "frequency": "Twice daily", "duration": "14 days" },
+      { "medication": "Cetirizine Hydrochloride", "dosage": "10 mg", "frequency": "Once daily (Bedtime)", "duration": "30 days" }
+    ],
+    "created_at": "2026-09-10T10:15:00Z"
+  },
+  {
+    "prescription_id": "RX-4005",
+    "patient_id": "PAT-1005",
+    "patient_name": "Rajesh Patel",
+    "doctor_id": "DOC-103",
+    "doctor_name": "Dr. Suresh Rao",
+    "date": "11 Sep 2026",
+    "status": "ACTIVE",
+    "items": [
+      { "medication": "Cholecalciferol (Vitamin D3)", "dosage": "60,000 IU", "frequency": "Once weekly", "duration": "8 weeks" }
+    ],
+    "created_at": "2026-09-11T16:30:00Z"
+  },
+  {
+    "prescription_id": "RX-4006",
+    "patient_id": "PAT-1006",
+    "patient_name": "Ananya Sen",
+    "doctor_id": "DOC-106",
+    "doctor_name": "Dr. Pradeep Verma",
+    "date": "13 Sep 2026",
+    "status": "ACTIVE",
+    "items": [
+      { "medication": "Propranolol Hydrochloride", "dosage": "40 mg", "frequency": "Once daily (Morning)", "duration": "60 days" },
+      { "medication": "Sumatriptan Succinate", "dosage": "50 mg", "frequency": "At onset of headache PRN", "duration": "10 doses" }
+    ],
+    "created_at": "2026-09-13T13:00:00Z"
+  },
+  {
+    "prescription_id": "RX-4007",
+    "patient_id": "PAT-1007",
+    "patient_name": "Tariq Ahmed",
+    "doctor_id": "DOC-107",
+    "doctor_name": "Dr. Sunita Kapoor",
+    "date": "14 Sep 2026",
+    "status": "ACTIVE",
+    "items": [
+      { "medication": "Budesonide / Formoterol Inhaler", "dosage": "200/6 mcg", "frequency": "2 puffs twice daily", "duration": "90 days" },
+      { "medication": "Montelukast Sodium", "dosage": "10 mg", "frequency": "Once daily (Bedtime)", "duration": "90 days" }
+    ],
+    "created_at": "2026-09-14T09:00:00Z"
+  },
+  {
+    "prescription_id": "RX-4008",
+    "patient_id": "PAT-1008",
+    "patient_name": "Deepa Joshi",
+    "doctor_id": "DOC-108",
+    "doctor_name": "Dr. Ramesh Nambiar",
+    "date": "15 Sep 2026",
+    "status": "ACTIVE",
+    "items": [
+      { "medication": "Pantoprazole Sodium", "dosage": "40 mg", "frequency": "Once daily (30 mins before breakfast)", "duration": "60 days" },
+      { "medication": "Mebeverine Hydrochloride", "dosage": "135 mg", "frequency": "Three times daily (Pre-meals)", "duration": "30 days" }
+    ],
+    "created_at": "2026-09-15T15:30:00Z"
+  },
+  {
+    "prescription_id": "RX-4009",
+    "patient_id": "PAT-1009",
+    "patient_name": "Kabir Das",
+    "doctor_id": "DOC-109",
+    "doctor_name": "Dr. Meera Kulkarni",
+    "date": "13 Sep 2026",
+    "status": "ACTIVE",
+    "items": [
+      { "medication": "Fluticasone Furoate Nasal Spray", "dosage": "27.5 mcg/actuation", "frequency": "2 sprays each nostril once daily", "duration": "30 days" }
+    ],
+    "created_at": "2026-09-13T11:00:00Z"
+  },
+  {
+    "prescription_id": "RX-4010",
+    "patient_id": "PAT-1010",
+    "patient_name": "Lakshmi Menon",
+    "doctor_id": "DOC-103",
+    "doctor_name": "Dr. Suresh Rao",
+    "date": "14 Sep 2026",
+    "status": "ACTIVE",
+    "items": [
+      { "medication": "Calcium Carbonate + Cholecalciferol", "dosage": "500 mg / 250 IU", "frequency": "Twice daily (Post Meals)", "duration": "90 days" },
+      { "medication": "Telmisartan", "dosage": "20 mg", "frequency": "Once daily (Morning)", "duration": "90 days" }
+    ],
+    "created_at": "2026-09-14T15:00:00Z"
   }
 ]

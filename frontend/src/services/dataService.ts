@@ -157,12 +157,119 @@ export const INITIAL_LAB_REPORTS: LabReportItem[] = [
     patient_id: 'PAT-1002',
     laboratory_id: 'LAB-001',
     doctor_id: 'DOC-102',
-    test_type: 'Thyroid Profile (T3, T4, TSH)',
+    test_type: 'Thyroid Function Profile (T3, T4, TSH)',
     test_date: '2026-08-10',
     status: 'COMPLETED',
     results: [
       { parameter: 'TSH', value: 6.2, unit: 'uIU/mL', reference_range: '0.4 - 4.2', is_abnormal: true, abnormality_direction: 'HIGH' },
       { parameter: 'Free T4', value: 1.1, unit: 'ng/dL', reference_range: '0.8 - 1.8', is_abnormal: false, abnormality_direction: 'NORMAL' },
+    ],
+  },
+  {
+    report_id: 'LABR-1003',
+    patient_id: 'PAT-1003',
+    laboratory_id: 'LAB-001',
+    doctor_id: 'DOC-101',
+    test_type: 'HbA1c & Glycemic Assessment',
+    test_date: '2026-08-14',
+    status: 'COMPLETED',
+    results: [
+      { parameter: 'HbA1c', value: 7.8, unit: '%', reference_range: '< 5.7', is_abnormal: true, abnormality_direction: 'HIGH' },
+      { parameter: 'Fasting Blood Sugar', value: 152, unit: 'mg/dL', reference_range: '70 - 99', is_abnormal: true, abnormality_direction: 'HIGH' },
+    ],
+  },
+  {
+    report_id: 'LABR-1004',
+    patient_id: 'PAT-1004',
+    laboratory_id: 'LAB-001',
+    doctor_id: 'DOC-101',
+    test_type: 'Cardiac Risk & Lipid Biomarker Panel',
+    test_date: '2026-08-18',
+    status: 'COMPLETED',
+    results: [
+      { parameter: 'Total Cholesterol', value: 210, unit: 'mg/dL', reference_range: '< 200', is_abnormal: true, abnormality_direction: 'HIGH' },
+      { parameter: 'LDL Cholesterol', value: 135, unit: 'mg/dL', reference_range: '< 100', is_abnormal: true, abnormality_direction: 'HIGH' },
+      { parameter: 'HDL Cholesterol', value: 48, unit: 'mg/dL', reference_range: '> 40', is_abnormal: false, abnormality_direction: 'NORMAL' },
+    ],
+  },
+  {
+    report_id: 'LABR-1005',
+    patient_id: 'PAT-1005',
+    laboratory_id: 'LAB-001',
+    doctor_id: 'DOC-103',
+    test_type: 'Complete Blood Count (CBC) with Differential',
+    test_date: '2026-08-20',
+    status: 'COMPLETED',
+    results: [
+      { parameter: 'WBC Count', value: 6.8, unit: 'K/uL', reference_range: '4.5 - 11.0', is_abnormal: false, abnormality_direction: 'NORMAL' },
+      { parameter: 'Hemoglobin', value: 13.5, unit: 'g/dL', reference_range: '12.0 - 15.5', is_abnormal: false, abnormality_direction: 'NORMAL' },
+      { parameter: 'Platelets', value: 245, unit: 'K/uL', reference_range: '150 - 450', is_abnormal: false, abnormality_direction: 'NORMAL' },
+    ],
+  },
+  {
+    report_id: 'LABR-1006',
+    patient_id: 'PAT-1006',
+    laboratory_id: 'LAB-001',
+    doctor_id: 'DOC-101',
+    test_type: 'Cardiovascular Biomarker & Troponin Panel',
+    test_date: '2026-09-16',
+    status: 'COMPLETED',
+    results: [
+      { parameter: 'Cardiac Troponin T', value: 0.048, unit: 'ng/mL', reference_range: '< 0.014', is_abnormal: true, abnormality_direction: 'HIGH' },
+      { parameter: 'CK-MB', value: 6.5, unit: 'ng/mL', reference_range: '< 5.0', is_abnormal: true, abnormality_direction: 'HIGH' },
+      { parameter: 'hs-CRP', value: 3.8, unit: 'mg/L', reference_range: '< 1.0', is_abnormal: true, abnormality_direction: 'HIGH' },
+    ],
+  },
+  {
+    report_id: 'LABR-1007',
+    patient_id: 'PAT-1007',
+    laboratory_id: 'LAB-001',
+    doctor_id: 'DOC-103',
+    test_type: 'Pulmonary Arterial Blood Gas & Electrolytes',
+    test_date: '2026-09-02',
+    status: 'COMPLETED',
+    results: [
+      { parameter: 'Arterial pH', value: 7.38, unit: '', reference_range: '7.35 - 7.45', is_abnormal: false, abnormality_direction: 'NORMAL' },
+      { parameter: 'PaO2', value: 88, unit: 'mmHg', reference_range: '75 - 100', is_abnormal: false, abnormality_direction: 'NORMAL' },
+    ],
+  },
+  {
+    report_id: 'LABR-1008',
+    patient_id: 'PAT-1008',
+    laboratory_id: 'LAB-001',
+    doctor_id: 'DOC-102',
+    test_type: 'Hepatic Function & Liver Enzyme Panel',
+    test_date: '2026-09-05',
+    status: 'COMPLETED',
+    results: [
+      { parameter: 'ALT (SGPT)', value: 28, unit: 'U/L', reference_range: '7 - 56', is_abnormal: false, abnormality_direction: 'NORMAL' },
+      { parameter: 'AST (SGOT)', value: 32, unit: 'U/L', reference_range: '10 - 40', is_abnormal: false, abnormality_direction: 'NORMAL' },
+    ],
+  },
+  {
+    report_id: 'LABR-1009',
+    patient_id: 'PAT-1009',
+    laboratory_id: 'LAB-001',
+    doctor_id: 'DOC-103',
+    test_type: 'Renal Function & Electrolyte Profile',
+    test_date: '2026-09-08',
+    status: 'COMPLETED',
+    results: [
+      { parameter: 'Serum Creatinine', value: 0.9, unit: 'mg/dL', reference_range: '0.6 - 1.2', is_abnormal: false, abnormality_direction: 'NORMAL' },
+      { parameter: 'Blood Urea Nitrogen', value: 14, unit: 'mg/dL', reference_range: '7 - 20', is_abnormal: false, abnormality_direction: 'NORMAL' },
+    ],
+  },
+  {
+    report_id: 'LABR-1010',
+    patient_id: 'PAT-1010',
+    laboratory_id: 'LAB-001',
+    doctor_id: 'DOC-103',
+    test_type: 'General Outpatient Diagnostic Screening',
+    test_date: '2026-09-12',
+    status: 'COMPLETED',
+    results: [
+      { parameter: 'Hemoglobin', value: 14.2, unit: 'g/dL', reference_range: '13.5 - 17.5', is_abnormal: false, abnormality_direction: 'NORMAL' },
+      { parameter: 'Total Cholesterol', value: 175, unit: 'mg/dL', reference_range: '< 200', is_abnormal: false, abnormality_direction: 'NORMAL' },
     ],
   },
 ];
@@ -467,6 +574,46 @@ class SharedDataService {
     setStorageItem(STORAGE_KEYS.PATIENTS, updatedList);
     emitDbChange({ table: 'patients', action: 'create', data: newPatient });
 
+    // Auto-create a synthetic baseline lab report & policy for newly registered patients if none exist
+    setTimeout(() => {
+      const existingLabs = this.getLabReportsForPatient(newPatient.patient_id);
+      if (existingLabs.length === 0) {
+        this.addLabReport({
+          report_id: `LABR-${newPatient.patient_id.replace('PAT-', '')}`,
+          patient_id: newPatient.patient_id,
+          laboratory_id: 'LAB-001',
+          doctor_id: newPatient.primary_doctor_id || 'DOC-101',
+          test_type: 'Comprehensive Outpatient Screening & Metabolic Panel',
+          test_date: new Date().toISOString().split('T')[0],
+          status: 'COMPLETED',
+          results: [
+            { parameter: 'Hemoglobin', value: 13.8, unit: 'g/dL', reference_range: '12.0 - 16.0', is_abnormal: false, abnormality_direction: 'NORMAL' },
+            { parameter: 'Fasting Blood Sugar', value: 92, unit: 'mg/dL', reference_range: '70 - 99', is_abnormal: false, abnormality_direction: 'NORMAL' },
+            { parameter: 'Total Cholesterol', value: 180, unit: 'mg/dL', reference_range: '< 200', is_abnormal: false, abnormality_direction: 'NORMAL' },
+            { parameter: 'Serum Creatinine', value: 0.9, unit: 'mg/dL', reference_range: '0.6 - 1.2', is_abnormal: false, abnormality_direction: 'NORMAL' },
+          ],
+        });
+      }
+      const existingPolicy = this.getPolicyByPatientId(newPatient.patient_id);
+      if (!existingPolicy) {
+        const autoPolicy = {
+          policy_id: `POL-${newPatient.patient_id.replace('PAT-', '')}`,
+          patient_id: newPatient.patient_id,
+          provider_name: 'Star Health & Allied Insurance',
+          policy_number: `SH-GEN-${newPatient.patient_id.replace('PAT-', '')}`,
+          plan_type: 'Comprehensive Individual Care',
+          status: 'ACTIVE',
+          coverage_limit: 500000,
+          remaining_coverage: 490000,
+          copay_percentage: 10,
+          valid_until: '2027-12-31',
+        };
+        const policies = this.getPolicies();
+        setStorageItem(STORAGE_KEYS.POLICIES, [autoPolicy, ...policies]);
+        emitDbChange({ table: 'policies', action: 'create', data: autoPolicy });
+      }
+    }, 50);
+
     // Persist to Supabase PostgreSQL
     const sb = getSupabaseClient();
     if (sb) {
@@ -693,6 +840,46 @@ class SharedDataService {
   getLabReportById(reportId: string): LabReportItem | null {
     const reports = this.getLabReports();
     return reports.find((r) => r.report_id.toUpperCase() === reportId.toUpperCase()) || null;
+  }
+
+  getLabReportsForPatient(patientId: string): LabReportItem[] {
+    const reports = this.getLabReports();
+    return reports.filter((r) => r.patient_id?.toUpperCase() === patientId.toUpperCase());
+  }
+
+  addLabReport(reportData: Partial<LabReportItem>): LabReportItem {
+    const list = this.getLabReports();
+    const newReport: LabReportItem = {
+      report_id: reportData.report_id || `LABR-${1000 + list.length + 1}`,
+      patient_id: reportData.patient_id || 'PAT-1001',
+      laboratory_id: reportData.laboratory_id || 'LAB-001',
+      doctor_id: reportData.doctor_id || 'DOC-101',
+      test_type: reportData.test_type || 'Comprehensive Outpatient Panel',
+      test_date: reportData.test_date || new Date().toISOString().split('T')[0],
+      status: reportData.status || 'COMPLETED',
+      results: reportData.results || [],
+    };
+
+    const existingIdx = list.findIndex((r) => r.report_id === newReport.report_id);
+    let updatedList: LabReportItem[];
+    if (existingIdx >= 0) {
+      updatedList = [...list];
+      updatedList[existingIdx] = newReport;
+    } else {
+      updatedList = [newReport, ...list];
+    }
+
+    setStorageItem(STORAGE_KEYS.LAB_REPORTS, updatedList);
+    emitDbChange({ table: 'lab_reports', action: 'create', data: newReport });
+
+    const sb = getSupabaseClient();
+    if (sb) {
+      sb.from('lab_reports').upsert(newReport).then(({ error }) => {
+        if (error) console.warn('[MEDION Supabase] Lab report upsert failed:', error.message);
+      });
+    }
+
+    return newReport;
   }
 
   // ----------------------------------------------------

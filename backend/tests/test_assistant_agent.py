@@ -434,8 +434,9 @@ def test_multiturn_appointment_booking_flow():
 
     # Turn 1
     t1 = agent.execute("interpret_request", {
-        "message": "Book an appointment with Dr Rajesh",
-        "user_role": "patient"
+        "message": "Book an appointment with Dr Mehta",
+        "user_role": "patient",
+        "patient_id": "PAT-1001"
     })
     assert t1["needs_clarification"] is True
     assert t1["target_action"] == "book_appointment"
@@ -443,8 +444,9 @@ def test_multiturn_appointment_booking_flow():
 
     # Turn 2
     t2 = agent.execute("interpret_request", {
-        "message": "Tomorrow at 10 AM",
+        "message": "Tomorrow at 11 AM",
         "user_role": "patient",
+        "patient_id": "PAT-1001",
         "conversation_context": ctx1
     })
     assert t2["success"] is True
@@ -452,7 +454,7 @@ def test_multiturn_appointment_booking_flow():
     assert "appointment" in t2
     apt = t2["appointment"]
     assert apt["status"] == "CONFIRMED"
-    assert "10:00" in apt["time_slot"]
+    assert "11:00" in apt["time_slot"]
     assert apt["doctor_id"] == "DOC-101"
 
     # Verify appointment actually exists in mock database

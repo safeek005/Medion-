@@ -7,6 +7,10 @@ import { dispatchToWorkbench } from '../../api/workbench';
 import { ExecutionTraceStep } from '../../types';
 import { HumanResponseRenderer } from '../../components/intelligence/HumanResponseRenderer';
 import {
+  useSharedPatients,
+  dataService,
+} from '../../services/dataService';
+import {
   MOCK_INPATIENTS,
   MOCK_EMAR_TASKS,
   InpatientBedItem,
@@ -44,6 +48,19 @@ export const NurseWorkspace: React.FC<NurseWorkspaceProps> = ({ onTraceGenerated
   const [output, setOutput] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [nurseNotice, setNurseNotice] = useState<string | null>(null);
+
+  // Baseline Clinical Details Form State
+  const [vitalsPatientId, setVitalsPatientId] = useState<string>('PAT-1001');
+  const [formBp, setFormBp] = useState('120/80');
+  const [formPulse, setFormPulse] = useState('76');
+  const [formSpo2, setFormSpo2] = useState('98');
+  const [formTemp, setFormTemp] = useState('98.6');
+  const [formRr, setFormRr] = useState('16');
+  const [formWeight, setFormWeight] = useState('70');
+  const [formHeight, setFormHeight] = useState('175');
+  const [formBloodGroup, setFormBloodGroup] = useState('O+');
+  const [formAllergies, setFormAllergies] = useState('No Known Drug Allergies');
+  const [formNotes, setFormNotes] = useState('Patient resting comfortably; baseline clinical vitals recorded by Charge Nurse.');
 
   // Shift care checklist
   const [shiftTasks, setShiftTasks] = useState([
@@ -872,6 +889,230 @@ export const NurseWorkspace: React.FC<NurseWorkspaceProps> = ({ onTraceGenerated
               patientAcuity={activeBed.acuity}
               lastTaken={activeBed.vitals.last_taken}
             />
+          </div>
+
+          {/* Section 7 Nurse -> Patient Baseline Clinical Update Form */}
+          <div
+            style={{
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--teal-border)',
+              borderRadius: 8,
+              padding: '1.5rem',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.75rem' }}>
+              <div>
+                <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Stethoscope style={{ width: 18, height: 18, color: 'var(--teal-intelligent)' }} />
+                  Record & Transmit Baseline Clinical Observations (Supabase Sync)
+                </h4>
+                <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                  Select patient to update baseline BP, Heart Rate, SpO2, Temperature, Weight, Blood Group, and Allergies
+                </span>
+              </div>
+              <Badge variant="brand">EHR Sync Active</Badge>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const targetPatient = (dataService.getPatients() || []).find((p) => p.patient_id.toUpperCase() === (vitalsPatientId || 'PAT-1001').toUpperCase());
+                const pName = targetPatient ? `${targetPatient.first_name} ${targetPatient.last_name}` : (vitalsPatientId || 'PAT-1001');
+
+                dataService.updatePatient(vitalsPatientId || 'PAT-1001', {
+                  blood_group: formBloodGroup as any,
+                  allergies: formAllergies,
+                  vitals: {
+                    bp: formBp,
+                    pulse: formPulse,
+                    spo2: formSpo2,
+                    temp: formTemp,
+                    rr: formRr,
+                    weight: formWeight,
+                    height: formHeight,
+                    notes: formNotes,
+                    last_taken: 'Just Now (' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ')',
+                  },
+                });
+
+                setNurseNotice(`Baseline clinical vitals updated for ${pName} (${vitalsPatientId || 'PAT-1001'}). Doctor & Patient portals synchronized.`);
+                setTimeout(() => setNurseNotice(null), 4500);
+              }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
+            >
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+                  Target Patient Roster
+                </label>
+                <select
+                  value={vitalsPatientId}
+                  onChange={(e) => {
+                    const pid = e.target.value;
+                    setVitalsPatientId(pid);
+                    const target = (dataService.getPatients() || []).find((p) => p.patient_id.toUpperCase() === pid.toUpperCase());
+                    if (target) {
+                      if (target.blood_group) setFormBloodGroup(target.blood_group);
+                      if (target.allergies) setFormAllergies(Array.isArray(target.allergies) ? target.allergies.join(', ') : String(target.allergies));
+                      if ((target as any).vitals) {
+                        const v = (target as any).vitals;
+                        if (v.bp) setFormBp(v.bp);
+                        if (v.pulse) setFormPulse(String(v.pulse));
+                        if (v.spo2) setFormSpo2(String(v.spo2));
+                        if (v.temp) setFormTemp(String(v.temp));
+                        if (v.rr) setFormRr(String(v.rr));
+                        if (v.weight) setFormWeight(String(v.weight));
+                        if (v.height) setFormHeight(String(v.height));
+                      }
+                    }
+                  }}
+                  style={{ width: '100%', padding: '0.6rem 0.85rem', borderRadius: 6, border: '1px solid var(--border-subtle)', fontSize: '0.85rem', color: 'var(--text-primary)', backgroundColor: 'var(--bg-surface-secondary)' }}
+                >
+                  {(dataService.getPatients() || []).map((p) => (
+                    <option key={p.patient_id} value={p.patient_id}>
+                      {p.first_name} {p.last_name} ({p.patient_id})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                    Blood Pressure (mmHg)
+                  </label>
+                  <input
+                    type="text"
+                    value={formBp}
+                    onChange={(e) => setFormBp(e.target.value)}
+                    placeholder="e.g. 120/80"
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 6, border: '1px solid var(--border-subtle)', fontSize: '0.84rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                    Pulse / Heart Rate (bpm)
+                  </label>
+                  <input
+                    type="text"
+                    value={formPulse}
+                    onChange={(e) => setFormPulse(e.target.value)}
+                    placeholder="e.g. 76"
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 6, border: '1px solid var(--border-subtle)', fontSize: '0.84rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                    Oxygen Saturation SpO2 (%)
+                  </label>
+                  <input
+                    type="text"
+                    value={formSpo2}
+                    onChange={(e) => setFormSpo2(e.target.value)}
+                    placeholder="e.g. 98"
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 6, border: '1px solid var(--border-subtle)', fontSize: '0.84rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                    Body Temperature (°F)
+                  </label>
+                  <input
+                    type="text"
+                    value={formTemp}
+                    onChange={(e) => setFormTemp(e.target.value)}
+                    placeholder="e.g. 98.6"
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 6, border: '1px solid var(--border-subtle)', fontSize: '0.84rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                    Respiratory Rate (/min)
+                  </label>
+                  <input
+                    type="text"
+                    value={formRr}
+                    onChange={(e) => setFormRr(e.target.value)}
+                    placeholder="e.g. 16"
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 6, border: '1px solid var(--border-subtle)', fontSize: '0.84rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                    Weight (kg) & Height (cm)
+                  </label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input
+                      type="text"
+                      value={formWeight}
+                      onChange={(e) => setFormWeight(e.target.value)}
+                      placeholder="70 kg"
+                      style={{ width: '50%', padding: '0.5rem 0.75rem', borderRadius: 6, border: '1px solid var(--border-subtle)', fontSize: '0.84rem' }}
+                    />
+                    <input
+                      type="text"
+                      value={formHeight}
+                      onChange={(e) => setFormHeight(e.target.value)}
+                      placeholder="175 cm"
+                      style={{ width: '50%', padding: '0.5rem 0.75rem', borderRadius: 6, border: '1px solid var(--border-subtle)', fontSize: '0.84rem' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                    Blood Group
+                  </label>
+                  <select
+                    value={formBloodGroup}
+                    onChange={(e) => setFormBloodGroup(e.target.value)}
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 6, border: '1px solid var(--border-subtle)', fontSize: '0.84rem', backgroundColor: 'var(--bg-surface)' }}
+                  >
+                    {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((bg) => (
+                      <option key={bg} value={bg}>{bg}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                    Documented Allergies
+                  </label>
+                  <input
+                    type="text"
+                    value={formAllergies}
+                    onChange={(e) => setFormAllergies(e.target.value)}
+                    placeholder="e.g. Penicillin, Sulfonamides, No Known Drug Allergies"
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 6, border: '1px solid var(--border-subtle)', fontSize: '0.84rem' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                  Nurse Observation & Rounding Notes
+                </label>
+                <textarea
+                  rows={2}
+                  value={formNotes}
+                  onChange={(e) => setFormNotes(e.target.value)}
+                  placeholder="Record baseline clinical observations..."
+                  style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 6, border: '1px solid var(--border-subtle)', fontSize: '0.84rem', fontFamily: 'inherit' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
+                <Button type="submit" variant="primary">
+                  <CheckCircle2 style={{ width: 16, height: 16, marginRight: 6 }} /> Save & Transmit Observations to Supabase
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}

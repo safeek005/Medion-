@@ -1,36 +1,112 @@
 [
   {
-    "record_id": "MR-1001",
+    "record_id": "MED-3001",
     "patient_id": "PAT-1001",
     "doctor_id": "DOC-101",
     "visit_date": "2024-06-15",
-    "diagnosis": "Essential Hypertension (Mild)",
-    "symptoms": ["Occasional headaches", "Mild dizziness after exercise"],
-    "vital_signs": {
-      "blood_pressure": "138/88 mmHg",
-      "heart_rate": "76 bpm",
-      "temperature_c": 36.8,
-      "spo2_percent": 98
-    },
-    "clinical_notes": "Patient advised dietary sodium restriction and regular moderate cardio. Re-evaluate in 3 months with Lipid profile and CBC.",
-    "lab_report_ids": ["LABR-1001"],
-    "prescription_ids": ["RX-1001"]
+    "diagnosis": "Essential Hypertension & Mild Anemia",
+    "symptoms": "Fatigue, occasional morning headaches",
+    "treatment_plan": "Prescribed Amlodipine 5mg OD and Iron supplement. Recommended low sodium diet.",
+    "notes": "Patient advised to monitor blood pressure weekly.",
+    "created_at": "2024-06-15T11:00:00Z"
   },
   {
-    "record_id": "MR-1002",
+    "record_id": "MED-3002",
     "patient_id": "PAT-1002",
     "doctor_id": "DOC-102",
+    "visit_date": "2024-07-10",
+    "diagnosis": "Type 2 Diabetes Mellitus & Subclinical Hypothyroidism",
+    "symptoms": "Polydipsia, mild weight gain, sluggishness",
+    "treatment_plan": "Titrated Metformin to 500mg BID. Initiated Levothyroxine 50mcg daily.",
+    "notes": "Referred to clinical nutritionist for diabetic meal planning.",
+    "created_at": "2024-07-10T14:30:00Z"
+  },
+  {
+    "record_id": "MED-3003",
+    "patient_id": "PAT-1003",
+    "doctor_id": "DOC-104",
     "visit_date": "2024-07-20",
-    "diagnosis": "Subclinical Hypothyroidism",
-    "symptoms": ["Fatigue", "Mild weight gain"],
-    "vital_signs": {
-      "blood_pressure": "118/76 mmHg",
-      "heart_rate": "68 bpm",
-      "temperature_c": 36.6,
-      "spo2_percent": 99
-    },
-    "clinical_notes": "TSH elevated at 6.2 uIU/mL. Free T4 within normal limits. Initiated low-dose Levothyroxine 25mcg.",
-    "lab_report_ids": ["LABR-1002"],
-    "prescription_ids": ["RX-1002"]
+    "diagnosis": "Right Knee Osteoarthritis (Grade II)",
+    "symptoms": "Joint stiffness, crepitus on staircase climbing",
+    "treatment_plan": "Prescribed Paracetamol PRN and Glucosamine sulfate. Recommended low-impact quadriceps strengthening.",
+    "notes": "X-ray confirmed mild joint space narrowing.",
+    "created_at": "2024-07-20T16:00:00Z"
+  },
+  {
+    "record_id": "MED-3004",
+    "patient_id": "PAT-1004",
+    "doctor_id": "DOC-105",
+    "visit_date": "2024-08-02",
+    "diagnosis": "Moderate Atopic Dermatitis",
+    "symptoms": "Pruritic erythematous plaques on flexural surfaces",
+    "treatment_plan": "Topical Hydrocortisone 1% cream, oral Cetirizine 10mg HS, emollients post-bath.",
+    "notes": "Avoid harsh synthetic soaps and fragrance products.",
+    "created_at": "2024-08-02T10:15:00Z"
+  },
+  {
+    "record_id": "MED-3005",
+    "patient_id": "PAT-1005",
+    "doctor_id": "DOC-103",
+    "visit_date": "2024-08-11",
+    "diagnosis": "Severe Vitamin D Deficiency & General Malaise",
+    "symptoms": "Generalized body ache, daytime tiredness",
+    "treatment_plan": "Oral Cholecalciferol 60,000 IU weekly for 8 weeks followed by monthly maintenance.",
+    "notes": "Sun exposure 15-20 mins daily recommended.",
+    "created_at": "2024-08-11T09:00:00Z"
+  },
+  {
+    "record_id": "MED-3006",
+    "patient_id": "PAT-1006",
+    "doctor_id": "DOC-106",
+    "visit_date": "2024-08-19",
+    "diagnosis": "Episodic Migraine without Aura",
+    "symptoms": "Unilateral throbbing headache, photophobia",
+    "treatment_plan": "Propranolol 40mg daily prophylaxis. Sumatriptan 50mg at onset of severe attacks.",
+    "notes": "Sleep hygiene diary initiated.",
+    "created_at": "2024-08-19T15:20:00Z"
+  },
+  {
+    "record_id": "MED-3007",
+    "patient_id": "PAT-1007",
+    "doctor_id": "DOC-107",
+    "visit_date": "2024-08-25",
+    "diagnosis": "Moderate Persistent Asthma",
+    "symptoms": "Nocturnal cough, wheezing during seasonal changes",
+    "treatment_plan": "Budesonide/Formoterol inhaler 200/6mcg BID. Montelukast 10mg HS.",
+    "notes": "Inhaler technique demonstrated in clinic.",
+    "created_at": "2024-08-25T11:45:00Z"
+  },
+  {
+    "record_id": "MED-3008",
+    "patient_id": "PAT-1008",
+    "doctor_id": "DOC-108",
+    "visit_date": "2024-09-01",
+    "diagnosis": "Gastroesophageal Reflux Disease (GERD)",
+    "symptoms": "Post-prandial heartburn, acid regurgitation",
+    "treatment_plan": "Pantoprazole 40mg 30 mins before breakfast. Lifestyle modification (head elevation during sleep).",
+    "notes": "Advised to avoid late-night spicy meals.",
+    "created_at": "2024-09-01T14:10:00Z"
+  },
+  {
+    "record_id": "MED-3009",
+    "patient_id": "PAT-1009",
+    "doctor_id": "DOC-109",
+    "visit_date": "2024-09-05",
+    "diagnosis": "Chronic Rhinosinusitis & Left Septal Spur",
+    "symptoms": "Nasal congestion, facial pressure, post-nasal drip",
+    "treatment_plan": "Fluticasone propionate nasal spray 2 puffs each nostril OD. Saline nasal douching BID.",
+    "notes": "CT paranasal sinuses ordered.",
+    "created_at": "2024-09-05T10:00:00Z"
+  },
+  {
+    "record_id": "MED-3010",
+    "patient_id": "PAT-1010",
+    "doctor_id": "DOC-103",
+    "visit_date": "2024-09-10",
+    "diagnosis": "Mild Osteopenia & Controlled Stage 1 HTN",
+    "symptoms": "Asymptomatic, routine post-menopausal bone density screening",
+    "treatment_plan": "Calcium Carbonate 1250mg + Vit D3 daily. Telmisartan 20mg OD.",
+    "notes": "Weight-bearing exercises advised.",
+    "created_at": "2024-09-10T16:00:00Z"
   }
 ]
