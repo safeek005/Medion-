@@ -2,6 +2,7 @@ from typing import Dict, Any, List, Optional
 from app.agents.assistant.ai_provider import assistant_ai_provider
 from app.agents.assistant.parser import deterministic_parser
 from app.agents.assistant.intent_registry import ACTION_REGISTRY
+from app.services.mock_db import mock_db
 
 class AssistantService:
     def interpret_request(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -446,8 +447,19 @@ class AssistantService:
                 suggested_answers = ["Male", "Female", "01.01.1990", "+91 9876543210"]
 
         elif target_action == "book_appointment":
-            doctor_id = extracted.get("doctor_id") or "Dr. Rajesh Mehta"
-            doc_name = "Dr. Rajesh Mehta" if "101" in str(doctor_id) else ("Dr. Anita Deshmukh" if "102" in str(doctor_id) else "Dr. Suresh Rao")
+            doctor_id = extracted.get("doctor_id")
+            doc = mock_db.find_one("doctors", "doctor_id", str(doctor_id)) or mock_db.find_one("doctors", "id", str(doctor_id))
+            if doc:
+                doc_name = doc.get("name") or f"Dr. {doc.get('first_name', '')} {doc.get('last_name', '')}".strip()
+            elif "101" in str(doctor_id):
+                doc_name = "Dr. Rajesh Mehta"
+            elif "102" in str(doctor_id):
+                doc_name = "Dr. Anita Deshmukh"
+            elif "103" in str(doctor_id):
+                doc_name = "Dr. Suresh Rao"
+            else:
+                doc_name = str(doctor_id) if doctor_id else "Dr. Rajesh Mehta"
+
             if "date" in missing and "time_slot" in missing:
                 clarification_text = f"Sure. What date and preferred time would you like for {doc_name}?"
                 suggested_answers = ["Tomorrow at 10 AM", "Tomorrow at 2 PM", "Friday at 11 AM", "Next available slot"]

@@ -131,39 +131,12 @@ class SupabaseDatabaseService:
         raw_table = table_name.split("?")[0]
         query_params = table_name.split("?")[1] if "?" in table_name else ""
 
-        # Default join selections for relational tables
-        if raw_table == "appointments" and "select=" not in query_params:
-            ep = f"appointments?select=*,patients(id,patient_id,first_name,last_name),doctors(id,doctor_id,name)"
+        if "select=" not in query_params:
+            ep = f"{raw_table}?select=*"
             if query_params:
                 ep += f"&{query_params}"
-            else:
-                ep += "&order=appointment_date.asc,start_time.asc"
-        elif raw_table == "medical_records" and "select=" not in query_params:
-            ep = f"medical_records?select=*,patients(id,patient_id,first_name,last_name),doctors(id,doctor_id,name)"
-            if query_params:
-                ep += f"&{query_params}"
-            else:
-                ep += "&order=record_date.desc"
-        elif raw_table == "lab_reports" and "select=" not in query_params:
-            ep = f"lab_reports?select=*,patients(id,patient_id,first_name,last_name)"
-            if query_params:
-                ep += f"&{query_params}"
-            else:
-                ep += "&order=order_date.desc"
-        elif raw_table == "prescriptions" and "select=" not in query_params:
-            ep = f"prescriptions?select=*,patients(id,patient_id,first_name,last_name),doctors(id,doctor_id,name)"
-            if query_params:
-                ep += f"&{query_params}"
-            else:
-                ep += "&order=created_at.desc"
-        elif raw_table == "insurance_claims" and "select=" not in query_params:
-            ep = f"insurance_claims?select=*,patients(id,patient_id,first_name,last_name)"
-            if query_params:
-                ep += f"&{query_params}"
-            else:
-                ep += "&order=submitted_date.desc"
         else:
-            ep = f"{table_name}?select=*" if "?" not in table_name else table_name
+            ep = table_name
 
         res = self._request(ep)
         if isinstance(res, list):
@@ -374,9 +347,11 @@ class SupabaseDatabaseService:
     def find_available_slots(self, doctor_id: str, date: str) -> List[Dict[str, Any]]:
         doctor = self.find_one("doctors", "doctor_id", doctor_id)
         if not doctor:
+            doctor = self.find_one("doctors", "id", doctor_id)
+        if not doctor:
             return []
 
-        doc_uuid = doctor.get("id", doctor_id)
+        doc_uuid = doctor.get("id") or doctor.get("doctor_id") or doctor_id
         master_slots = doctor.get("available_slots", [])
         if isinstance(master_slots, str):
             try:
@@ -394,17 +369,18 @@ class SupabaseDatabaseService:
         
         # Query active booked appointments for this doctor on target date
         existing_apts = self.get_collection(
-            f"appointments?doctor_id=eq.{doc_enc}&appointment_date=eq.{date_enc}&status=in.(BOOKED,CONFIRMED,SCHEDULED)"
+            f"appointments?doctor_id=eq.{doc_enc}&appointment_date=eq.{date_enc}"
         )
 
         booked_slots = set()
         for apt in existing_apts:
-            if apt.get("time_slot"):
-                booked_slots.add(apt.get("time_slot"))
-            elif apt.get("start_time") and apt.get("end_time"):
-                st = str(apt.get("start_time"))[:5]
-                et = str(apt.get("end_time"))[:5]
-                booked_slots.add(f"{st}-{et}")
+            if apt.get("status") not in ["CANCELLED", "COMPLETED", "REJECTED"]:
+                if apt.get("time_slot"):
+                    booked_slots.add(apt.get("time_slot"))
+                elif apt.get("start_time") and apt.get("end_time"):
+                    st = str(apt.get("start_time"))[:5]
+                    et = str(apt.get("end_time"))[:5]
+                    booked_slots.add(f"{st}-{et}")
 
         available = []
         for idx, slot in enumerate(master_slots, 1):
