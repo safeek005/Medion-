@@ -2,6 +2,7 @@ import re
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Tuple, Optional
 from app.agents.assistant.intent_registry import ACTION_REGISTRY
+from app.services.mock_db import mock_db
 
 DOCTOR_PATTERNS = [
     ("DOC-101", [
@@ -207,7 +208,13 @@ class DeterministicParser:
         elif len(labr_matches) == 1:
             entities["report_id"] = labr_matches[0].upper()
         elif "latest" in text_lower and ("lab" in text_lower or "report" in text_lower):
-            entities["report_id"] = "LABR-1001"
+            pid = entities.get("patient_id")
+            if not pid and context:
+                pid = context.get("caller_patient_id") or context.get("authenticated_patient_id") or context.get("patient_id")
+            if pid:
+                pts_reports = mock_db.find_many("lab_reports", "patient_id", pid)
+                if pts_reports:
+                    entities["report_id"] = pts_reports[-1].get("report_id") or pts_reports[0].get("report_id")
 
         # 6. Appointment ID: APT-xxxx
         apt_match = re.findall(r'\bAPT-\d+\b', text, re.IGNORECASE)

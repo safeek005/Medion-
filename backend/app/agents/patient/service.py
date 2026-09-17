@@ -373,8 +373,12 @@ class PatientService:
                     matched = True
             if phone and phone in (p.get("phone") or ""):
                 matched = True
-            if email and email.lower() in (p.get("email") or "").lower():
-                matched = True
+            if email:
+                e_clean = email.lower().strip()
+                e_user = e_clean.split("@")[0]
+                p_email = (p.get("email") or "").lower().strip()
+                if e_clean in p_email or (e_user and e_user in p_email):
+                    matched = True
             if query:
                 q_lower = query.lower()
                 full = f"{p.get('first_name') or ''} {p.get('last_name') or ''}".lower()

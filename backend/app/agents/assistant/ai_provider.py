@@ -185,6 +185,17 @@ class DeterministicFallbackProvider(AIProvider):
             if context and (context.get("caller_patient_id") or context.get("patient_id") or context.get("authenticated_patient_id")):
                 extracted["patient_id"] = context.get("caller_patient_id") or context.get("patient_id") or context.get("authenticated_patient_id")
 
+        if intent in ["explain_lab_report", "analyze_lab_report"]:
+            pid = extracted.get("patient_id")
+            if pid:
+                from app.services.mock_db import mock_db
+                curr_rid = extracted.get("report_id")
+                rep = mock_db.find_one("lab_reports", "report_id", curr_rid) if curr_rid else None
+                if not rep or rep.get("patient_id") != pid:
+                    user_reps = mock_db.find_many("lab_reports", "patient_id", pid)
+                    if user_reps:
+                        extracted["report_id"] = user_reps[-1].get("report_id") or user_reps[0].get("report_id")
+
         provider_info = {
             "provider_name": "MEDION Deterministic Healthcare Engine (Offline / Fallback)",
             "is_fallback": True,

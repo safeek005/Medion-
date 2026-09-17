@@ -7,9 +7,11 @@
     "gender": "Male",
     "blood_group": "O+",
     "phone": "+91 9876543210",
-    "email": "arun.kumar@example.com",
+    "email": "arun.kumar@medion.demo",
     "address": "42 MG Road, Indiranagar, Bengaluru, Karnataka",
-    "allergies": ["Penicillin"],
+    "allergies": [
+      "Penicillin"
+    ],
     "primary_doctor_id": "DOC-101",
     "primary_doctor_name": "Dr. Rajesh Mehta",
     "department": "Cardiology",
@@ -25,9 +27,12 @@
     "gender": "Female",
     "blood_group": "A+",
     "phone": "+91 9812345678",
-    "email": "sneha.sharma@example.com",
+    "email": "sneha.sharma@medion.demo",
     "address": "15 Park Street, Koramangala, Bengaluru, Karnataka",
-    "allergies": ["Aspirin", "Sulfa Drugs"],
+    "allergies": [
+      "Aspirin",
+      "Sulfa Drugs"
+    ],
     "primary_doctor_id": "DOC-102",
     "primary_doctor_name": "Dr. Anita Deshmukh",
     "department": "Endocrinology",
@@ -43,9 +48,12 @@
     "gender": "Male",
     "blood_group": "B-",
     "phone": "+91 9988776655",
-    "email": "vikram.singh@example.com",
+    "email": "vikram.singh@medion.demo",
     "address": "88 Outer Ring Road, Whitefield, Bengaluru, Karnataka",
-    "allergies": ["Ibuprofen", "NSAIDs"],
+    "allergies": [
+      "Ibuprofen",
+      "NSAIDs"
+    ],
     "primary_doctor_id": "DOC-104",
     "primary_doctor_name": "Dr. Vikramaditya Roy",
     "department": "Orthopedics",
@@ -61,9 +69,12 @@
     "gender": "Female",
     "blood_group": "O-",
     "phone": "+91 9765432109",
-    "email": "priya.nair@example.com",
+    "email": "priya.nair@medion.demo",
     "address": "24 HSR Layout, Sector 3, Bengaluru, Karnataka",
-    "allergies": ["Latex", "Nickel"],
+    "allergies": [
+      "Latex",
+      "Nickel"
+    ],
     "primary_doctor_id": "DOC-105",
     "primary_doctor_name": "Dr. Kavita Iyer",
     "department": "Dermatology",
@@ -81,7 +92,9 @@
     "phone": "+91 9654321098",
     "email": "rajesh.patel@example.com",
     "address": "102 Electronic City Phase 1, Bengaluru, Karnataka",
-    "allergies": ["None known"],
+    "allergies": [
+      "None known"
+    ],
     "primary_doctor_id": "DOC-103",
     "primary_doctor_name": "Dr. Suresh Rao",
     "department": "General Medicine",
@@ -99,7 +112,9 @@
     "phone": "+91 9543210987",
     "email": "ananya.sen@example.com",
     "address": "56 Jayanagar 4th Block, Bengaluru, Karnataka",
-    "allergies": ["Erythromycin"],
+    "allergies": [
+      "Erythromycin"
+    ],
     "primary_doctor_id": "DOC-106",
     "primary_doctor_name": "Dr. Pradeep Verma",
     "department": "Neurology",
@@ -117,7 +132,10 @@
     "phone": "+91 9432109876",
     "email": "tariq.ahmed@example.com",
     "address": "77 Frazer Town, Commercial Street, Bengaluru, Karnataka",
-    "allergies": ["Dust Mites", "Pollen"],
+    "allergies": [
+      "Dust Mites",
+      "Pollen"
+    ],
     "primary_doctor_id": "DOC-107",
     "primary_doctor_name": "Dr. Sunita Kapoor",
     "department": "Pulmonology",
@@ -135,7 +153,9 @@
     "phone": "+91 9321098765",
     "email": "deepa.joshi@example.com",
     "address": "33 Malleshwaram 18th Cross, Bengaluru, Karnataka",
-    "allergies": ["Ciprofloxacin"],
+    "allergies": [
+      "Ciprofloxacin"
+    ],
     "primary_doctor_id": "DOC-108",
     "primary_doctor_name": "Dr. Ramesh Nambiar",
     "department": "Gastroenterology",
@@ -153,7 +173,9 @@
     "phone": "+91 9210987654",
     "email": "kabir.das@example.com",
     "address": "19 Bannerghatta Main Road, Bengaluru, Karnataka",
-    "allergies": ["Amoxicillin"],
+    "allergies": [
+      "Amoxicillin"
+    ],
     "primary_doctor_id": "DOC-109",
     "primary_doctor_name": "Dr. Meera Kulkarni",
     "department": "ENT",
@@ -171,7 +193,9 @@
     "phone": "+91 9109876543",
     "email": "lakshmi.menon@example.com",
     "address": "64 Sadashivanagar 8th Main, Bengaluru, Karnataka",
-    "allergies": ["Codeine"],
+    "allergies": [
+      "Codeine"
+    ],
     "primary_doctor_id": "DOC-103",
     "primary_doctor_name": "Dr. Suresh Rao",
     "department": "General Medicine",
@@ -189,7 +213,10 @@
     "phone": "+91 9845012345",
     "email": "rahul.sharma@example.com",
     "address": "12 Richmond Town, Bengaluru, Karnataka",
-    "allergies": ["Penicillin", "Sulfa Drugs"],
+    "allergies": [
+      "Penicillin",
+      "Sulfa Drugs"
+    ],
     "primary_doctor_id": "DOC-101",
     "primary_doctor_name": "Dr. Rajesh Mehta",
     "department": "Cardiology",
@@ -199,15 +226,17 @@
   },
   {
     "patient_id": "PAT-1044",
-    "first_name": "Shiva",
-    "last_name": "S",
+    "first_name": "shiva",
+    "last_name": "s",
     "dob": "1988-06-15",
     "gender": "Male",
     "blood_group": "O+",
     "phone": "+91 9876543044",
-    "email": "shiva.s@example.com",
+    "email": "shiva.s@medion.demo",
     "address": "44 RS Puram, Coimbatore, Tamil Nadu",
-    "allergies": ["None known"],
+    "allergies": [
+      "None known"
+    ],
     "primary_doctor_id": "DOC-101",
     "primary_doctor_name": "Dr. Rajesh Mehta",
     "department": "Cardiology",

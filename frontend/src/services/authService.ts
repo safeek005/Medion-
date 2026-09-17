@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { UserRole, AuthUser, PatientProfile } from '../types';
-import { dataService } from './dataService';
+import { UserRole, AuthUser, PatientProfile, LabReportItem } from '../types';
+import { dataService, INITIAL_LAB_REPORTS } from './dataService';
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
@@ -158,6 +158,46 @@ const DEV_INSTITUTIONAL_DIRECTORY: Record<string, AuthUser> = {
   },
 };
 
+export interface SyntheticPatientAccount {
+  patient_id: string;
+  name: string;
+  email: string;
+  password: string;
+}
+
+export const SYNTHETIC_PATIENT_ACCOUNTS: SyntheticPatientAccount[] = [
+  {
+    patient_id: 'PAT-1001',
+    name: 'Arun Kumar',
+    email: 'arun.kumar@medion.demo',
+    password: 'Medion@1001',
+  },
+  {
+    patient_id: 'PAT-1002',
+    name: 'Sneha Sharma',
+    email: 'sneha.sharma@medion.demo',
+    password: 'Medion@1002',
+  },
+  {
+    patient_id: 'PAT-1003',
+    name: 'Vikram Singh',
+    email: 'vikram.singh@medion.demo',
+    password: 'Medion@1003',
+  },
+  {
+    patient_id: 'PAT-1004',
+    name: 'Priya Nair',
+    email: 'priya.nair@medion.demo',
+    password: 'Medion@1004',
+  },
+  {
+    patient_id: 'PAT-1044',
+    name: 'shiva s',
+    email: 'shiva.s@medion.demo',
+    password: 'Medion@1044',
+  },
+];
+
 class AuthService {
   private currentUser: AuthUser | null = null;
   private listeners: Array<(user: AuthUser | null) => void> = [];
@@ -185,12 +225,63 @@ class AuthService {
   /**
    * Authenticate Patient via Phone, Email, or MRN
    */
-  async loginPatient(identifier: string, _password?: string): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
+  async loginPatient(identifier: string, password?: string): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
     const query = (identifier || '').trim().toLowerCase();
     if (!query) {
       return { success: false, error: 'Please enter your Medical Record Number (MRN), Email, or Phone number.' };
     }
 
+    // 1. Check synthetic patient accounts with credential verification
+    const syntheticMatch = SYNTHETIC_PATIENT_ACCOUNTS.find(
+      (a) => a.patient_id.toLowerCase() === query || a.email.toLowerCase() === query
+    );
+
+    if (syntheticMatch) {
+      if (password && password.trim()) {
+        if (password.trim() !== syntheticMatch.password) {
+          return { success: false, error: 'Invalid password. Please check your credentials.' };
+        }
+      }
+
+      // Check if patient profile exists in dataService
+      let patient = dataService.getPatientById(syntheticMatch.patient_id);
+      if (!patient) {
+        // Auto-seed patient profile into dataService if not present
+        patient = dataService.createPatient({
+          patient_id: syntheticMatch.patient_id,
+          first_name: syntheticMatch.name.split(' ')[0],
+          last_name: syntheticMatch.name.split(' ').slice(1).join(' ') || '',
+          email: syntheticMatch.email,
+        });
+      }
+
+      // Ensure the patient's lab reports exist in dataService
+      const patientReports = dataService.getLabReportsForPatient(syntheticMatch.patient_id);
+      if (patientReports.length === 0) {
+        const initReports = INITIAL_LAB_REPORTS.filter(
+          (lr: LabReportItem) => lr.patient_id?.toUpperCase() === syntheticMatch.patient_id.toUpperCase()
+        );
+        for (const rep of initReports) {
+          dataService.addLabReport(rep);
+        }
+      }
+
+      const authUser: AuthUser = {
+        id: syntheticMatch.patient_id,
+        name: syntheticMatch.name,
+        email: syntheticMatch.email,
+        role: 'patient',
+        organization: 'MEDION Patient Care Network',
+        facility: 'HOSP-001 (Outpatient)',
+        phone: patient?.phone || undefined,
+        title: 'Registered Patient',
+      };
+
+      this.setSession(authUser);
+      return { success: true, user: authUser };
+    }
+
+    // 2. Lookup existing registered patient records
     const patients = dataService.getPatients();
     const matched = patients.find(
       (p) =>
@@ -199,10 +290,8 @@ class AuthService {
         (p.phone && p.phone.replace(/\D/g, '').includes(query.replace(/\D/g, '')))
     );
 
-    let authUser: AuthUser;
-
     if (matched) {
-      authUser = {
+      const authUser: AuthUser = {
         id: matched.patient_id,
         name: `${matched.first_name} ${matched.last_name}`,
         email: matched.email || `${matched.patient_id.toLowerCase()}@patient.medionhealth.org`,
@@ -212,29 +301,14 @@ class AuthService {
         phone: matched.phone || undefined,
         title: 'Registered Patient',
       };
-    } else {
-      // Default to Arun Kumar if default PAT-1001
-      const defaultPatient = patients[0] || {
-        patient_id: 'PAT-1001',
-        first_name: 'Arun',
-        last_name: 'Kumar',
-        phone: '+91 9876543210',
-        email: 'arun.kumar@example.com',
-      };
-      authUser = {
-        id: defaultPatient.patient_id,
-        name: `${defaultPatient.first_name} ${defaultPatient.last_name}`,
-        email: defaultPatient.email || 'arun.kumar@example.com',
-        role: 'patient',
-        organization: 'MEDION Patient Care Network',
-        facility: 'HOSP-001 (Outpatient)',
-        phone: defaultPatient.phone || undefined,
-        title: 'Registered Patient',
-      };
+      this.setSession(authUser);
+      return { success: true, user: authUser };
     }
 
-    this.setSession(authUser);
-    return { success: true, user: authUser };
+    return {
+      success: false,
+      error: 'Patient account not found. Please enter a valid MRN or registered email (e.g. shiva.s@medion.demo or PAT-1044).',
+    };
   }
 
   /**

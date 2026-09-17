@@ -8,25 +8,135 @@
     "test_name": "Comprehensive Blood & Lipid Panel",
     "report_date": "2026-09-14",
     "date": "14 Sep 2026",
-    "status": "COMPLETED",
+    "status": "RELEASED",
     "critical_panic": false,
     "specimen_id": "SPEC-8821",
     "test_results": [
-      { "test_parameter": "Hemoglobin", "value": 10.4, "unit": "g/dL", "reference_range": "13.5 - 17.5", "is_abnormal": true, "abnormality_direction": "LOW" },
-      { "test_parameter": "Total Cholesterol", "value": 238.0, "unit": "mg/dL", "reference_range": "< 200", "is_abnormal": true, "abnormality_direction": "HIGH" },
-      { "test_parameter": "LDL-C (Direct)", "value": 152.0, "unit": "mg/dL", "reference_range": "< 100", "is_abnormal": true, "abnormality_direction": "HIGH" },
-      { "test_parameter": "Triglycerides", "value": 185.0, "unit": "mg/dL", "reference_range": "< 150", "is_abnormal": true, "abnormality_direction": "HIGH" },
-      { "test_parameter": "Fasting Plasma Glucose", "value": 95.0, "unit": "mg/dL", "reference_range": "70 - 99", "is_abnormal": false, "abnormality_direction": "NORMAL" }
+      {
+        "test_parameter": "Hemoglobin",
+        "value": 10.4,
+        "unit": "g/dL",
+        "reference_range": "13.5 - 17.5",
+        "is_abnormal": true,
+        "abnormality_direction": "LOW"
+      },
+      {
+        "test_parameter": "Total Cholesterol",
+        "value": 238.0,
+        "unit": "mg/dL",
+        "reference_range": "< 200",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "test_parameter": "LDL-C (Direct)",
+        "value": 152.0,
+        "unit": "mg/dL",
+        "reference_range": "< 100",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "test_parameter": "Triglycerides",
+        "value": 185.0,
+        "unit": "mg/dL",
+        "reference_range": "< 150",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "test_parameter": "Fasting Plasma Glucose",
+        "value": 95.0,
+        "unit": "mg/dL",
+        "reference_range": "70 - 99",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
     ],
     "biomarkers": [
-      { "name": "Total Cholesterol", "value": "238", "range": "< 200", "unit": "mg/dL", "is_abnormal": true },
-      { "name": "LDL-C (Direct)", "value": "152", "range": "< 100", "unit": "mg/dL", "is_abnormal": true },
-      { "name": "HDL-C", "value": "45", "range": "> 40", "unit": "mg/dL", "is_abnormal": false },
-      { "name": "Triglycerides", "value": "185", "range": "< 150", "unit": "mg/dL", "is_abnormal": true },
-      { "name": "Fasting Plasma Glucose", "value": "95", "range": "70 - 99", "unit": "mg/dL", "is_abnormal": false }
+      {
+        "name": "Total Cholesterol",
+        "value": "238",
+        "range": "< 200",
+        "unit": "mg/dL",
+        "is_abnormal": true
+      },
+      {
+        "name": "LDL-C (Direct)",
+        "value": "152",
+        "range": "< 100",
+        "unit": "mg/dL",
+        "is_abnormal": true
+      },
+      {
+        "name": "HDL-C",
+        "value": "45",
+        "range": "> 40",
+        "unit": "mg/dL",
+        "is_abnormal": false
+      },
+      {
+        "name": "Triglycerides",
+        "value": "185",
+        "range": "< 150",
+        "unit": "mg/dL",
+        "is_abnormal": true
+      },
+      {
+        "name": "Fasting Plasma Glucose",
+        "value": "95",
+        "range": "70 - 99",
+        "unit": "mg/dL",
+        "is_abnormal": false
+      }
     ],
     "impression": "Moderate hypercholesterolemia with elevated LDL-C. Statins titration advised.",
-    "created_at": "2026-09-14T10:00:00Z"
+    "created_at": "2026-09-14T10:00:00Z",
+    "section": "Biochemistry",
+    "results": [
+      {
+        "parameter": "Hemoglobin",
+        "value": 10.4,
+        "unit": "g/dL",
+        "reference_range": "13.5 - 17.5",
+        "is_abnormal": true,
+        "abnormality_direction": "LOW"
+      },
+      {
+        "parameter": "Total Cholesterol",
+        "value": 238.0,
+        "unit": "mg/dL",
+        "reference_range": "< 200",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "parameter": "LDL-C (Direct)",
+        "value": 152.0,
+        "unit": "mg/dL",
+        "reference_range": "< 100",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "parameter": "Triglycerides",
+        "value": 185.0,
+        "unit": "mg/dL",
+        "reference_range": "< 150",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "parameter": "Fasting Plasma Glucose",
+        "value": 95.0,
+        "unit": "mg/dL",
+        "reference_range": "70 - 99",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
+    ],
+    "test_type": "Comprehensive Blood & Lipid Panel",
+    "test_date": "2026-09-14"
   },
   {
     "report_id": "LABR-1002",
@@ -37,23 +147,112 @@
     "test_name": "HbA1c & Glycemic Panel",
     "report_date": "2026-09-15",
     "date": "15 Sep 2026",
-    "status": "VERIFIED_AND_RELEASED",
+    "status": "RELEASED",
     "critical_panic": false,
     "specimen_id": "SPEC-8822",
     "test_results": [
-      { "test_parameter": "Glycated Hemoglobin (HbA1c)", "value": 8.2, "unit": "%", "reference_range": "< 5.7", "is_abnormal": true, "abnormality_direction": "HIGH" },
-      { "test_parameter": "Fasting Blood Sugar", "value": 148.0, "unit": "mg/dL", "reference_range": "70 - 99", "is_abnormal": true, "abnormality_direction": "HIGH" },
-      { "test_parameter": "Post-Prandial Sugar", "value": 210.0, "unit": "mg/dL", "reference_range": "< 140", "is_abnormal": true, "abnormality_direction": "HIGH" },
-      { "test_parameter": "Serum TSH", "value": 5.8, "unit": "mIU/L", "reference_range": "0.4 - 4.2", "is_abnormal": true, "abnormality_direction": "HIGH" }
+      {
+        "test_parameter": "Glycated Hemoglobin (HbA1c)",
+        "value": 8.2,
+        "unit": "%",
+        "reference_range": "< 5.7",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "test_parameter": "Fasting Blood Sugar",
+        "value": 148.0,
+        "unit": "mg/dL",
+        "reference_range": "70 - 99",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "test_parameter": "Post-Prandial Sugar",
+        "value": 210.0,
+        "unit": "mg/dL",
+        "reference_range": "< 140",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "test_parameter": "Serum TSH",
+        "value": 5.8,
+        "unit": "mIU/L",
+        "reference_range": "0.4 - 4.2",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      }
     ],
     "biomarkers": [
-      { "name": "Glycated Hemoglobin (HbA1c)", "value": "8.2", "range": "< 5.7", "unit": "%", "is_abnormal": true },
-      { "name": "Fasting Blood Sugar", "value": "148", "range": "70 - 99", "unit": "mg/dL", "is_abnormal": true },
-      { "name": "Post-Prandial Sugar", "value": "210", "range": "< 140", "unit": "mg/dL", "is_abnormal": true },
-      { "name": "Serum TSH", "value": "5.8", "range": "0.4 - 4.2", "unit": "mIU/L", "is_abnormal": true }
+      {
+        "name": "Glycated Hemoglobin (HbA1c)",
+        "value": "8.2",
+        "range": "< 5.7",
+        "unit": "%",
+        "is_abnormal": true
+      },
+      {
+        "name": "Fasting Blood Sugar",
+        "value": "148",
+        "range": "70 - 99",
+        "unit": "mg/dL",
+        "is_abnormal": true
+      },
+      {
+        "name": "Post-Prandial Sugar",
+        "value": "210",
+        "range": "< 140",
+        "unit": "mg/dL",
+        "is_abnormal": true
+      },
+      {
+        "name": "Serum TSH",
+        "value": "5.8",
+        "range": "0.4 - 4.2",
+        "unit": "mIU/L",
+        "is_abnormal": true
+      }
     ],
     "impression": "Suboptimal glycemic control (HbA1c 8.2%) and elevated TSH. Adjust diabetes treatment.",
-    "created_at": "2026-09-15T11:30:00Z"
+    "created_at": "2026-09-15T11:30:00Z",
+    "section": "Endocrinology",
+    "results": [
+      {
+        "parameter": "Glycated Hemoglobin (HbA1c)",
+        "value": 8.2,
+        "unit": "%",
+        "reference_range": "< 5.7",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "parameter": "Fasting Blood Sugar",
+        "value": 148.0,
+        "unit": "mg/dL",
+        "reference_range": "70 - 99",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "parameter": "Post-Prandial Sugar",
+        "value": 210.0,
+        "unit": "mg/dL",
+        "reference_range": "< 140",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "parameter": "Serum TSH",
+        "value": 5.8,
+        "unit": "mIU/L",
+        "reference_range": "0.4 - 4.2",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      }
+    ],
+    "test_type": "HbA1c & Glycemic Panel",
+    "test_date": "2026-09-15"
   },
   {
     "report_id": "LABR-1003",
@@ -64,21 +263,89 @@
     "test_name": "Inflammatory Markers & Mineral Panel",
     "report_date": "2026-09-12",
     "date": "12 Sep 2026",
-    "status": "COMPLETED",
+    "status": "RELEASED",
     "critical_panic": false,
     "specimen_id": "SPEC-8823",
     "test_results": [
-      { "test_parameter": "Erythrocyte Sedimentation Rate (ESR)", "value": 28.0, "unit": "mm/hr", "reference_range": "< 20", "is_abnormal": true, "abnormality_direction": "HIGH" },
-      { "test_parameter": "C-Reactive Protein (CRP)", "value": 6.4, "unit": "mg/L", "reference_range": "< 3.0", "is_abnormal": true, "abnormality_direction": "HIGH" },
-      { "test_parameter": "Serum Calcium", "value": 9.2, "unit": "mg/dL", "reference_range": "8.5 - 10.2", "is_abnormal": false, "abnormality_direction": "NORMAL" }
+      {
+        "test_parameter": "Erythrocyte Sedimentation Rate (ESR)",
+        "value": 28.0,
+        "unit": "mm/hr",
+        "reference_range": "< 20",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "test_parameter": "C-Reactive Protein (CRP)",
+        "value": 6.4,
+        "unit": "mg/L",
+        "reference_range": "< 3.0",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "test_parameter": "Serum Calcium",
+        "value": 9.2,
+        "unit": "mg/dL",
+        "reference_range": "8.5 - 10.2",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
     ],
     "biomarkers": [
-      { "name": "ESR", "value": "28", "range": "< 20", "unit": "mm/hr", "is_abnormal": true },
-      { "name": "C-Reactive Protein (CRP)", "value": "6.4", "range": "< 3.0", "unit": "mg/L", "is_abnormal": true },
-      { "name": "Serum Calcium", "value": "9.2", "range": "8.5 - 10.2", "unit": "mg/dL", "is_abnormal": false }
+      {
+        "name": "ESR",
+        "value": "28",
+        "range": "< 20",
+        "unit": "mm/hr",
+        "is_abnormal": true
+      },
+      {
+        "name": "C-Reactive Protein (CRP)",
+        "value": "6.4",
+        "range": "< 3.0",
+        "unit": "mg/L",
+        "is_abnormal": true
+      },
+      {
+        "name": "Serum Calcium",
+        "value": "9.2",
+        "range": "8.5 - 10.2",
+        "unit": "mg/dL",
+        "is_abnormal": false
+      }
     ],
     "impression": "Mild elevation in inflammatory markers consistent with joint osteoarthritic changes.",
-    "created_at": "2026-09-12T14:15:00Z"
+    "created_at": "2026-09-12T14:15:00Z",
+    "section": "Immunology",
+    "results": [
+      {
+        "parameter": "Erythrocyte Sedimentation Rate (ESR)",
+        "value": 28.0,
+        "unit": "mm/hr",
+        "reference_range": "< 20",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "parameter": "C-Reactive Protein (CRP)",
+        "value": 6.4,
+        "unit": "mg/L",
+        "reference_range": "< 3.0",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "parameter": "Serum Calcium",
+        "value": 9.2,
+        "unit": "mg/dL",
+        "reference_range": "8.5 - 10.2",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
+    ],
+    "test_type": "Inflammatory Markers & Mineral Panel",
+    "test_date": "2026-09-12"
   },
   {
     "report_id": "LABR-1004",
@@ -89,19 +356,66 @@
     "test_name": "Serum IgE & Allergy Panel",
     "report_date": "2026-09-10",
     "date": "10 Sep 2026",
-    "status": "COMPLETED",
+    "status": "RELEASED",
     "critical_panic": false,
     "specimen_id": "SPEC-8824",
     "test_results": [
-      { "test_parameter": "Total IgE", "value": 340.0, "unit": "IU/mL", "reference_range": "< 100", "is_abnormal": true, "abnormality_direction": "HIGH" },
-      { "test_parameter": "Absolute Eosinophil Count", "value": 520.0, "unit": "cells/mcL", "reference_range": "40 - 440", "is_abnormal": true, "abnormality_direction": "HIGH" }
+      {
+        "test_parameter": "Total IgE",
+        "value": 340.0,
+        "unit": "IU/mL",
+        "reference_range": "< 100",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "test_parameter": "Absolute Eosinophil Count",
+        "value": 520.0,
+        "unit": "cells/mcL",
+        "reference_range": "40 - 440",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      }
     ],
     "biomarkers": [
-      { "name": "Total IgE", "value": "340", "range": "< 100", "unit": "IU/mL", "is_abnormal": true },
-      { "name": "Absolute Eosinophil Count", "value": "520", "range": "40 - 440", "unit": "cells/mcL", "is_abnormal": true }
+      {
+        "name": "Total IgE",
+        "value": "340",
+        "range": "< 100",
+        "unit": "IU/mL",
+        "is_abnormal": true
+      },
+      {
+        "name": "Absolute Eosinophil Count",
+        "value": "520",
+        "range": "40 - 440",
+        "unit": "cells/mcL",
+        "is_abnormal": true
+      }
     ],
     "impression": "Elevated IgE and eosinophilia consistent with active allergic eczema.",
-    "created_at": "2026-09-10T09:45:00Z"
+    "created_at": "2026-09-10T09:45:00Z",
+    "section": "Immunology",
+    "results": [
+      {
+        "parameter": "Total IgE",
+        "value": 340.0,
+        "unit": "IU/mL",
+        "reference_range": "< 100",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "parameter": "Absolute Eosinophil Count",
+        "value": 520.0,
+        "unit": "cells/mcL",
+        "reference_range": "40 - 440",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      }
+    ],
+    "test_type": "Serum IgE & Allergy Panel",
+    "test_date": "2026-09-10"
   },
   {
     "report_id": "LABR-1005",
@@ -116,15 +430,61 @@
     "critical_panic": false,
     "specimen_id": "SPEC-8825",
     "test_results": [
-      { "test_parameter": "Hemoglobin", "value": 13.8, "unit": "g/dL", "reference_range": "13.0 - 17.0", "is_abnormal": false, "abnormality_direction": "NORMAL" },
-      { "test_parameter": "25-OH Vitamin D", "value": 14.2, "unit": "ng/mL", "reference_range": "30 - 100", "is_abnormal": true, "abnormality_direction": "LOW" }
+      {
+        "test_parameter": "Hemoglobin",
+        "value": 13.8,
+        "unit": "g/dL",
+        "reference_range": "13.0 - 17.0",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "test_parameter": "25-OH Vitamin D",
+        "value": 14.2,
+        "unit": "ng/mL",
+        "reference_range": "30 - 100",
+        "is_abnormal": true,
+        "abnormality_direction": "LOW"
+      }
     ],
     "biomarkers": [
-      { "name": "Hemoglobin", "value": "13.8", "range": "13.0 - 17.0", "unit": "g/dL", "is_abnormal": false },
-      { "name": "25-OH Vitamin D", "value": "14.2", "range": "30 - 100", "unit": "ng/mL", "is_abnormal": true }
+      {
+        "name": "Hemoglobin",
+        "value": "13.8",
+        "range": "13.0 - 17.0",
+        "unit": "g/dL",
+        "is_abnormal": false
+      },
+      {
+        "name": "25-OH Vitamin D",
+        "value": "14.2",
+        "range": "30 - 100",
+        "unit": "ng/mL",
+        "is_abnormal": true
+      }
     ],
     "impression": "Vitamin D deficiency noted. Supplementation recommended.",
-    "created_at": "2026-09-11T16:00:00Z"
+    "created_at": "2026-09-11T16:00:00Z",
+    "results": [
+      {
+        "parameter": "Hemoglobin",
+        "value": 13.8,
+        "unit": "g/dL",
+        "reference_range": "13.0 - 17.0",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "parameter": "25-OH Vitamin D",
+        "value": 14.2,
+        "unit": "ng/mL",
+        "reference_range": "30 - 100",
+        "is_abnormal": true,
+        "abnormality_direction": "LOW"
+      }
+    ],
+    "test_type": "Complete Blood Count & Vitamin Profile",
+    "test_date": "2026-09-11"
   },
   {
     "report_id": "LABR-1006",
@@ -139,15 +499,61 @@
     "critical_panic": false,
     "specimen_id": "SPEC-8826",
     "test_results": [
-      { "test_parameter": "Serum Sodium", "value": 139.0, "unit": "mEq/L", "reference_range": "135 - 145", "is_abnormal": false, "abnormality_direction": "NORMAL" },
-      { "test_parameter": "Serum Magnesium", "value": 1.9, "unit": "mg/dL", "reference_range": "1.7 - 2.2", "is_abnormal": false, "abnormality_direction": "NORMAL" }
+      {
+        "test_parameter": "Serum Sodium",
+        "value": 139.0,
+        "unit": "mEq/L",
+        "reference_range": "135 - 145",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "test_parameter": "Serum Magnesium",
+        "value": 1.9,
+        "unit": "mg/dL",
+        "reference_range": "1.7 - 2.2",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
     ],
     "biomarkers": [
-      { "name": "Serum Sodium", "value": "139", "range": "135 - 145", "unit": "mEq/L", "is_abnormal": false },
-      { "name": "Serum Magnesium", "value": "1.9", "range": "1.7 - 2.2", "unit": "mg/dL", "is_abnormal": false }
+      {
+        "name": "Serum Sodium",
+        "value": "139",
+        "range": "135 - 145",
+        "unit": "mEq/L",
+        "is_abnormal": false
+      },
+      {
+        "name": "Serum Magnesium",
+        "value": "1.9",
+        "range": "1.7 - 2.2",
+        "unit": "mg/dL",
+        "is_abnormal": false
+      }
     ],
     "impression": "Normal serum electrolyte profile.",
-    "created_at": "2026-09-13T12:20:00Z"
+    "created_at": "2026-09-13T12:20:00Z",
+    "results": [
+      {
+        "parameter": "Serum Sodium",
+        "value": 139.0,
+        "unit": "mEq/L",
+        "reference_range": "135 - 145",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "parameter": "Serum Magnesium",
+        "value": 1.9,
+        "unit": "mg/dL",
+        "reference_range": "1.7 - 2.2",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
+    ],
+    "test_type": "Serum Electrolyte & Magnesium Panel",
+    "test_date": "2026-09-13"
   },
   {
     "report_id": "LABR-1007",
@@ -162,15 +568,61 @@
     "critical_panic": false,
     "specimen_id": "SPEC-8827",
     "test_results": [
-      { "test_parameter": "pO2", "value": 88.0, "unit": "mmHg", "reference_range": "80 - 100", "is_abnormal": false, "abnormality_direction": "NORMAL" },
-      { "test_parameter": "Absolute Eosinophils", "value": 480.0, "unit": "cells/mcL", "reference_range": "40 - 440", "is_abnormal": true, "abnormality_direction": "HIGH" }
+      {
+        "test_parameter": "pO2",
+        "value": 88.0,
+        "unit": "mmHg",
+        "reference_range": "80 - 100",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "test_parameter": "Absolute Eosinophils",
+        "value": 480.0,
+        "unit": "cells/mcL",
+        "reference_range": "40 - 440",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      }
     ],
     "biomarkers": [
-      { "name": "pO2", "value": "88", "range": "80 - 100", "unit": "mmHg", "is_abnormal": false },
-      { "name": "Absolute Eosinophils", "value": "480", "range": "40 - 440", "unit": "cells/mcL", "is_abnormal": true }
+      {
+        "name": "pO2",
+        "value": "88",
+        "range": "80 - 100",
+        "unit": "mmHg",
+        "is_abnormal": false
+      },
+      {
+        "name": "Absolute Eosinophils",
+        "value": "480",
+        "range": "40 - 440",
+        "unit": "cells/mcL",
+        "is_abnormal": true
+      }
     ],
     "impression": "Airway allergic reactivity evidenced by mild eosinophilia.",
-    "created_at": "2026-09-14T08:30:00Z"
+    "created_at": "2026-09-14T08:30:00Z",
+    "results": [
+      {
+        "parameter": "pO2",
+        "value": 88.0,
+        "unit": "mmHg",
+        "reference_range": "80 - 100",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "parameter": "Absolute Eosinophils",
+        "value": 480.0,
+        "unit": "cells/mcL",
+        "reference_range": "40 - 440",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      }
+    ],
+    "test_type": "Arterial Blood Gas & Eosinophil Count",
+    "test_date": "2026-09-14"
   },
   {
     "report_id": "LABR-1008",
@@ -185,13 +637,38 @@
     "critical_panic": false,
     "specimen_id": "SPEC-8828",
     "test_results": [
-      { "test_parameter": "ALT (SGPT)", "value": 24.0, "unit": "U/L", "reference_range": "7 - 56", "is_abnormal": false, "abnormality_direction": "NORMAL" }
+      {
+        "test_parameter": "ALT (SGPT)",
+        "value": 24.0,
+        "unit": "U/L",
+        "reference_range": "7 - 56",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
     ],
     "biomarkers": [
-      { "name": "ALT (SGPT)", "value": "24", "range": "7 - 56", "unit": "U/L", "is_abnormal": false }
+      {
+        "name": "ALT (SGPT)",
+        "value": "24",
+        "range": "7 - 56",
+        "unit": "U/L",
+        "is_abnormal": false
+      }
     ],
     "impression": "Normal liver enzymes; negative for H. Pylori infection.",
-    "created_at": "2026-09-15T15:10:00Z"
+    "created_at": "2026-09-15T15:10:00Z",
+    "results": [
+      {
+        "parameter": "ALT (SGPT)",
+        "value": 24.0,
+        "unit": "U/L",
+        "reference_range": "7 - 56",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
+    ],
+    "test_type": "Liver Function & H. Pylori Test",
+    "test_date": "2026-09-15"
   },
   {
     "report_id": "LABR-1009",
@@ -206,13 +683,38 @@
     "critical_panic": false,
     "specimen_id": "SPEC-8829",
     "test_results": [
-      { "test_parameter": "Serum IgE", "value": 90.0, "unit": "IU/mL", "reference_range": "< 100", "is_abnormal": false, "abnormality_direction": "NORMAL" }
+      {
+        "test_parameter": "Serum IgE",
+        "value": 90.0,
+        "unit": "IU/mL",
+        "reference_range": "< 100",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
     ],
     "biomarkers": [
-      { "name": "Serum IgE", "value": "90", "range": "< 100", "unit": "IU/mL", "is_abnormal": false }
+      {
+        "name": "Serum IgE",
+        "value": "90",
+        "range": "< 100",
+        "unit": "IU/mL",
+        "is_abnormal": false
+      }
     ],
     "impression": "No pathogenic bacterial growth isolated.",
-    "created_at": "2026-09-13T10:30:00Z"
+    "created_at": "2026-09-13T10:30:00Z",
+    "results": [
+      {
+        "parameter": "Serum IgE",
+        "value": 90.0,
+        "unit": "IU/mL",
+        "reference_range": "< 100",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
+    ],
+    "test_type": "Nasal Swab Culture & Sensitivity",
+    "test_date": "2026-09-13"
   },
   {
     "report_id": "LABR-1010",
@@ -227,15 +729,61 @@
     "critical_panic": false,
     "specimen_id": "SPEC-8830",
     "test_results": [
-      { "test_parameter": "Serum Calcium", "value": 9.4, "unit": "mg/dL", "reference_range": "8.5 - 10.2", "is_abnormal": false, "abnormality_direction": "NORMAL" },
-      { "test_parameter": "Serum Creatinine", "value": 0.9, "unit": "mg/dL", "reference_range": "0.6 - 1.1", "is_abnormal": false, "abnormality_direction": "NORMAL" }
+      {
+        "test_parameter": "Serum Calcium",
+        "value": 9.4,
+        "unit": "mg/dL",
+        "reference_range": "8.5 - 10.2",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "test_parameter": "Serum Creatinine",
+        "value": 0.9,
+        "unit": "mg/dL",
+        "reference_range": "0.6 - 1.1",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
     ],
     "biomarkers": [
-      { "name": "Serum Calcium", "value": "9.4", "range": "8.5 - 10.2", "unit": "mg/dL", "is_abnormal": false },
-      { "name": "Serum Creatinine", "value": "0.9", "range": "0.6 - 1.1", "unit": "mg/dL", "is_abnormal": false }
+      {
+        "name": "Serum Calcium",
+        "value": "9.4",
+        "range": "8.5 - 10.2",
+        "unit": "mg/dL",
+        "is_abnormal": false
+      },
+      {
+        "name": "Serum Creatinine",
+        "value": "0.9",
+        "range": "0.6 - 1.1",
+        "unit": "mg/dL",
+        "is_abnormal": false
+      }
     ],
     "impression": "Normal renal function and calcium homeostatic markers.",
-    "created_at": "2026-09-14T14:40:00Z"
+    "created_at": "2026-09-14T14:40:00Z",
+    "results": [
+      {
+        "parameter": "Serum Calcium",
+        "value": 9.4,
+        "unit": "mg/dL",
+        "reference_range": "8.5 - 10.2",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "parameter": "Serum Creatinine",
+        "value": 0.9,
+        "unit": "mg/dL",
+        "reference_range": "0.6 - 1.1",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
+    ],
+    "test_type": "Bone Mineral Density Markers & Serum Creatinine",
+    "test_date": "2026-09-14"
   },
   {
     "report_id": "LABR-1025",
@@ -250,15 +798,61 @@
     "critical_panic": false,
     "specimen_id": "SPEC-8825",
     "test_results": [
-      { "test_parameter": "Hemoglobin", "value": 13.2, "unit": "g/dL", "reference_range": "12.0 - 15.5", "is_abnormal": false, "abnormality_direction": "NORMAL" },
-      { "test_parameter": "Total Cholesterol", "value": 175.0, "unit": "mg/dL", "reference_range": "< 200", "is_abnormal": false, "abnormality_direction": "NORMAL" }
+      {
+        "test_parameter": "Hemoglobin",
+        "value": 13.2,
+        "unit": "g/dL",
+        "reference_range": "12.0 - 15.5",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "test_parameter": "Total Cholesterol",
+        "value": 175.0,
+        "unit": "mg/dL",
+        "reference_range": "< 200",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
     ],
     "biomarkers": [
-      { "name": "Hemoglobin", "value": "13.2", "range": "12.0 - 15.5", "unit": "g/dL", "is_abnormal": false },
-      { "name": "Total Cholesterol", "value": "175", "range": "< 200", "unit": "mg/dL", "is_abnormal": false }
+      {
+        "name": "Hemoglobin",
+        "value": "13.2",
+        "range": "12.0 - 15.5",
+        "unit": "g/dL",
+        "is_abnormal": false
+      },
+      {
+        "name": "Total Cholesterol",
+        "value": "175",
+        "range": "< 200",
+        "unit": "mg/dL",
+        "is_abnormal": false
+      }
     ],
     "impression": "Normal hematology and cholesterol limits.",
-    "created_at": "2026-09-16T10:00:00Z"
+    "created_at": "2026-09-16T10:00:00Z",
+    "results": [
+      {
+        "parameter": "Hemoglobin",
+        "value": 13.2,
+        "unit": "g/dL",
+        "reference_range": "12.0 - 15.5",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "parameter": "Total Cholesterol",
+        "value": 175.0,
+        "unit": "mg/dL",
+        "reference_range": "< 200",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
+    ],
+    "test_type": "Lipid & Glycemic Follow-Up Panel",
+    "test_date": "2026-09-16"
   },
   {
     "report_id": "LABR-1044-01",
@@ -274,19 +868,107 @@
     "critical_panic": false,
     "specimen_id": "SPEC-1044-01",
     "test_results": [
-      { "test_parameter": "Hemoglobin", "value": 13.8, "unit": "g/dL", "reference_range": "12.0 - 16.0", "is_abnormal": false, "abnormality_direction": "NORMAL" },
-      { "test_parameter": "WBC", "value": 7.2, "unit": "x10^3/uL", "reference_range": "4.0 - 11.0", "is_abnormal": false, "abnormality_direction": "NORMAL" },
-      { "test_parameter": "Platelets", "value": 245.0, "unit": "x10^3/uL", "reference_range": "150 - 450", "is_abnormal": false, "abnormality_direction": "NORMAL" },
-      { "test_parameter": "Hematocrit", "value": 41.0, "unit": "%", "reference_range": "36 - 46", "is_abnormal": false, "abnormality_direction": "NORMAL" }
+      {
+        "test_parameter": "Hemoglobin",
+        "value": 13.8,
+        "unit": "g/dL",
+        "reference_range": "12.0 - 16.0",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "test_parameter": "WBC",
+        "value": 7.2,
+        "unit": "x10^3/uL",
+        "reference_range": "4.0 - 11.0",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "test_parameter": "Platelets",
+        "value": 245.0,
+        "unit": "x10^3/uL",
+        "reference_range": "150 - 450",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "test_parameter": "Hematocrit",
+        "value": 41.0,
+        "unit": "%",
+        "reference_range": "36 - 46",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
     ],
     "biomarkers": [
-      { "name": "Hemoglobin", "value": "13.8", "range": "12.0 - 16.0", "unit": "g/dL", "is_abnormal": false },
-      { "name": "WBC", "value": "7.2", "range": "4.0 - 11.0", "unit": "x10^3/uL", "is_abnormal": false },
-      { "name": "Platelets", "value": "245", "range": "150 - 450", "unit": "x10^3/uL", "is_abnormal": false },
-      { "name": "Hematocrit", "value": "41", "range": "36 - 46", "unit": "%", "is_abnormal": false }
+      {
+        "name": "Hemoglobin",
+        "value": "13.8",
+        "range": "12.0 - 16.0",
+        "unit": "g/dL",
+        "is_abnormal": false
+      },
+      {
+        "name": "WBC",
+        "value": "7.2",
+        "range": "4.0 - 11.0",
+        "unit": "x10^3/uL",
+        "is_abnormal": false
+      },
+      {
+        "name": "Platelets",
+        "value": "245",
+        "range": "150 - 450",
+        "unit": "x10^3/uL",
+        "is_abnormal": false
+      },
+      {
+        "name": "Hematocrit",
+        "value": "41",
+        "range": "36 - 46",
+        "unit": "%",
+        "is_abnormal": false
+      }
     ],
     "impression": "Normal complete blood count parameters.",
-    "created_at": "2026-09-16T09:00:00Z"
+    "created_at": "2026-09-16T09:00:00Z",
+    "results": [
+      {
+        "parameter": "Hemoglobin",
+        "value": 13.8,
+        "unit": "g/dL",
+        "reference_range": "12.0 - 16.0",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "parameter": "WBC",
+        "value": 7.2,
+        "unit": "x10^3/uL",
+        "reference_range": "4.0 - 11.0",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "parameter": "Platelets",
+        "value": 245.0,
+        "unit": "x10^3/uL",
+        "reference_range": "150 - 450",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "parameter": "Hematocrit",
+        "value": 41.0,
+        "unit": "%",
+        "reference_range": "36 - 46",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
+    ],
+    "test_type": "Complete Blood Count (CBC)",
+    "test_date": "2026-09-16"
   },
   {
     "report_id": "LABR-1044-02",
@@ -302,19 +984,107 @@
     "critical_panic": false,
     "specimen_id": "SPEC-1044-02",
     "test_results": [
-      { "test_parameter": "Fasting Glucose", "value": 108.0, "unit": "mg/dL", "reference_range": "70 - 99", "is_abnormal": true, "abnormality_direction": "HIGH" },
-      { "test_parameter": "Creatinine", "value": 0.9, "unit": "mg/dL", "reference_range": "0.6 - 1.2", "is_abnormal": false, "abnormality_direction": "NORMAL" },
-      { "test_parameter": "ALT", "value": 28.0, "unit": "U/L", "reference_range": "7 - 56", "is_abnormal": false, "abnormality_direction": "NORMAL" },
-      { "test_parameter": "AST", "value": 25.0, "unit": "U/L", "reference_range": "10 - 40", "is_abnormal": false, "abnormality_direction": "NORMAL" }
+      {
+        "test_parameter": "Fasting Glucose",
+        "value": 108.0,
+        "unit": "mg/dL",
+        "reference_range": "70 - 99",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "test_parameter": "Creatinine",
+        "value": 0.9,
+        "unit": "mg/dL",
+        "reference_range": "0.6 - 1.2",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "test_parameter": "ALT",
+        "value": 28.0,
+        "unit": "U/L",
+        "reference_range": "7 - 56",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "test_parameter": "AST",
+        "value": 25.0,
+        "unit": "U/L",
+        "reference_range": "10 - 40",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
     ],
     "biomarkers": [
-      { "name": "Fasting Glucose", "value": "108", "range": "70 - 99", "unit": "mg/dL", "is_abnormal": true },
-      { "name": "Creatinine", "value": "0.9", "range": "0.6 - 1.2", "unit": "mg/dL", "is_abnormal": false },
-      { "name": "ALT", "value": "28", "range": "7 - 56", "unit": "U/L", "is_abnormal": false },
-      { "name": "AST", "value": "25", "range": "10 - 40", "unit": "U/L", "is_abnormal": false }
+      {
+        "name": "Fasting Glucose",
+        "value": "108",
+        "range": "70 - 99",
+        "unit": "mg/dL",
+        "is_abnormal": true
+      },
+      {
+        "name": "Creatinine",
+        "value": "0.9",
+        "range": "0.6 - 1.2",
+        "unit": "mg/dL",
+        "is_abnormal": false
+      },
+      {
+        "name": "ALT",
+        "value": "28",
+        "range": "7 - 56",
+        "unit": "U/L",
+        "is_abnormal": false
+      },
+      {
+        "name": "AST",
+        "value": "25",
+        "range": "10 - 40",
+        "unit": "U/L",
+        "is_abnormal": false
+      }
     ],
     "impression": "Mildly elevated fasting glucose (108 mg/dL). Normal renal and hepatic enzymes.",
-    "created_at": "2026-09-17T08:30:00Z"
+    "created_at": "2026-09-17T08:30:00Z",
+    "results": [
+      {
+        "parameter": "Fasting Glucose",
+        "value": 108.0,
+        "unit": "mg/dL",
+        "reference_range": "70 - 99",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "parameter": "Creatinine",
+        "value": 0.9,
+        "unit": "mg/dL",
+        "reference_range": "0.6 - 1.2",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "parameter": "ALT",
+        "value": 28.0,
+        "unit": "U/L",
+        "reference_range": "7 - 56",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "parameter": "AST",
+        "value": 25.0,
+        "unit": "U/L",
+        "reference_range": "10 - 40",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
+    ],
+    "test_type": "Comprehensive Metabolic Panel",
+    "test_date": "2026-09-17"
   },
   {
     "report_id": "LABR-1044-03",
@@ -330,18 +1100,570 @@
     "critical_panic": false,
     "specimen_id": "SPEC-1044-03",
     "test_results": [
-      { "test_parameter": "Total Cholesterol", "value": 198.0, "unit": "mg/dL", "reference_range": "< 200", "is_abnormal": false, "abnormality_direction": "NORMAL" },
-      { "test_parameter": "LDL Cholesterol", "value": 124.0, "unit": "mg/dL", "reference_range": "< 100", "is_abnormal": true, "abnormality_direction": "HIGH" },
-      { "test_parameter": "HDL Cholesterol", "value": 52.0, "unit": "mg/dL", "reference_range": "> 40", "is_abnormal": false, "abnormality_direction": "NORMAL" },
-      { "test_parameter": "Triglycerides", "value": 138.0, "unit": "mg/dL", "reference_range": "< 150", "is_abnormal": false, "abnormality_direction": "NORMAL" }
+      {
+        "test_parameter": "Total Cholesterol",
+        "value": 198.0,
+        "unit": "mg/dL",
+        "reference_range": "< 200",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "test_parameter": "LDL Cholesterol",
+        "value": 124.0,
+        "unit": "mg/dL",
+        "reference_range": "< 100",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "test_parameter": "HDL Cholesterol",
+        "value": 52.0,
+        "unit": "mg/dL",
+        "reference_range": "> 40",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "test_parameter": "Triglycerides",
+        "value": 138.0,
+        "unit": "mg/dL",
+        "reference_range": "< 150",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
     ],
     "biomarkers": [
-      { "name": "Total Cholesterol", "value": "198", "range": "< 200", "unit": "mg/dL", "is_abnormal": false },
-      { "name": "LDL Cholesterol", "value": "124", "range": "< 100", "unit": "mg/dL", "is_abnormal": true },
-      { "name": "HDL Cholesterol", "value": "52", "range": "> 40", "unit": "mg/dL", "is_abnormal": false },
-      { "name": "Triglycerides", "value": "138", "range": "< 150", "unit": "mg/dL", "is_abnormal": false }
+      {
+        "name": "Total Cholesterol",
+        "value": "198",
+        "range": "< 200",
+        "unit": "mg/dL",
+        "is_abnormal": false
+      },
+      {
+        "name": "LDL Cholesterol",
+        "value": "124",
+        "range": "< 100",
+        "unit": "mg/dL",
+        "is_abnormal": true
+      },
+      {
+        "name": "HDL Cholesterol",
+        "value": "52",
+        "range": "> 40",
+        "unit": "mg/dL",
+        "is_abnormal": false
+      },
+      {
+        "name": "Triglycerides",
+        "value": "138",
+        "range": "< 150",
+        "unit": "mg/dL",
+        "is_abnormal": false
+      }
     ],
     "impression": "Borderline elevated LDL cholesterol (124 mg/dL). Total cholesterol and triglycerides within normal limits.",
-    "created_at": "2026-09-17T09:15:00Z"
+    "created_at": "2026-09-17T09:15:00Z",
+    "results": [
+      {
+        "parameter": "Total Cholesterol",
+        "value": 198.0,
+        "unit": "mg/dL",
+        "reference_range": "< 200",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "parameter": "LDL Cholesterol",
+        "value": 124.0,
+        "unit": "mg/dL",
+        "reference_range": "< 100",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "parameter": "HDL Cholesterol",
+        "value": 52.0,
+        "unit": "mg/dL",
+        "reference_range": "> 40",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "parameter": "Triglycerides",
+        "value": 138.0,
+        "unit": "mg/dL",
+        "reference_range": "< 150",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
+    ],
+    "test_type": "Lipid Profile",
+    "test_date": "2026-09-17"
+  },
+  {
+    "report_id": "LABR-1001-02",
+    "patient_id": "PAT-1001",
+    "patient_name": "Arun Kumar",
+    "lab_id": "LAB-001",
+    "doctor_id": "DOC-101",
+    "test_name": "Cardiac Biomarkers & Electrolyte Panel",
+    "test_type": "Cardiac Biomarkers & Electrolyte Panel",
+    "section": "Biochemistry",
+    "report_date": "2026-09-16",
+    "date": "16 Sep 2026",
+    "test_date": "2026-09-16",
+    "status": "RELEASED",
+    "critical_panic": false,
+    "specimen_id": "SPEC-1001-02",
+    "test_results": [
+      {
+        "test_parameter": "Serum Sodium",
+        "value": 140.0,
+        "unit": "mEq/L",
+        "reference_range": "135 - 145",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "test_parameter": "Serum Potassium",
+        "value": 4.2,
+        "unit": "mEq/L",
+        "reference_range": "3.5 - 5.0",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "test_parameter": "hs-CRP",
+        "value": 3.2,
+        "unit": "mg/L",
+        "reference_range": "< 1.0",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "test_parameter": "Cardiac Troponin T",
+        "value": 0.01,
+        "unit": "ng/mL",
+        "reference_range": "< 0.014",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
+    ],
+    "results": [
+      {
+        "parameter": "Serum Sodium",
+        "value": 140.0,
+        "unit": "mEq/L",
+        "reference_range": "135 - 145",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "parameter": "Serum Potassium",
+        "value": 4.2,
+        "unit": "mEq/L",
+        "reference_range": "3.5 - 5.0",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "parameter": "hs-CRP",
+        "value": 3.2,
+        "unit": "mg/L",
+        "reference_range": "< 1.0",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "parameter": "Cardiac Troponin T",
+        "value": 0.01,
+        "unit": "ng/mL",
+        "reference_range": "< 0.014",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
+    ],
+    "biomarkers": [
+      {
+        "name": "Serum Sodium",
+        "value": "140",
+        "range": "135 - 145",
+        "unit": "mEq/L",
+        "is_abnormal": false
+      },
+      {
+        "name": "Serum Potassium",
+        "value": "4.2",
+        "range": "3.5 - 5.0",
+        "unit": "mEq/L",
+        "is_abnormal": false
+      },
+      {
+        "name": "hs-CRP",
+        "value": "3.2",
+        "range": "< 1.0",
+        "unit": "mg/L",
+        "is_abnormal": true
+      },
+      {
+        "name": "Cardiac Troponin T",
+        "value": "0.01",
+        "range": "< 0.014",
+        "unit": "ng/mL",
+        "is_abnormal": false
+      }
+    ],
+    "impression": "Elevated high-sensitivity CRP indicative of cardiovascular inflammatory risk. Normal electrolytes and troponin.",
+    "created_at": "2026-09-16T14:00:00Z"
+  },
+  {
+    "report_id": "LABR-1002-02",
+    "patient_id": "PAT-1002",
+    "patient_name": "Sneha Sharma",
+    "lab_id": "LAB-001",
+    "doctor_id": "DOC-102",
+    "test_name": "Renal Function & Urinalysis Panel",
+    "test_type": "Renal Function & Urinalysis Panel",
+    "section": "Biochemistry",
+    "report_date": "2026-09-16",
+    "date": "16 Sep 2026",
+    "test_date": "2026-09-16",
+    "status": "RELEASED",
+    "critical_panic": false,
+    "specimen_id": "SPEC-1002-02",
+    "test_results": [
+      {
+        "test_parameter": "Serum Creatinine",
+        "value": 0.85,
+        "unit": "mg/dL",
+        "reference_range": "0.6 - 1.2",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "test_parameter": "Blood Urea Nitrogen",
+        "value": 15.0,
+        "unit": "mg/dL",
+        "reference_range": "7 - 20",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "test_parameter": "eGFR",
+        "value": 95.0,
+        "unit": "mL/min",
+        "reference_range": "> 90",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "test_parameter": "Microalbumin",
+        "value": 24.0,
+        "unit": "mg/L",
+        "reference_range": "< 30",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
+    ],
+    "results": [
+      {
+        "parameter": "Serum Creatinine",
+        "value": 0.85,
+        "unit": "mg/dL",
+        "reference_range": "0.6 - 1.2",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "parameter": "Blood Urea Nitrogen",
+        "value": 15.0,
+        "unit": "mg/dL",
+        "reference_range": "7 - 20",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "parameter": "eGFR",
+        "value": 95.0,
+        "unit": "mL/min",
+        "reference_range": "> 90",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "parameter": "Microalbumin",
+        "value": 24.0,
+        "unit": "mg/L",
+        "reference_range": "< 30",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
+    ],
+    "biomarkers": [
+      {
+        "name": "Serum Creatinine",
+        "value": "0.85",
+        "range": "0.6 - 1.2",
+        "unit": "mg/dL",
+        "is_abnormal": false
+      },
+      {
+        "name": "Blood Urea Nitrogen",
+        "value": "15",
+        "range": "7 - 20",
+        "unit": "mg/dL",
+        "is_abnormal": false
+      },
+      {
+        "name": "eGFR",
+        "value": "95",
+        "range": "> 90",
+        "unit": "mL/min",
+        "is_abnormal": false
+      },
+      {
+        "name": "Microalbumin",
+        "value": "24",
+        "range": "< 30",
+        "unit": "mg/L",
+        "is_abnormal": false
+      }
+    ],
+    "impression": "Normal renal filtration and urinalysis parameters without nephropathic signs.",
+    "created_at": "2026-09-16T15:30:00Z"
+  },
+  {
+    "report_id": "LABR-1003-02",
+    "patient_id": "PAT-1003",
+    "patient_name": "Vikram Singh",
+    "lab_id": "LAB-002",
+    "doctor_id": "DOC-104",
+    "test_name": "Arthritic & Joint Fluid Diagnostic Panel",
+    "test_type": "Arthritic & Joint Fluid Diagnostic Panel",
+    "section": "Hematology",
+    "report_date": "2026-09-15",
+    "date": "15 Sep 2026",
+    "test_date": "2026-09-15",
+    "status": "RELEASED",
+    "critical_panic": false,
+    "specimen_id": "SPEC-1003-02",
+    "test_results": [
+      {
+        "test_parameter": "Rheumatoid Factor",
+        "value": 12.0,
+        "unit": "IU/mL",
+        "reference_range": "< 14",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "test_parameter": "Serum Uric Acid",
+        "value": 7.6,
+        "unit": "mg/dL",
+        "reference_range": "3.5 - 7.2",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "test_parameter": "25-OH Vitamin D",
+        "value": 22.0,
+        "unit": "ng/mL",
+        "reference_range": "30 - 100",
+        "is_abnormal": true,
+        "abnormality_direction": "LOW"
+      },
+      {
+        "test_parameter": "WBC Count",
+        "value": 6.8,
+        "unit": "x10^3/uL",
+        "reference_range": "4.0 - 11.0",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
+    ],
+    "results": [
+      {
+        "parameter": "Rheumatoid Factor",
+        "value": 12.0,
+        "unit": "IU/mL",
+        "reference_range": "< 14",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "parameter": "Serum Uric Acid",
+        "value": 7.6,
+        "unit": "mg/dL",
+        "reference_range": "3.5 - 7.2",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "parameter": "25-OH Vitamin D",
+        "value": 22.0,
+        "unit": "ng/mL",
+        "reference_range": "30 - 100",
+        "is_abnormal": true,
+        "abnormality_direction": "LOW"
+      },
+      {
+        "parameter": "WBC Count",
+        "value": 6.8,
+        "unit": "x10^3/uL",
+        "reference_range": "4.0 - 11.0",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
+    ],
+    "biomarkers": [
+      {
+        "name": "Rheumatoid Factor",
+        "value": "12",
+        "range": "< 14",
+        "unit": "IU/mL",
+        "is_abnormal": false
+      },
+      {
+        "name": "Serum Uric Acid",
+        "value": "7.6",
+        "range": "3.5 - 7.2",
+        "unit": "mg/dL",
+        "is_abnormal": true
+      },
+      {
+        "name": "25-OH Vitamin D",
+        "value": "22",
+        "range": "30 - 100",
+        "unit": "ng/mL",
+        "is_abnormal": true
+      },
+      {
+        "name": "WBC Count",
+        "value": "6.8",
+        "range": "4.0 - 11.0",
+        "unit": "x10^3/uL",
+        "is_abnormal": false
+      }
+    ],
+    "impression": "Hyperuricemia noted; vitamin D insufficiency. No serological evidence of rheumatoid arthritis.",
+    "created_at": "2026-09-15T12:00:00Z"
+  },
+  {
+    "report_id": "LABR-1004-02",
+    "patient_id": "PAT-1004",
+    "patient_name": "Priya Nair",
+    "lab_id": "LAB-001",
+    "doctor_id": "DOC-105",
+    "test_name": "Comprehensive Complete Blood Count",
+    "test_type": "Comprehensive Complete Blood Count",
+    "section": "Hematology",
+    "report_date": "2026-09-15",
+    "date": "15 Sep 2026",
+    "test_date": "2026-09-15",
+    "status": "RELEASED",
+    "critical_panic": false,
+    "specimen_id": "SPEC-1004-02",
+    "test_results": [
+      {
+        "test_parameter": "Hemoglobin",
+        "value": 12.8,
+        "unit": "g/dL",
+        "reference_range": "12.0 - 16.0",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "test_parameter": "Platelets",
+        "value": 280.0,
+        "unit": "x10^3/uL",
+        "reference_range": "150 - 450",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "test_parameter": "Eosinophils",
+        "value": 7.2,
+        "unit": "%",
+        "reference_range": "1.0 - 6.0",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "test_parameter": "WBC",
+        "value": 7.5,
+        "unit": "x10^3/uL",
+        "reference_range": "4.0 - 11.0",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
+    ],
+    "results": [
+      {
+        "parameter": "Hemoglobin",
+        "value": 12.8,
+        "unit": "g/dL",
+        "reference_range": "12.0 - 16.0",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "parameter": "Platelets",
+        "value": 280.0,
+        "unit": "x10^3/uL",
+        "reference_range": "150 - 450",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      },
+      {
+        "parameter": "Eosinophils",
+        "value": 7.2,
+        "unit": "%",
+        "reference_range": "1.0 - 6.0",
+        "is_abnormal": true,
+        "abnormality_direction": "HIGH"
+      },
+      {
+        "parameter": "WBC",
+        "value": 7.5,
+        "unit": "x10^3/uL",
+        "reference_range": "4.0 - 11.0",
+        "is_abnormal": false,
+        "abnormality_direction": "NORMAL"
+      }
+    ],
+    "biomarkers": [
+      {
+        "name": "Hemoglobin",
+        "value": "12.8",
+        "range": "12.0 - 16.0",
+        "unit": "g/dL",
+        "is_abnormal": false
+      },
+      {
+        "name": "Platelets",
+        "value": "280",
+        "range": "150 - 450",
+        "unit": "x10^3/uL",
+        "is_abnormal": false
+      },
+      {
+        "name": "Eosinophils",
+        "value": "7.2",
+        "range": "1.0 - 6.0",
+        "unit": "%",
+        "is_abnormal": true
+      },
+      {
+        "name": "WBC",
+        "value": "7.5",
+        "range": "4.0 - 11.0",
+        "unit": "x10^3/uL",
+        "is_abnormal": false
+      }
+    ],
+    "impression": "Mild peripheral eosinophilia consistent with active allergic history. Normal platelet and erythrocyte mass.",
+    "created_at": "2026-09-15T10:00:00Z"
   }
 ]

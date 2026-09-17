@@ -149,7 +149,25 @@ export const INITIAL_CLAIMS = [
 
 // Default Lab Reports
 export const INITIAL_LAB_REPORTS: LabReportItem[] = [
-  MOCK_LAB_REPORT,
+  {
+    ...MOCK_LAB_REPORT,
+    status: 'RELEASED',
+  },
+  {
+    report_id: 'LABR-1001-02',
+    patient_id: 'PAT-1001',
+    laboratory_id: 'LAB-001',
+    doctor_id: 'DOC-101',
+    test_type: 'Cardiac Biomarkers & Electrolyte Panel',
+    test_date: '2026-09-16',
+    status: 'RELEASED',
+    results: [
+      { parameter: 'Serum Sodium', value: 140.0, unit: 'mEq/L', reference_range: '135 - 145', is_abnormal: false, abnormality_direction: 'NORMAL' },
+      { parameter: 'Serum Potassium', value: 4.2, unit: 'mEq/L', reference_range: '3.5 - 5.0', is_abnormal: false, abnormality_direction: 'NORMAL' },
+      { parameter: 'hs-CRP', value: 3.2, unit: 'mg/L', reference_range: '< 1.0', is_abnormal: true, abnormality_direction: 'HIGH' },
+      { parameter: 'Cardiac Troponin T', value: 0.01, unit: 'ng/mL', reference_range: '< 0.014', is_abnormal: false, abnormality_direction: 'NORMAL' },
+    ],
+  },
   MOCK_LAB_REPORT_ARUN_BASELINE,
   MOCK_LAB_REPORT_KAVYA,
   {
@@ -159,10 +177,25 @@ export const INITIAL_LAB_REPORTS: LabReportItem[] = [
     doctor_id: 'DOC-102',
     test_type: 'Thyroid Function Profile (T3, T4, TSH)',
     test_date: '2026-08-10',
-    status: 'COMPLETED',
+    status: 'RELEASED',
     results: [
       { parameter: 'TSH', value: 6.2, unit: 'uIU/mL', reference_range: '0.4 - 4.2', is_abnormal: true, abnormality_direction: 'HIGH' },
       { parameter: 'Free T4', value: 1.1, unit: 'ng/dL', reference_range: '0.8 - 1.8', is_abnormal: false, abnormality_direction: 'NORMAL' },
+    ],
+  },
+  {
+    report_id: 'LABR-1002-02',
+    patient_id: 'PAT-1002',
+    laboratory_id: 'LAB-001',
+    doctor_id: 'DOC-102',
+    test_type: 'Renal Function & Urinalysis Panel',
+    test_date: '2026-09-16',
+    status: 'RELEASED',
+    results: [
+      { parameter: 'Serum Creatinine', value: 0.85, unit: 'mg/dL', reference_range: '0.6 - 1.2', is_abnormal: false, abnormality_direction: 'NORMAL' },
+      { parameter: 'Blood Urea Nitrogen', value: 15.0, unit: 'mg/dL', reference_range: '7 - 20', is_abnormal: false, abnormality_direction: 'NORMAL' },
+      { parameter: 'eGFR', value: 95.0, unit: 'mL/min', reference_range: '> 90', is_abnormal: false, abnormality_direction: 'NORMAL' },
+      { parameter: 'Microalbumin', value: 24.0, unit: 'mg/L', reference_range: '< 30', is_abnormal: false, abnormality_direction: 'NORMAL' },
     ],
   },
   {
@@ -172,10 +205,25 @@ export const INITIAL_LAB_REPORTS: LabReportItem[] = [
     doctor_id: 'DOC-101',
     test_type: 'HbA1c & Glycemic Assessment',
     test_date: '2026-08-14',
-    status: 'COMPLETED',
+    status: 'RELEASED',
     results: [
       { parameter: 'HbA1c', value: 7.8, unit: '%', reference_range: '< 5.7', is_abnormal: true, abnormality_direction: 'HIGH' },
       { parameter: 'Fasting Blood Sugar', value: 152, unit: 'mg/dL', reference_range: '70 - 99', is_abnormal: true, abnormality_direction: 'HIGH' },
+    ],
+  },
+  {
+    report_id: 'LABR-1003-02',
+    patient_id: 'PAT-1003',
+    laboratory_id: 'LAB-002',
+    doctor_id: 'DOC-104',
+    test_type: 'Arthritic & Joint Fluid Diagnostic Panel',
+    test_date: '2026-09-15',
+    status: 'RELEASED',
+    results: [
+      { parameter: 'Rheumatoid Factor', value: 12.0, unit: 'IU/mL', reference_range: '< 14', is_abnormal: false, abnormality_direction: 'NORMAL' },
+      { parameter: 'Serum Uric Acid', value: 7.6, unit: 'mg/dL', reference_range: '3.5 - 7.2', is_abnormal: true, abnormality_direction: 'HIGH' },
+      { parameter: '25-OH Vitamin D', value: 22.0, unit: 'ng/mL', reference_range: '30 - 100', is_abnormal: true, abnormality_direction: 'LOW' },
+      { parameter: 'WBC Count', value: 6.8, unit: 'x10^3/uL', reference_range: '4.0 - 11.0', is_abnormal: false, abnormality_direction: 'NORMAL' },
     ],
   },
   {
@@ -185,11 +233,26 @@ export const INITIAL_LAB_REPORTS: LabReportItem[] = [
     doctor_id: 'DOC-101',
     test_type: 'Cardiac Risk & Lipid Biomarker Panel',
     test_date: '2026-08-18',
-    status: 'COMPLETED',
+    status: 'RELEASED',
     results: [
       { parameter: 'Total Cholesterol', value: 210, unit: 'mg/dL', reference_range: '< 200', is_abnormal: true, abnormality_direction: 'HIGH' },
       { parameter: 'LDL Cholesterol', value: 135, unit: 'mg/dL', reference_range: '< 100', is_abnormal: true, abnormality_direction: 'HIGH' },
       { parameter: 'HDL Cholesterol', value: 48, unit: 'mg/dL', reference_range: '> 40', is_abnormal: false, abnormality_direction: 'NORMAL' },
+    ],
+  },
+  {
+    report_id: 'LABR-1004-02',
+    patient_id: 'PAT-1004',
+    laboratory_id: 'LAB-001',
+    doctor_id: 'DOC-105',
+    test_type: 'Comprehensive Complete Blood Count',
+    test_date: '2026-09-15',
+    status: 'RELEASED',
+    results: [
+      { parameter: 'Hemoglobin', value: 12.8, unit: 'g/dL', reference_range: '12.0 - 16.0', is_abnormal: false, abnormality_direction: 'NORMAL' },
+      { parameter: 'Platelets', value: 280.0, unit: 'x10^3/uL', reference_range: '150 - 450', is_abnormal: false, abnormality_direction: 'NORMAL' },
+      { parameter: 'Eosinophils', value: 7.2, unit: '%', reference_range: '1.0 - 6.0', is_abnormal: true, abnormality_direction: 'HIGH' },
+      { parameter: 'WBC', value: 7.5, unit: 'x10^3/uL', reference_range: '4.0 - 11.0', is_abnormal: false, abnormality_direction: 'NORMAL' },
     ],
   },
   {
@@ -514,15 +577,44 @@ class SharedDataService {
   }
 
   private initializeIfEmpty() {
-    if (!getStorageItem(STORAGE_KEYS.PATIENTS, null)) {
+    const existingPatients = getStorageItem<PatientProfile[]>(STORAGE_KEYS.PATIENTS, []);
+    if (!existingPatients || existingPatients.length === 0) {
       setStorageItem(STORAGE_KEYS.PATIENTS, MOCK_PATIENTS_LIST);
+    } else {
+      let updatedP = false;
+      const mergedP = [...existingPatients];
+      for (const initP of MOCK_PATIENTS_LIST) {
+        if (!mergedP.some((p) => p.patient_id.toUpperCase() === initP.patient_id.toUpperCase())) {
+          mergedP.push(initP);
+          updatedP = true;
+        }
+      }
+      if (updatedP) {
+        setStorageItem(STORAGE_KEYS.PATIENTS, mergedP);
+      }
     }
+
     if (!getStorageItem(STORAGE_KEYS.APPOINTMENTS, null)) {
       setStorageItem(STORAGE_KEYS.APPOINTMENTS, MOCK_APPOINTMENTS);
     }
-    if (!getStorageItem(STORAGE_KEYS.LAB_REPORTS, null)) {
+
+    const existingReports = getStorageItem<LabReportItem[]>(STORAGE_KEYS.LAB_REPORTS, []);
+    if (!existingReports || existingReports.length === 0) {
       setStorageItem(STORAGE_KEYS.LAB_REPORTS, INITIAL_LAB_REPORTS);
+    } else {
+      let updated = false;
+      const merged = [...existingReports];
+      for (const initR of INITIAL_LAB_REPORTS) {
+        if (!merged.some((r) => r.report_id === initR.report_id)) {
+          merged.push(initR);
+          updated = true;
+        }
+      }
+      if (updated) {
+        setStorageItem(STORAGE_KEYS.LAB_REPORTS, merged);
+      }
     }
+
     if (!getStorageItem(STORAGE_KEYS.PRESCRIPTIONS, null)) {
       setStorageItem(STORAGE_KEYS.PRESCRIPTIONS, MOCK_PRESCRIPTIONS);
     }
@@ -879,7 +971,20 @@ class SharedDataService {
   // ----------------------------------------------------
 
   getLabReports(): LabReportItem[] {
-    return getStorageItem<LabReportItem[]>(STORAGE_KEYS.LAB_REPORTS, INITIAL_LAB_REPORTS);
+    const list = getStorageItem<LabReportItem[]>(STORAGE_KEYS.LAB_REPORTS, INITIAL_LAB_REPORTS);
+    if (!list || list.length === 0) return INITIAL_LAB_REPORTS;
+    let missingFound = false;
+    const merged = [...list];
+    for (const initR of INITIAL_LAB_REPORTS) {
+      if (!merged.some((r) => r.report_id === initR.report_id)) {
+        merged.push(initR);
+        missingFound = true;
+      }
+    }
+    if (missingFound) {
+      setStorageItem(STORAGE_KEYS.LAB_REPORTS, merged);
+    }
+    return merged;
   }
 
   getLabReportById(reportId: string): LabReportItem | null {

@@ -57,7 +57,8 @@ class AssistantService:
                 "PAT-1007": ["tariq", "pat-1007"],
                 "PAT-1008": ["deepa", "pat-1008"],
                 "PAT-1009": ["kabir", "pat-1009"],
-                "PAT-1010": ["lakshmi", "pat-1010"]
+                "PAT-1010": ["lakshmi", "pat-1010"],
+                "PAT-1044": ["shiva", "pat-1044"]
             }
             if caller_pid:
                 for other_id, aliases in all_synthetic_patients.items():
@@ -80,7 +81,9 @@ class AssistantService:
             admin_intent_keywords = [
                 "settle claim", "adjudicate claim", "reject claim", "approve prescription",
                 "create prescription", "formulary", "list all patients", "all appointments",
-                "department schedule", "daily schedule", "physician roster"
+                "department schedule", "daily schedule", "physician roster",
+                "census", "bed", "utilization", "operations", "schedule doctor", "clinical review",
+                "all patients", "database metrics", "hospital operations"
             ]
             for kw in admin_intent_keywords:
                 if kw in msg_lower:
@@ -96,16 +99,17 @@ class AssistantService:
                         "needs_clarification": False
                     }
 
-            patient_forbidden = {
+            # Prohibit privileged administrative and clinical actions
+            restricted_actions = {
+                "patient": {"register_patient", "get_all_patients"},
+                "medical": {"analyze_lab_report_doctor", "clinical_review", "sign_clinical_order"},
+                "appointment": {"get_all_appointments"},
                 "insurance": {"adjudicate_claim", "settle_claim", "reject_claim", "prepare_claim", "submit_claim", "process_preauthorization", "get_all_claims"},
-                "medical": {"approve_prescription", "update_prescription", "create_prescription", "flag_abnormal_results"},
-                "patient": {"list_all_patients", "delete_patient", "register_patient"},
-                "appointment": {"update_appointment_status", "complete_appointment", "list_all_appointments", "get_daily_schedule"},
-                "admin": {"view_dashboard", "manage_users"},
-                "nurse": {"view_dashboard"},
-                "lab": {"view_dashboard"}
+                "nurse": {"record_vitals", "administer_medication", "get_nurse_tasks", "execute_task"},
+                "admin": {"get_operations_summary", "get_audit_logs", "get_all_users"},
+                "lab": {"approve_report", "process_specimen", "notify_critical_lab", "authorize_patient_lab_release"}
             }
-            if target_agent in ["admin", "nurse", "lab", "hospital"] or target_action in patient_forbidden.get(target_agent, set()):
+            if target_agent in restricted_actions and target_action in restricted_actions[target_agent]:
                 denied_msg = f"Access Denied: The requested action '{target_action}' on '{target_agent}' is restricted to authorized healthcare staff and cannot be performed from the Patient Portal."
                 return {
                     **parsed,
@@ -123,6 +127,16 @@ class AssistantService:
             if target_agent in ["appointment", "patient", "medical"]:
                 params["caller_patient_id"] = caller_pid
                 params["patient_id"] = caller_pid
+
+            # Ensure lab reports are strictly scoped to the authenticated caller
+            if target_action in ["explain_lab_report", "analyze_lab_report"]:
+                from app.services.mock_db import mock_db
+                curr_rid = params.get("report_id")
+                rep = mock_db.find_one("lab_reports", "report_id", curr_rid) if curr_rid and curr_rid != "latest" else None
+                if not rep or rep.get("patient_id") != caller_pid:
+                    user_reports = mock_db.find_many("lab_reports", "patient_id", caller_pid)
+                    if user_reports:
+                        params["report_id"] = user_reports[-1].get("report_id") or user_reports[0].get("report_id")
 
             target_pid = params.get("patient_id")
             if caller_pid and target_pid and str(caller_pid).strip().upper() != str(target_pid).strip().upper():
