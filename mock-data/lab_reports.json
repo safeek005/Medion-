@@ -236,5 +236,28 @@
     ],
     "impression": "Normal renal function and calcium homeostatic markers.",
     "created_at": "2026-09-14T14:40:00Z"
+  },
+  {
+    "report_id": "LABR-1025",
+    "patient_id": "PAT-1025",
+    "patient_name": "Rahul Sharma",
+    "lab_id": "LAB-001",
+    "doctor_id": "DOC-101",
+    "test_name": "Lipid & Glycemic Follow-Up Panel",
+    "report_date": "2026-09-16",
+    "date": "16 Sep 2026",
+    "status": "COMPLETED",
+    "critical_panic": false,
+    "specimen_id": "SPEC-8825",
+    "test_results": [
+      { "test_parameter": "Hemoglobin", "value": 13.2, "unit": "g/dL", "reference_range": "12.0 - 15.5", "is_abnormal": false, "abnormality_direction": "NORMAL" },
+      { "test_parameter": "Total Cholesterol", "value": 175.0, "unit": "mg/dL", "reference_range": "< 200", "is_abnormal": false, "abnormality_direction": "NORMAL" }
+    ],
+    "biomarkers": [
+      { "name": "Hemoglobin", "value": "13.2", "range": "12.0 - 15.5", "unit": "g/dL", "is_abnormal": false },
+      { "name": "Total Cholesterol", "value": "175", "range": "< 200", "unit": "mg/dL", "is_abnormal": false }
+    ],
+    "impression": "Normal hematology and cholesterol limits.",
+    "created_at": "2026-09-16T10:00:00Z"
   }
 ]

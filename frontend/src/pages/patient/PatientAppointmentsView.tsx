@@ -32,11 +32,16 @@ export const PatientAppointmentsView: React.FC<PatientAppointmentsViewProps> = (
   const patients = useSharedPatients();
 
   // Scope strictly to authenticated patient session
-  const activePatient =
-    (user?.id ? patients.find((p) => p.patient_id.toUpperCase() === user.id.toUpperCase()) : null) ||
-    (user?.email ? patients.find((p) => p.email?.toLowerCase() === user.email.toLowerCase()) : null) ||
-    patients[0] ||
-    null;
+  const activePatient = user?.id
+    ? (patients.find((p) => p.patient_id.toUpperCase() === user.id.toUpperCase()) ||
+       (user.email ? patients.find((p) => p.email?.toLowerCase() === user.email.toLowerCase()) : null) || {
+         patient_id: user.id,
+         first_name: user.name ? user.name.split(' ')[0] : 'Patient',
+         last_name: user.name && user.name.split(' ').length > 1 ? user.name.split(' ').slice(1).join(' ') : '',
+         email: user.email,
+         phone: user.phone || '',
+       })
+    : patients[0];
 
   const mrn = user?.id || activePatient?.patient_id || 'PAT-1001';
   const patientDisplayName = user?.name || (activePatient ? `${activePatient.first_name} ${activePatient.last_name}` : 'Patient');

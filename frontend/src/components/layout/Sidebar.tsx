@@ -267,13 +267,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const getUserDisplayName = () => {
     if (user?.name) return user.name;
     switch (effectiveRole) {
-      case 'patient': return 'Kavya';
+      case 'patient': return 'Arun Kumar';
       case 'doctor': return 'Dr. Rajesh Mehta';
       case 'nurse': return 'Nurse Reka';
       case 'lab': return 'Dr. Vikram Patel';
       case 'insurance': return 'Kavita Iyer';
       case 'hospital': return 'Admin Officer';
-      default: return 'Kavya';
+      default: return 'User';
     }
   };
 
@@ -417,7 +417,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <span>{effectiveRole}</span>
                     <span>•</span>
                     <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
-                      {effectiveRole === 'patient' ? 'PAT-1025' : (user as any)?.staff_id || 'DOC-101'}
+                      {user?.id || ((user as any)?.staff_id || (effectiveRole === 'patient' ? 'PAT-1001' : 'DOC-101'))}
                     </span>
                   </div>
                 </div>

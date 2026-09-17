@@ -77,19 +77,11 @@ class MedicalService:
                 ]
             patient_id = patient_id or report.get("patient_id")
             report_id = report_id or report.get("report_id")
-        elif report_id == "LABR-1025" or patient_id == "PAT-1025":
-            report_id = "LABR-1025"
-            patient_id = "PAT-1025"
-            raw_test_results = raw_test_results or [
-                {"test_parameter": "Hemoglobin", "value": 13.2, "unit": "g/dL", "reference_range": "12.0 - 15.5", "is_abnormal": False},
-                {"test_parameter": "Total Cholesterol", "value": 175.0, "unit": "mg/dL", "reference_range": "< 200", "is_abnormal": False}
-            ]
-
         if not raw_test_results:
             return {
                 "success": False,
                 "error": "No laboratory reports available.",
-                "message": f"No laboratory reports found on file for patient {patient_id or 'specified'}."
+                "message": f"No laboratory reports found on file for patient '{patient_id or 'specified'}'."
             }
 
 
@@ -199,28 +191,17 @@ class MedicalService:
             patient_reports = mock_db.find_many("lab_reports", "patient_id", patient_id)
             if len(patient_reports) >= 2:
                 current_report_id = current_report_id or patient_reports[0].get("report_id")
-                previous_report_id = previous_report_id or patient_reports[1].get("report_id")
-            elif len(patient_reports) == 1:
-                current_report_id = current_report_id or patient_reports[0].get("report_id")
-                previous_report_id = previous_report_id or "LABR-1001"
-            else:
-                all_reports = mock_db.get_collection("lab_reports")
-                if len(all_reports) >= 2:
-                    current_report_id = current_report_id or all_reports[1].get("report_id")
-                    previous_report_id = previous_report_id or all_reports[0].get("report_id")
-                else:
-                    current_report_id = current_report_id or "LABR-1002"
-                    previous_report_id = previous_report_id or "LABR-1001"
+        curr_rep = mock_db.find_one("lab_reports", "report_id", current_report_id) if current_report_id else None
+        prev_rep = mock_db.find_one("lab_reports", "report_id", previous_report_id) if previous_report_id else None
 
-        curr_rep = mock_db.find_one("lab_reports", "report_id", current_report_id)
-        prev_rep = mock_db.find_one("lab_reports", "report_id", previous_report_id)
-
-        if not curr_rep:
-            curr_rep = mock_db.find_one("lab_reports", "report_id", "LABR-1001")
-            current_report_id = "LABR-1001"
-        if not prev_rep:
-            prev_rep = mock_db.find_one("lab_reports", "report_id", "LABR-1001")
-            previous_report_id = "LABR-1001"
+        if not curr_rep or not prev_rep:
+            return {
+                "success": False,
+                "patient_id": patient_id,
+                "error": "Previous comparable report not found.",
+                "summary": "No previous comparable laboratory report found for your patient record.",
+                "message": "No previous comparable laboratory report found for your patient record."
+            }
 
         curr_tests = {item.get("test_parameter") or item.get("test_name"): item for item in curr_rep.get("test_results", [])}
         prev_tests = {item.get("test_parameter") or item.get("test_name"): item for item in prev_rep.get("test_results", [])}
@@ -332,21 +313,35 @@ class MedicalService:
                 pts_reports = mock_db.find_many("lab_reports", "patient_id", patient_id)
                 if pts_reports:
                     report_id = pts_reports[-1].get("report_id") or pts_reports[0].get("report_id")
-            if not report_id:
-                all_reports = mock_db.get_collection("lab_reports")
-                if all_reports:
-                    report_id = all_reports[0].get("report_id")
-                else:
-                    report_id = "LABR-1001"
+
+        if not report_id:
+            return {
+                "success": False,
+                "patient_id": patient_id,
+                "error": "No lab report found for this patient.",
+                "explanation": f"No diagnostic laboratory reports are currently on file for patient '{patient_id or 'record'}'.",
+                "summary": f"No diagnostic laboratory reports found on file for patient '{patient_id or 'record'}'."
+            }
 
         report = mock_db.find_one("lab_reports", "report_id", report_id)
         if not report:
-            all_reports = mock_db.get_collection("lab_reports")
-            if all_reports:
-                report = all_reports[0]
-                report_id = report.get("report_id", "LABR-1001")
-            else:
-                raise ValueError(f"No lab reports found for report_id '{report_id}'.")
+            return {
+                "success": False,
+                "patient_id": patient_id,
+                "error": f"Lab report '{report_id}' not found.",
+                "explanation": f"The requested laboratory report '{report_id}' was not found on file.",
+                "summary": f"Laboratory report '{report_id}' not found."
+            }
+
+        # Identity guard: enforce patient ownership of lab report
+        if patient_id and report.get("patient_id") and str(report.get("patient_id")).strip().upper() != str(patient_id).strip().upper():
+            return {
+                "success": False,
+                "patient_id": patient_id,
+                "error": f"Access Denied: Report '{report_id}' belongs to another patient.",
+                "explanation": "I can only access laboratory information associated with your patient record.",
+                "summary": f"Access Denied: Report '{report_id}' belongs to another patient."
+            }
 
         explanation_result = ai_provider.generate_explanation(report, audience=audience)
 

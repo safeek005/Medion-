@@ -60,8 +60,9 @@ export const AskMedionCommand: React.FC<AskMedionCommandProps> = ({
 
     if (parts.length >= 3 && parts[1] === 'patients') {
       context.patient_id = parts[2];
-    } else if (role === 'patient') {
-      context.patient_id = user?.id || 'PAT-1025';
+    } else if (role === 'patient' && user?.id) {
+      context.patient_id = user.id;
+      context.caller_patient_id = user.id;
     }
 
     return context;

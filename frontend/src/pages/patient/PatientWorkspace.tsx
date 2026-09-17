@@ -78,14 +78,18 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({ onTraceGener
   const labReports = useSharedLabReports();
   const policies = useSharedPolicies();
 
-  const activePatient =
-    (user?.id ? patients.find((p) => p.patient_id.toUpperCase() === user.id.toUpperCase()) : null) ||
-    (user?.email ? patients.find((p) => p.email?.toLowerCase() === user.email.toLowerCase()) : null) ||
-    patients[0] ||
-    patients.find((p) => p.patient_id === 'PAT-1001') ||
-    MOCK_PATIENT;
+  const activePatient = user?.id
+    ? (patients.find((p) => p.patient_id.toUpperCase() === user.id.toUpperCase()) ||
+       (user.email ? patients.find((p) => p.email?.toLowerCase() === user.email.toLowerCase()) : null) || {
+         patient_id: user.id,
+         first_name: user.name ? user.name.split(' ')[0] : 'Patient',
+         last_name: user.name && user.name.split(' ').length > 1 ? user.name.split(' ').slice(1).join(' ') : '',
+         email: user.email,
+         phone: user.phone || '',
+       })
+    : (patients[0] || MOCK_PATIENT);
   const mrn = user?.id || activePatient.patient_id;
-  const patientDisplayName = user?.name || `${activePatient.first_name} ${activePatient.last_name}`;
+  const patientDisplayName = user?.name || `${activePatient.first_name} ${activePatient.last_name}`.trim();
 
   const patientApts = appointments.filter(
     (a) => a.patient_id?.toUpperCase() === mrn.toUpperCase() && a.status !== 'CANCELLED'

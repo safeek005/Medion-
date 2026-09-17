@@ -29,11 +29,16 @@ export const PatientRecordsView: React.FC<PatientRecordsViewProps> = () => {
   const policies = useSharedPolicies();
 
   // Scope strictly to authenticated patient
-  const activePatient =
-    (user?.id ? patients.find((p) => p.patient_id.toUpperCase() === user.id.toUpperCase()) : null) ||
-    (user?.email ? patients.find((p) => p.email?.toLowerCase() === user.email.toLowerCase()) : null) ||
-    patients[0] ||
-    null;
+  const activePatient = user?.id
+    ? (patients.find((p) => p.patient_id.toUpperCase() === user.id.toUpperCase()) ||
+       (user.email ? patients.find((p) => p.email?.toLowerCase() === user.email.toLowerCase()) : null) || {
+         patient_id: user.id,
+         first_name: user.name ? user.name.split(' ')[0] : 'Patient',
+         last_name: user.name && user.name.split(' ').length > 1 ? user.name.split(' ').slice(1).join(' ') : '',
+         email: user.email,
+         phone: user.phone || '',
+       })
+    : patients[0];
 
   const mrn = user?.id || activePatient?.patient_id || 'PAT-1001';
   const attendingDoctor = doctors.find((d) => d.doctor_id === activePatient?.primary_doctor_id) || null;

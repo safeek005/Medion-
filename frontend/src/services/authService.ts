@@ -302,6 +302,7 @@ class AuthService {
    */
   private setSession(user: AuthUser) {
     this.currentUser = user;
+    dataService.clearConversationContext();
     if (typeof window !== 'undefined') {
       try {
         window.sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
@@ -321,6 +322,7 @@ class AuthService {
 
   logout() {
     this.currentUser = null;
+    dataService.clearConversationContext();
     if (typeof window !== 'undefined') {
       try {
         window.sessionStorage.removeItem(AUTH_STORAGE_KEY);
