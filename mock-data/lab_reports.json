@@ -259,5 +259,89 @@
     ],
     "impression": "Normal hematology and cholesterol limits.",
     "created_at": "2026-09-16T10:00:00Z"
+  },
+  {
+    "report_id": "LABR-1044-01",
+    "patient_id": "PAT-1044",
+    "patient_name": "shiva s",
+    "lab_id": "LAB-001",
+    "doctor_id": "DOC-101",
+    "test_name": "Complete Blood Count (CBC)",
+    "section": "Hematology",
+    "report_date": "2026-09-16",
+    "date": "16 Sep 2026",
+    "status": "RELEASED",
+    "critical_panic": false,
+    "specimen_id": "SPEC-1044-01",
+    "test_results": [
+      { "test_parameter": "Hemoglobin", "value": 13.8, "unit": "g/dL", "reference_range": "12.0 - 16.0", "is_abnormal": false, "abnormality_direction": "NORMAL" },
+      { "test_parameter": "WBC", "value": 7.2, "unit": "x10^3/uL", "reference_range": "4.0 - 11.0", "is_abnormal": false, "abnormality_direction": "NORMAL" },
+      { "test_parameter": "Platelets", "value": 245.0, "unit": "x10^3/uL", "reference_range": "150 - 450", "is_abnormal": false, "abnormality_direction": "NORMAL" },
+      { "test_parameter": "Hematocrit", "value": 41.0, "unit": "%", "reference_range": "36 - 46", "is_abnormal": false, "abnormality_direction": "NORMAL" }
+    ],
+    "biomarkers": [
+      { "name": "Hemoglobin", "value": "13.8", "range": "12.0 - 16.0", "unit": "g/dL", "is_abnormal": false },
+      { "name": "WBC", "value": "7.2", "range": "4.0 - 11.0", "unit": "x10^3/uL", "is_abnormal": false },
+      { "name": "Platelets", "value": "245", "range": "150 - 450", "unit": "x10^3/uL", "is_abnormal": false },
+      { "name": "Hematocrit", "value": "41", "range": "36 - 46", "unit": "%", "is_abnormal": false }
+    ],
+    "impression": "Normal complete blood count parameters.",
+    "created_at": "2026-09-16T09:00:00Z"
+  },
+  {
+    "report_id": "LABR-1044-02",
+    "patient_id": "PAT-1044",
+    "patient_name": "shiva s",
+    "lab_id": "LAB-001",
+    "doctor_id": "DOC-101",
+    "test_name": "Comprehensive Metabolic Panel",
+    "section": "Biochemistry",
+    "report_date": "2026-09-17",
+    "date": "17 Sep 2026",
+    "status": "RELEASED",
+    "critical_panic": false,
+    "specimen_id": "SPEC-1044-02",
+    "test_results": [
+      { "test_parameter": "Fasting Glucose", "value": 108.0, "unit": "mg/dL", "reference_range": "70 - 99", "is_abnormal": true, "abnormality_direction": "HIGH" },
+      { "test_parameter": "Creatinine", "value": 0.9, "unit": "mg/dL", "reference_range": "0.6 - 1.2", "is_abnormal": false, "abnormality_direction": "NORMAL" },
+      { "test_parameter": "ALT", "value": 28.0, "unit": "U/L", "reference_range": "7 - 56", "is_abnormal": false, "abnormality_direction": "NORMAL" },
+      { "test_parameter": "AST", "value": 25.0, "unit": "U/L", "reference_range": "10 - 40", "is_abnormal": false, "abnormality_direction": "NORMAL" }
+    ],
+    "biomarkers": [
+      { "name": "Fasting Glucose", "value": "108", "range": "70 - 99", "unit": "mg/dL", "is_abnormal": true },
+      { "name": "Creatinine", "value": "0.9", "range": "0.6 - 1.2", "unit": "mg/dL", "is_abnormal": false },
+      { "name": "ALT", "value": "28", "range": "7 - 56", "unit": "U/L", "is_abnormal": false },
+      { "name": "AST", "value": "25", "range": "10 - 40", "unit": "U/L", "is_abnormal": false }
+    ],
+    "impression": "Mildly elevated fasting glucose (108 mg/dL). Normal renal and hepatic enzymes.",
+    "created_at": "2026-09-17T08:30:00Z"
+  },
+  {
+    "report_id": "LABR-1044-03",
+    "patient_id": "PAT-1044",
+    "patient_name": "shiva s",
+    "lab_id": "LAB-001",
+    "doctor_id": "DOC-101",
+    "test_name": "Lipid Profile",
+    "section": "Biochemistry",
+    "report_date": "2026-09-17",
+    "date": "17 Sep 2026",
+    "status": "RELEASED",
+    "critical_panic": false,
+    "specimen_id": "SPEC-1044-03",
+    "test_results": [
+      { "test_parameter": "Total Cholesterol", "value": 198.0, "unit": "mg/dL", "reference_range": "< 200", "is_abnormal": false, "abnormality_direction": "NORMAL" },
+      { "test_parameter": "LDL Cholesterol", "value": 124.0, "unit": "mg/dL", "reference_range": "< 100", "is_abnormal": true, "abnormality_direction": "HIGH" },
+      { "test_parameter": "HDL Cholesterol", "value": 52.0, "unit": "mg/dL", "reference_range": "> 40", "is_abnormal": false, "abnormality_direction": "NORMAL" },
+      { "test_parameter": "Triglycerides", "value": 138.0, "unit": "mg/dL", "reference_range": "< 150", "is_abnormal": false, "abnormality_direction": "NORMAL" }
+    ],
+    "biomarkers": [
+      { "name": "Total Cholesterol", "value": "198", "range": "< 200", "unit": "mg/dL", "is_abnormal": false },
+      { "name": "LDL Cholesterol", "value": "124", "range": "< 100", "unit": "mg/dL", "is_abnormal": true },
+      { "name": "HDL Cholesterol", "value": "52", "range": "> 40", "unit": "mg/dL", "is_abnormal": false },
+      { "name": "Triglycerides", "value": "138", "range": "< 150", "unit": "mg/dL", "is_abnormal": false }
+    ],
+    "impression": "Borderline elevated LDL cholesterol (124 mg/dL). Total cholesterol and triglycerides within normal limits.",
+    "created_at": "2026-09-17T09:15:00Z"
   }
 ]

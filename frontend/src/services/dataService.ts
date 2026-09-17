@@ -272,6 +272,51 @@ export const INITIAL_LAB_REPORTS: LabReportItem[] = [
       { parameter: 'Total Cholesterol', value: 175, unit: 'mg/dL', reference_range: '< 200', is_abnormal: false, abnormality_direction: 'NORMAL' },
     ],
   },
+  {
+    report_id: 'LABR-1044-01',
+    patient_id: 'PAT-1044',
+    laboratory_id: 'LAB-001',
+    doctor_id: 'DOC-101',
+    test_type: 'Complete Blood Count (CBC)',
+    test_date: '2026-09-16',
+    status: 'RELEASED',
+    results: [
+      { parameter: 'Hemoglobin', value: 13.8, unit: 'g/dL', reference_range: '12.0 - 16.0', is_abnormal: false, abnormality_direction: 'NORMAL' },
+      { parameter: 'WBC', value: 7.2, unit: 'x10^3/uL', reference_range: '4.0 - 11.0', is_abnormal: false, abnormality_direction: 'NORMAL' },
+      { parameter: 'Platelets', value: 245, unit: 'x10^3/uL', reference_range: '150 - 450', is_abnormal: false, abnormality_direction: 'NORMAL' },
+      { parameter: 'Hematocrit', value: 41, unit: '%', reference_range: '36 - 46', is_abnormal: false, abnormality_direction: 'NORMAL' },
+    ],
+  },
+  {
+    report_id: 'LABR-1044-02',
+    patient_id: 'PAT-1044',
+    laboratory_id: 'LAB-001',
+    doctor_id: 'DOC-101',
+    test_type: 'Comprehensive Metabolic Panel',
+    test_date: '2026-09-17',
+    status: 'RELEASED',
+    results: [
+      { parameter: 'Fasting Glucose', value: 108, unit: 'mg/dL', reference_range: '70 - 99', is_abnormal: true, abnormality_direction: 'HIGH' },
+      { parameter: 'Creatinine', value: 0.9, unit: 'mg/dL', reference_range: '0.6 - 1.2', is_abnormal: false, abnormality_direction: 'NORMAL' },
+      { parameter: 'ALT', value: 28, unit: 'U/L', reference_range: '7 - 56', is_abnormal: false, abnormality_direction: 'NORMAL' },
+      { parameter: 'AST', value: 25, unit: 'U/L', reference_range: '10 - 40', is_abnormal: false, abnormality_direction: 'NORMAL' },
+    ],
+  },
+  {
+    report_id: 'LABR-1044-03',
+    patient_id: 'PAT-1044',
+    laboratory_id: 'LAB-001',
+    doctor_id: 'DOC-101',
+    test_type: 'Lipid Profile',
+    test_date: '2026-09-17',
+    status: 'RELEASED',
+    results: [
+      { parameter: 'Total Cholesterol', value: 198, unit: 'mg/dL', reference_range: '< 200', is_abnormal: false, abnormality_direction: 'NORMAL' },
+      { parameter: 'LDL Cholesterol', value: 124, unit: 'mg/dL', reference_range: '< 100', is_abnormal: true, abnormality_direction: 'HIGH' },
+      { parameter: 'HDL Cholesterol', value: 52, unit: 'mg/dL', reference_range: '> 40', is_abnormal: false, abnormality_direction: 'NORMAL' },
+      { parameter: 'Triglycerides', value: 138, unit: 'mg/dL', reference_range: '< 150', is_abnormal: false, abnormality_direction: 'NORMAL' },
+    ],
+  },
 ];
 
 // In-Memory fallback for non-browser or disabled storage
