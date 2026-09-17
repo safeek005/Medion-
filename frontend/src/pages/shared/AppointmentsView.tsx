@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { AppointmentItem } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -21,10 +21,11 @@ import {
   List,
   CalendarDays,
 } from 'lucide-react';
-import { useSharedAppointments, dataService } from '../../services/dataService';
+import { useSharedAppointments, useSharedPatients, dataService } from '../../services/dataService';
 
 export const AppointmentsView: React.FC = () => {
   const appointments = useSharedAppointments();
+  const registeredPatients = useSharedPatients();
   const [viewMode, setViewMode] = useState<'schedule' | 'calendar' | 'table'>('schedule');
   const [selectedDept, setSelectedDept] = useState<string>('ALL');
   const [selectedPhysician, setSelectedPhysician] = useState<string>('ALL');
@@ -34,45 +35,17 @@ export const AppointmentsView: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
 
-  // New Appointment Form State
-  const [newPatientId, setNewPatientId] = useState('PAT-1001');
-  const [newDoctorId, setNewDoctorId] = useState('DOC-101');
-  const [newDate, setNewDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [newTimeSlot, setNewTimeSlot] = useState('11:00-11:30');
-  const [newReason, setNewReason] = useState('Routine Cardiology Consultation');
-  const [newDept, setNewDept] = useState('Cardiology');
-
-  const handleBookSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newApt = dataService.bookAppointment({
-      patient_id: newPatientId,
-      doctor_id: newDoctorId,
-      hospital_id: 'HOSP-001',
-      date: newDate,
-      time_slot: newTimeSlot,
-      status: 'SCHEDULED',
-      reason: newReason,
-    });
-
-    setIsModalOpen(false);
-    setNotificationMsg(`Appointment ${newApt.appointment_id} scheduled successfully for ${newDate} at ${newTimeSlot}!`);
-    setTimeout(() => setNotificationMsg(null), 4500);
-  };
-
-  const handleCancelApt = (id: string) => {
-    dataService.cancelAppointment(id);
-    setNotificationMsg(`Appointment ${id} has been cancelled.`);
-    setTimeout(() => setNotificationMsg(null), 4500);
-  };
-
   // Physician availability directory
-  const physicians = [
-    { id: 'DOC-101', name: 'Dr. Rajesh Mehta', dept: 'Cardiology', room: 'OPD Suite 4B', status: 'In Consult', statusVariant: 'brand' as const, nextAvailable: '11:30 AM', bookedToday: 8 },
-    { id: 'DOC-102', name: 'Dr. Anita Deshmukh', dept: 'Endocrinology', room: 'OPD Suite 2A', status: 'Available', statusVariant: 'green' as const, nextAvailable: 'Now (Walk-in)', bookedToday: 5 },
-    { id: 'DOC-103', name: 'Dr. Suresh Rao', dept: 'General Medicine', room: 'OPD Suite 1C', status: 'In Consult', statusVariant: 'brand' as const, nextAvailable: '12:00 PM', bookedToday: 11 },
-    { id: 'DOC-104', name: 'Dr. Priya Sundaram', dept: 'Neurology', room: 'Neuro Clinic 3', status: 'Ward Rounds', statusVariant: 'amber' as const, nextAvailable: '02:00 PM', bookedToday: 6 },
-    { id: 'DOC-105', name: 'Dr. Vikram Patel', dept: 'Orthopedics', room: 'Fracture Clinic 5', status: 'Available', statusVariant: 'green' as const, nextAvailable: '11:45 AM', bookedToday: 7 },
-  ];
+  const physicians = useMemo(
+    () => [
+      { id: 'DOC-101', name: 'Dr. Rajesh Mehta', dept: 'Cardiology', room: 'OPD Suite 4B', status: 'In Consult', statusVariant: 'brand' as const, nextAvailable: '11:30 AM', bookedToday: 8 },
+      { id: 'DOC-102', name: 'Dr. Anita Deshmukh', dept: 'Endocrinology', room: 'OPD Suite 2A', status: 'Available', statusVariant: 'green' as const, nextAvailable: 'Now (Walk-in)', bookedToday: 5 },
+      { id: 'DOC-103', name: 'Dr. Suresh Rao', dept: 'General Medicine', room: 'OPD Suite 1C', status: 'In Consult', statusVariant: 'brand' as const, nextAvailable: '12:00 PM', bookedToday: 11 },
+      { id: 'DOC-104', name: 'Dr. Priya Sundaram', dept: 'Neurology', room: 'Neuro Clinic 3', status: 'Ward Rounds', statusVariant: 'amber' as const, nextAvailable: '02:00 PM', bookedToday: 6 },
+      { id: 'DOC-105', name: 'Dr. Vikram Patel', dept: 'Orthopedics', room: 'Fracture Clinic 5', status: 'Available', statusVariant: 'green' as const, nextAvailable: '11:45 AM', bookedToday: 7 },
+    ],
+    []
+  );
 
   // Department load breakdown
   const departments = [
@@ -83,43 +56,208 @@ export const AppointmentsView: React.FC = () => {
     { name: 'Orthopedics', totalToday: 11, completed: 5, waiting: 2, capacity: '78%' },
   ];
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const formattedTodayDate = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric'
-  });
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const formattedTodayDate = useMemo(
+    () =>
+      new Date().toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      }),
+    []
+  );
 
-  // Dynamically derive timeline slots from canonical appointments
-  const activeTimelineSlots = appointments.map((apt) => {
-    return {
-      id: apt.appointment_id,
-      time: apt.time_slot || (apt.start_time ? `${apt.start_time}-${apt.end_time || ''}` : '10:00-10:30'),
-      doctor: apt.doctor_name || 'Dr. Rajesh Mehta',
-      dept: apt.specialty || 'Cardiology',
-      room: 'OPD Suite 4B',
-      patient: apt.patient_name || apt.patient_id || 'Patient',
-      patientId: apt.patient_id,
-      type: apt.reason_for_visit || apt.reason || 'Clinical Consultation',
-      status: apt.status || 'CONFIRMED',
-      statusVariant: (apt.status === 'COMPLETED' ? 'green' : (apt.status === 'IN_CONSULTATION' ? 'brand' : 'neutral')) as any,
-    };
-  });
+  // New Appointment Form State
+  const [newPatientId, setNewPatientId] = useState('PAT-1001');
+  const [newDept, setNewDept] = useState('Cardiology');
+  const [newDoctorId, setNewDoctorId] = useState('DOC-101');
+  const [newDate, setNewDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [newTimeSlot, setNewTimeSlot] = useState('');
+  const [newReason, setNewReason] = useState('Routine Clinical Consultation');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
+
+  // Standard 30-minute consultation slots
+  const availableSlotsList = [
+    '09:00-09:30',
+    '09:30-10:00',
+    '10:00-10:30',
+    '10:30-11:00',
+    '11:00-11:30',
+    '11:30-12:00',
+    '14:00-14:30',
+    '14:30-15:00',
+    '15:00-15:30',
+    '15:30-16:00',
+  ];
+
+  // Booked slots for selected doctor and date
+  const bookedSlotsSet = useMemo(() => {
+    const set = new Set<string>();
+    appointments.forEach((apt) => {
+      if (
+        apt.status !== 'CANCELLED' &&
+        apt.doctor_id === newDoctorId &&
+        apt.date === newDate &&
+        apt.time_slot
+      ) {
+        set.add(apt.time_slot);
+      }
+    });
+    return set;
+  }, [appointments, newDoctorId, newDate]);
+
+  // Current Patient profile
+  const currentPatient = useMemo(() => {
+    return (
+      registeredPatients.find((p) => p.patient_id.toUpperCase() === newPatientId.toUpperCase()) || {
+        patient_id: newPatientId,
+        first_name: 'Patient',
+        last_name: newPatientId,
+      }
+    );
+  }, [registeredPatients, newPatientId]);
+
+  // Current Doctor profile
+  const currentDoctor = useMemo(() => {
+    return physicians.find((p) => p.id === newDoctorId) || physicians[0];
+  }, [physicians, newDoctorId]);
+
+  // Handle specialty change
+  const handleDeptChange = (dept: string) => {
+    setNewDept(dept);
+    const docsInDept = physicians.filter((p) => p.dept === dept);
+    if (docsInDept.length > 0) {
+      setNewDoctorId(docsInDept[0].id);
+    }
+    setNewTimeSlot('');
+  };
+
+  // Handle doctor change
+  const handleDoctorChange = (docId: string) => {
+    setNewDoctorId(docId);
+    const doc = physicians.find((p) => p.id === docId);
+    if (doc && doc.dept !== newDept) {
+      setNewDept(doc.dept);
+    }
+    setNewTimeSlot('');
+  };
+
+  // Open modal cleanly
+  const handleOpenModal = () => {
+    setNewTimeSlot('');
+    setIsSubmitting(false);
+    isSubmittingRef.current = false;
+    setIsModalOpen(true);
+  };
+
+  // Handle Book Submit with strict duplicate prevention
+  const handleBookSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSubmittingRef.current || isSubmitting) return;
+    if (!newTimeSlot) return;
+
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
+
+    try {
+      const patientName = `${currentPatient.first_name} ${currentPatient.last_name}`.trim();
+      const newApt = dataService.bookAppointment({
+        patient_id: newPatientId,
+        patient_name: patientName,
+        doctor_id: newDoctorId,
+        doctor_name: currentDoctor.name,
+        specialty: newDept,
+        hospital_id: 'HOSP-001',
+        date: newDate,
+        time_slot: newTimeSlot,
+        status: 'SCHEDULED',
+        reason: newReason,
+      });
+
+      setIsModalOpen(false);
+      setNewTimeSlot('');
+      setNotificationMsg(
+        `Appointment ${newApt.appointment_id} scheduled successfully for ${patientName} with ${currentDoctor.name} on ${newDate} at ${newTimeSlot}!`
+      );
+      setTimeout(() => setNotificationMsg(null), 5000);
+    } finally {
+      setIsSubmitting(false);
+      isSubmittingRef.current = false;
+    }
+  };
+
+  const handleCancelApt = (id: string) => {
+    dataService.cancelAppointment(id);
+    setNotificationMsg(`Appointment ${id} has been cancelled.`);
+    setTimeout(() => setNotificationMsg(null), 4500);
+  };
+
+  // Dynamically derive timeline slots with strict deduplication
+  const activeTimelineSlots = useMemo(() => {
+    const seenIds = new Set<string>();
+    const uniqueApts: AppointmentItem[] = [];
+    for (const apt of appointments) {
+      const idKey = apt.appointment_id ? apt.appointment_id.toUpperCase() : null;
+      if (idKey && !seenIds.has(idKey)) {
+        seenIds.add(idKey);
+        uniqueApts.push(apt);
+      }
+    }
+
+    return uniqueApts.map((apt) => {
+      const doc = physicians.find((p) => p.id === apt.doctor_id);
+      return {
+        id: apt.appointment_id,
+        date: apt.date,
+        time: apt.time_slot || (apt.start_time ? `${apt.start_time}-${apt.end_time || ''}` : '10:00-10:30'),
+        doctor: apt.doctor_name || doc?.name || 'Dr. Rajesh Mehta',
+        doctorId: apt.doctor_id,
+        dept: apt.specialty || doc?.dept || 'Cardiology',
+        room: doc?.room || 'OPD Suite 4B',
+        patient: apt.patient_name || apt.patient_id || 'Patient',
+        patientId: apt.patient_id,
+        type: apt.reason_for_visit || apt.reason || 'Clinical Consultation',
+        status: apt.status || 'CONFIRMED',
+        statusVariant: (apt.status === 'COMPLETED' ? 'green' : (apt.status === 'IN_CONSULTATION' ? 'brand' : 'neutral')) as any,
+      };
+    });
+  }, [appointments, physicians]);
 
   // Filter timeline items
-  const filteredTimeline = activeTimelineSlots.filter((slot) => {
-    if (selectedDept !== 'ALL' && slot.dept !== selectedDept) return false;
-    if (selectedPhysician !== 'ALL' && slot.doctor !== selectedPhysician) return false;
-    if (selectedStatus !== 'ALL' && slot.status.toUpperCase() !== selectedStatus.toUpperCase()) return false;
-    return true;
-  });
+  const filteredTimeline = useMemo(() => {
+    return activeTimelineSlots.filter((slot) => {
+      if (timeScope === 'today') {
+        if (slot.date && slot.date !== todayStr) return false;
+      } else if (timeScope === 'week') {
+        if (slot.date) {
+          const slotTime = new Date(slot.date).getTime();
+          const todayTime = new Date(todayStr).getTime();
+          const diffDays = (slotTime - todayTime) / (1000 * 3600 * 24);
+          if (diffDays < 0 || diffDays > 7) return false;
+        }
+      }
+      if (selectedDept !== 'ALL' && slot.dept !== selectedDept) return false;
+      if (selectedPhysician !== 'ALL' && slot.doctor !== selectedPhysician) return false;
+      if (selectedStatus !== 'ALL' && slot.status.toUpperCase() !== selectedStatus.toUpperCase()) return false;
+      return true;
+    });
+  }, [activeTimelineSlots, timeScope, todayStr, selectedDept, selectedPhysician, selectedStatus]);
 
-  // Filter table appointments
-  const filteredAppointments = appointments.filter((apt) => {
-    if (selectedStatus !== 'ALL' && apt.status !== selectedStatus) return false;
-    return true;
-  });
+  // Filter table appointments with deduplication
+  const filteredAppointments = useMemo(() => {
+    const seen = new Set<string>();
+    const unique = appointments.filter((apt) => {
+      if (!apt.appointment_id || seen.has(apt.appointment_id.toUpperCase())) return false;
+      seen.add(apt.appointment_id.toUpperCase());
+      return true;
+    });
+    return unique.filter((apt) => {
+      if (selectedStatus !== 'ALL' && apt.status !== selectedStatus) return false;
+      return true;
+    });
+  }, [appointments, selectedStatus]);
 
   return (
     <div style={{ padding: '1.75rem 2rem', maxWidth: 1350, margin: '0 auto' }}>
@@ -233,7 +371,7 @@ export const AppointmentsView: React.FC = () => {
             </button>
           </div>
 
-          <Button variant="primary" size="sm" onClick={() => setIsModalOpen(true)}>
+          <Button variant="primary" size="sm" onClick={handleOpenModal}>
             <Plus style={{ width: 14, height: 14 }} /> Book Clinical Appointment
           </Button>
         </div>
@@ -409,9 +547,9 @@ export const AppointmentsView: React.FC = () => {
 
               {/* Chronological Timeline Track */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {filteredTimeline.map((slot, idx) => (
+                {filteredTimeline.map((slot) => (
                   <div
-                    key={idx}
+                    key={slot.id}
                     style={{
                       display: 'grid',
                       gridTemplateColumns: '85px minmax(0, 1fr) auto',
@@ -846,11 +984,15 @@ export const AppointmentsView: React.FC = () => {
               borderRadius: 8,
               border: '1px solid var(--border-subtle)',
               width: '100%',
-              maxWidth: 520,
+              maxWidth: 560,
+              maxHeight: '92vh',
               boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+              display: 'flex',
+              flexDirection: 'column',
               overflow: 'hidden',
             }}
           >
+            {/* Modal Header */}
             <div
               style={{
                 padding: '1.25rem 1.5rem',
@@ -858,6 +1000,7 @@ export const AppointmentsView: React.FC = () => {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
+                flexShrink: 0,
               }}
             >
               <div>
@@ -869,118 +1012,259 @@ export const AppointmentsView: React.FC = () => {
                 </span>
               </div>
               <button
-                onClick={() => setIsModalOpen(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => {
+                  if (!isSubmitting) setIsModalOpen(false);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                  color: 'var(--text-muted)',
+                  padding: '0.25rem',
+                }}
               >
                 <X style={{ width: 18, height: 18 }} />
               </button>
             </div>
 
-            <form onSubmit={handleBookSubmit} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {/* Modal Form Body */}
+            <form
+              onSubmit={handleBookSubmit}
+              style={{
+                padding: '1.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1.1rem',
+                overflowY: 'auto',
+              }}
+            >
+              {/* Step 3: Select Patient */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
-                  Patient Master ID
+                  1. Select Patient
                 </label>
-                <input
-                  type="text"
+                <select
                   value={newPatientId}
                   onChange={(e) => setNewPatientId(e.target.value)}
-                  required
+                  disabled={isSubmitting}
                   className="input-ui"
-                  placeholder="e.g. PAT-1001 (Arun Kumar)"
-                />
+                >
+                  {registeredPatients.map((p) => (
+                    <option key={p.patient_id} value={p.patient_id}>
+                      {p.first_name} {p.last_name} ({p.patient_id})
+                    </option>
+                  ))}
+                </select>
               </div>
 
+              {/* Steps 4 & 5: Select Specialty and Attending Doctor */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
-                    Attending Physician
-                  </label>
-                  <select
-                    value={newDoctorId}
-                    onChange={(e) => setNewDoctorId(e.target.value)}
-                    className="input-ui"
-                  >
-                    <option value="DOC-101">Dr. Rajesh Mehta (Cardiology)</option>
-                    <option value="DOC-102">Dr. Anita Deshmukh (Endo)</option>
-                    <option value="DOC-103">Dr. Suresh Rao (Gen Med)</option>
-                    <option value="DOC-104">Dr. Priya Sundaram (Neuro)</option>
-                    <option value="DOC-105">Dr. Vikram Patel (Ortho)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
-                    Department
+                    2. Select Specialty
                   </label>
                   <select
                     value={newDept}
-                    onChange={(e) => setNewDept(e.target.value)}
+                    onChange={(e) => handleDeptChange(e.target.value)}
+                    disabled={isSubmitting}
                     className="input-ui"
                   >
-                    <option value="Cardiology">Cardiology</option>
-                    <option value="Endocrinology">Endocrinology</option>
-                    <option value="General Medicine">General Medicine</option>
-                    <option value="Neurology">Neurology</option>
-                    <option value="Orthopedics">Orthopedics</option>
+                    {['Cardiology', 'Endocrinology', 'General Medicine', 'Neurology', 'Orthopedics'].map((dept) => (
+                      <option key={dept} value={dept}>
+                        {dept}
+                      </option>
+                    ))}
                   </select>
                 </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
-                    Consultation Date
-                  </label>
-                  <input
-                    type="date"
-                    value={newDate}
-                    onChange={(e) => setNewDate(e.target.value)}
-                    required
-                    className="input-ui"
-                  />
-                </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
-                    Time Window
+                    3. Select Doctor
                   </label>
                   <select
-                    value={newTimeSlot}
-                    onChange={(e) => setNewTimeSlot(e.target.value)}
+                    value={newDoctorId}
+                    onChange={(e) => handleDoctorChange(e.target.value)}
+                    disabled={isSubmitting}
                     className="input-ui"
                   >
-                    <option value="09:00-09:30">09:00 - 09:30 AM</option>
-                    <option value="09:30-10:00">09:30 - 10:00 AM</option>
-                    <option value="10:00-10:30">10:00 - 10:30 AM</option>
-                    <option value="10:30-11:00">10:30 - 11:00 AM</option>
-                    <option value="11:00-11:30">11:00 - 11:30 AM</option>
-                    <option value="11:30-12:00">11:30 - 12:00 PM</option>
-                    <option value="14:00-14:30">02:00 - 02:30 PM</option>
-                    <option value="15:00-15:30">03:00 - 03:30 PM</option>
+                    {physicians
+                      .filter((p) => p.dept === newDept)
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} ({p.room})
+                        </option>
+                      ))}
                   </select>
                 </div>
               </div>
 
+              {/* Step 6: Select Date */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
-                  Clinical Indication / Reason for Visit
+                  4. Select Consultation Date
+                </label>
+                <input
+                  type="date"
+                  value={newDate}
+                  min={todayStr}
+                  onChange={(e) => {
+                    setNewDate(e.target.value);
+                    setNewTimeSlot('');
+                  }}
+                  disabled={isSubmitting}
+                  required
+                  className="input-ui"
+                />
+              </div>
+
+              {/* Steps 7 & 8: Show available 30-minute slots & Select ONE slot */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    5. Available 30-Minute Slots ({newDate})
+                  </label>
+                  <span style={{ fontSize: '0.72rem', color: newTimeSlot ? 'var(--teal-intelligent)' : 'var(--text-muted)' }}>
+                    {newTimeSlot ? `Selected: ${newTimeSlot}` : 'Select ONE slot'}
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))',
+                    gap: '0.45rem',
+                  }}
+                >
+                  {availableSlotsList.map((slot) => {
+                    const isBooked = bookedSlotsSet.has(slot);
+                    const isSelected = newTimeSlot === slot;
+
+                    return (
+                      <button
+                        key={slot}
+                        type="button"
+                        disabled={isBooked || isSubmitting}
+                        onClick={() => setNewTimeSlot(slot)}
+                        style={{
+                          padding: '0.45rem 0.25rem',
+                          fontSize: '0.74rem',
+                          borderRadius: 4,
+                          fontWeight: isSelected ? 700 : 500,
+                          textAlign: 'center',
+                          transition: 'all 0.15s ease',
+                          cursor: isBooked ? 'not-allowed' : 'pointer',
+                          background: isSelected
+                            ? 'rgba(13, 148, 136, 0.12)'
+                            : isBooked
+                            ? 'var(--bg-surface-secondary)'
+                            : 'var(--bg-surface)',
+                          color: isSelected
+                            ? 'var(--teal-intelligent)'
+                            : isBooked
+                            ? 'var(--text-muted)'
+                            : 'var(--text-primary)',
+                          border: isSelected
+                            ? '2px solid var(--teal-intelligent)'
+                            : isBooked
+                            ? '1px solid var(--border-subtle)'
+                            : '1px solid var(--border-strong)',
+                          opacity: isBooked ? 0.45 : 1,
+                        }}
+                      >
+                        <div>{slot}</div>
+                        <div style={{ fontSize: '0.64rem', marginTop: '0.1rem', color: isBooked ? 'var(--danger-red)' : 'inherit' }}>
+                          {isBooked ? 'Booked' : isSelected ? '✓ Chosen' : 'Available'}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Clinical Indication / Reason */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
+                  6. Clinical Indication / Reason for Visit
                 </label>
                 <input
                   type="text"
                   value={newReason}
                   onChange={(e) => setNewReason(e.target.value)}
+                  disabled={isSubmitting}
                   required
                   className="input-ui"
                   placeholder="e.g. Hypertension Follow-Up & ECG Evaluation"
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
-                <Button variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>
+              {/* Step 9: Show ONE Confirmation Section */}
+              <div
+                style={{
+                  background: 'var(--bg-surface-secondary)',
+                  border: '1px solid var(--border-subtle)',
+                  borderLeft: '3px solid var(--teal-intelligent)',
+                  borderRadius: 6,
+                  padding: '0.85rem 1rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.4rem',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--teal-intelligent)', textTransform: 'uppercase' }}>
+                    Booking Confirmation Summary
+                  </span>
+                  <Badge variant="brand">Coimbatore Medical Center (HOSP-001)</Badge>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', fontSize: '0.78rem' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>PATIENT: </span>
+                    <strong style={{ color: 'var(--text-primary)' }}>
+                      {currentPatient.first_name} {currentPatient.last_name}
+                    </strong>{' '}
+                    ({newPatientId})
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>SPECIALTY: </span>
+                    <strong style={{ color: 'var(--text-primary)' }}>{newDept}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>PHYSICIAN: </span>
+                    <strong style={{ color: 'var(--text-primary)' }}>{currentDoctor.name}</strong> ({currentDoctor.room})
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>SLOT: </span>
+                    {newTimeSlot ? (
+                      <strong style={{ color: 'var(--teal-intelligent)' }}>
+                        {newDate} • {newTimeSlot}
+                      </strong>
+                    ) : (
+                      <span style={{ color: 'var(--danger-red)', fontWeight: 600 }}>Please select a slot</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 10: Confirm Booking Buttons */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.25rem' }}>
+                <Button
+                  variant="secondary"
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => {
+                    if (!isSubmitting) setIsModalOpen(false);
+                  }}
+                >
                   Cancel
                 </Button>
-                <Button variant="primary" type="submit">
+                <Button
+                  variant="primary"
+                  type="submit"
+                  loading={isSubmitting}
+                  disabled={isSubmitting || !newTimeSlot}
+                >
                   Confirm Booking
                 </Button>
               </div>

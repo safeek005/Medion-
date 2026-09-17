@@ -812,7 +812,18 @@ class SharedDataService {
   // ----------------------------------------------------
 
   getAppointments(): AppointmentItem[] {
-    return getStorageItem<AppointmentItem[]>(STORAGE_KEYS.APPOINTMENTS, MOCK_APPOINTMENTS);
+    const list = getStorageItem<AppointmentItem[]>(STORAGE_KEYS.APPOINTMENTS, MOCK_APPOINTMENTS);
+    // Strict deduplication by appointment_id
+    const seen = new Set<string>();
+    const uniqueList: AppointmentItem[] = [];
+    for (const apt of list) {
+      const key = apt.appointment_id ? apt.appointment_id.toUpperCase() : null;
+      if (key && !seen.has(key)) {
+        seen.add(key);
+        uniqueList.push(apt);
+      }
+    }
+    return uniqueList;
   }
 
   getAppointmentById(appointmentId: string): AppointmentItem | null {
@@ -835,19 +846,59 @@ class SharedDataService {
 
   bookAppointment(aptData: Partial<AppointmentItem> & { appointment_date?: string; reason_for_visit?: string }): AppointmentItem {
     const list = this.getAppointments();
+
+    const patientId = aptData.patient_id || 'PAT-1001';
+    let patientName = aptData.patient_name;
+    if (!patientName) {
+      const p = this.getPatientById(patientId);
+      if (p) patientName = `${p.first_name} ${p.last_name}`;
+    }
+
+    const doctorId = aptData.doctor_id || 'DOC-101';
+    let doctorName = aptData.doctor_name;
+    let specialty = aptData.specialty;
+    if (!doctorName || !specialty) {
+      const d = this.getDoctorById(doctorId);
+      if (d) {
+        if (!doctorName) doctorName = `Dr. ${d.first_name} ${d.last_name}`;
+        if (!specialty) specialty = d.specialty;
+      }
+    }
+
+    const date = aptData.date || aptData.appointment_date || new Date().toISOString().split('T')[0];
+    const timeSlot = aptData.time_slot || '10:00-10:30';
+
+    // IDEMPOTENCY CHECK:
+    // If an active appointment for this exact patient, doctor, date, and slot already exists,
+    // prevent duplicate insertion and return the existing record.
+    const existingActive = list.find(
+      (a) =>
+        a.status !== 'CANCELLED' &&
+        a.patient_id.toUpperCase() === patientId.toUpperCase() &&
+        a.doctor_id.toUpperCase() === doctorId.toUpperCase() &&
+        a.date === date &&
+        a.time_slot === timeSlot
+    );
+    if (existingActive) {
+      return existingActive;
+    }
+
     const newApt: AppointmentItem = {
       appointment_id: aptData.appointment_id || this.generateAppointmentId(),
-      patient_id: aptData.patient_id || 'PAT-1001',
-      doctor_id: aptData.doctor_id || 'DOC-101',
+      patient_id: patientId,
+      patient_name: patientName,
+      doctor_id: doctorId,
+      doctor_name: doctorName,
+      specialty: specialty,
       hospital_id: aptData.hospital_id || 'HOSP-001',
-      date: aptData.date || aptData.appointment_date || new Date().toISOString().split('T')[0],
-      time_slot: aptData.time_slot || '10:00-10:30',
+      date: date,
+      time_slot: timeSlot,
       status: (aptData.status as any) || 'SCHEDULED',
       reason: aptData.reason || aptData.reason_for_visit || 'Clinical Consultation',
     };
 
     // Check if ID exists, if so update, else prepend
-    const existingIdx = list.findIndex((a) => a.appointment_id === newApt.appointment_id);
+    const existingIdx = list.findIndex((a) => a.appointment_id.toUpperCase() === newApt.appointment_id.toUpperCase());
     let updatedList: AppointmentItem[];
     if (existingIdx >= 0) {
       updatedList = [...list];
