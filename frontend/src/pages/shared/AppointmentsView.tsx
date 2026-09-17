@@ -83,100 +83,32 @@ export const AppointmentsView: React.FC = () => {
     { name: 'Orthopedics', totalToday: 11, completed: 5, waiting: 2, capacity: '78%' },
   ];
 
-  // Simulated chronological timeline for today
-  const todayTimelineSlots = [
-    {
-      time: '09:00 AM',
-      doctor: 'Dr. Rajesh Mehta',
-      dept: 'Cardiology',
-      room: 'Suite 4B',
-      patient: 'Arun Kumar',
-      patientId: 'PAT-1001',
-      type: 'Follow-up & Lipid Review',
-      status: 'Completed',
-      statusVariant: 'green' as const,
-    },
-    {
-      time: '09:30 AM',
-      doctor: 'Dr. Suresh Rao',
-      dept: 'General Medicine',
-      room: 'Suite 1C',
-      patient: 'Priya Sharma',
-      patientId: 'PAT-1004',
-      type: 'Comprehensive Physical',
-      status: 'Completed',
-      statusVariant: 'green' as const,
-    },
-    {
-      time: '10:00 AM',
-      doctor: 'Dr. Anita Deshmukh',
-      dept: 'Endocrinology',
-      room: 'Suite 2A',
-      patient: 'Vikram Singh',
-      patientId: 'PAT-1003',
-      type: 'HbA1c & Insulin Titration',
-      status: 'In Consult',
-      statusVariant: 'brand' as const,
-    },
-    {
-      time: '10:30 AM',
-      doctor: 'Dr. Rajesh Mehta',
-      dept: 'Cardiology',
-      room: 'Suite 4B',
-      patient: 'Sneha Sharma',
-      patientId: 'PAT-1002',
-      type: 'Echocardiogram Review',
-      status: 'In Consult',
-      statusVariant: 'brand' as const,
-    },
-    {
-      time: '11:00 AM',
-      doctor: 'Dr. Suresh Rao',
-      dept: 'General Medicine',
-      room: 'Suite 1C',
-      patient: 'Kavita Iyer',
-      patientId: 'PAT-1005',
-      type: 'Post-Viral Fatigue Check',
-      status: 'Waiting',
-      statusVariant: 'amber' as const,
-    },
-    {
-      time: '11:30 AM',
-      doctor: 'Dr. Rajesh Mehta',
-      dept: 'Cardiology',
-      room: 'Suite 4B',
-      patient: 'Rajesh Iyer',
-      patientId: 'PAT-1006',
-      type: 'Hypertension Follow-Up',
-      status: 'Checked In',
-      statusVariant: 'brand' as const,
-    },
-    {
-      time: '12:00 PM',
-      doctor: 'Dr. Priya Sundaram',
-      dept: 'Neurology',
-      room: 'Neuro Clinic 3',
-      patient: 'Ananya Roy',
-      patientId: 'PAT-1007',
-      type: 'Migraine Prophylaxis Consult',
-      status: 'Scheduled',
-      statusVariant: 'neutral' as const,
-    },
-    {
-      time: '02:00 PM',
-      doctor: 'Dr. Vikram Patel',
-      dept: 'Orthopedics',
-      room: 'Fracture Clinic 5',
-      patient: 'Mohammed Farooq',
-      patientId: 'PAT-1008',
-      type: 'Post-Op Knee Arthroscopy',
-      status: 'Scheduled',
-      statusVariant: 'neutral' as const,
-    },
-  ];
+  const todayStr = new Date().toISOString().split('T')[0];
+  const formattedTodayDate = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  });
+
+  // Dynamically derive timeline slots from canonical appointments
+  const activeTimelineSlots = appointments.map((apt) => {
+    return {
+      id: apt.appointment_id,
+      time: apt.time_slot || (apt.start_time ? `${apt.start_time}-${apt.end_time || ''}` : '10:00-10:30'),
+      doctor: apt.doctor_name || 'Dr. Rajesh Mehta',
+      dept: apt.specialty || 'Cardiology',
+      room: 'OPD Suite 4B',
+      patient: apt.patient_name || apt.patient_id || 'Patient',
+      patientId: apt.patient_id,
+      type: apt.reason_for_visit || apt.reason || 'Clinical Consultation',
+      status: apt.status || 'CONFIRMED',
+      statusVariant: (apt.status === 'COMPLETED' ? 'green' : (apt.status === 'IN_CONSULTATION' ? 'brand' : 'neutral')) as any,
+    };
+  });
 
   // Filter timeline items
-  const filteredTimeline = todayTimelineSlots.filter((slot) => {
+  const filteredTimeline = activeTimelineSlots.filter((slot) => {
     if (selectedDept !== 'ALL' && slot.dept !== selectedDept) return false;
     if (selectedPhysician !== 'ALL' && slot.doctor !== selectedPhysician) return false;
     if (selectedStatus !== 'ALL' && slot.status.toUpperCase() !== selectedStatus.toUpperCase()) return false;
@@ -469,7 +401,7 @@ export const AppointmentsView: React.FC = () => {
                     Today's Clinical Schedule
                   </h2>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    Real-time outpatient queue • Thursday, September 15, 2026
+                    Real-time outpatient queue • {formattedTodayDate}
                   </span>
                 </div>
                 <Badge variant="brand">Live Dispatch</Badge>
@@ -487,8 +419,8 @@ export const AppointmentsView: React.FC = () => {
                       alignItems: 'center',
                       padding: '0.85rem 1rem',
                       borderRadius: 6,
-                      background: slot.status === 'In Consult' ? 'rgba(13, 148, 136, 0.06)' : 'var(--bg-surface-secondary)',
-                      border: slot.status === 'In Consult' ? '1px solid rgba(13, 148, 136, 0.3)' : '1px solid var(--border-subtle)',
+                      background: (slot.status === 'In Consult' || slot.status === 'IN_CONSULTATION') ? 'rgba(13, 148, 136, 0.06)' : 'var(--bg-surface-secondary)',
+                      border: (slot.status === 'In Consult' || slot.status === 'IN_CONSULTATION') ? '1px solid rgba(13, 148, 136, 0.3)' : '1px solid var(--border-subtle)',
                       transition: 'all 0.15s ease',
                     }}
                   >

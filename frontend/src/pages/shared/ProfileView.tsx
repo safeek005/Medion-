@@ -14,18 +14,18 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ role }) => {
   const getProfileInfo = (r: UserRole) => {
     if (r === 'patient' && user) {
       return {
-        name: user.name || 'Registered Patient',
+        name: user.name || 'Arun Kumar',
         title: 'Registered Patient',
-        department: `Outpatient Services (${user.id || 'PAT-1025'})`,
-        email: user.email || 'patient@example.com',
-        phone: (user as any).phone || '+91 98450 12345',
+        department: `Outpatient Services (${user.id || 'PAT-1001'})`,
+        email: user.email || 'arun.kumar@example.com',
+        phone: (user as any).phone || '+91 9123456789',
         facility: 'Coimbatore Medical Center (Main Campus)',
       };
     }
     switch (r) {
       case 'doctor': return { name: user?.name || 'Dr. Rajesh Mehta', title: 'Senior Cardiologist & Department Head', department: 'Department of Cardiology', email: user?.email || 'dr.mehta@medionhealth.org', phone: '+91 98765 00001', facility: 'Coimbatore Medical Center (Main Campus)' };
       case 'nurse': return { name: user?.name || 'Nurse Reka', title: 'Clinical Operations Lead', department: 'Inpatient & Ambulatory Operations', email: user?.email || 'nurse.reka@medionhealth.org', phone: '+91 98765 00002', facility: 'Coimbatore Medical Center (Main Campus)' };
-      case 'patient': return { name: 'Kavya Sharma', title: 'Registered Patient', department: 'Outpatient Services (PAT-1025)', email: 'kavya.sharma@example.com', phone: '+91 98450 12345', facility: 'Coimbatore Medical Center (Main Campus)' };
+      case 'patient': return { name: user?.name || 'Arun Kumar', title: 'Registered Patient', department: `Outpatient Services (${user?.id || 'PAT-1001'})`, email: user?.email || 'arun.kumar@example.com', phone: '+91 9123456789', facility: 'Coimbatore Medical Center (Main Campus)' };
       case 'lab': return { name: user?.name || 'Lab Tech Manager', title: 'Laboratory Specialist', department: 'Diagnostic Pathology (LAB-001)', email: user?.email || 'lab.tech@medionlabs.org', phone: '+91 98765 00003', facility: 'Central Diagnostics Lab • CMC Wing B' };
       case 'insurance': return { name: user?.name || 'Officer Rajesh Patel', title: 'Senior Adjudication Officer', department: 'Payer Relations & Claims Operations', email: user?.email || 'claims@medioncare.com', phone: '+91 98765 00004', facility: 'Star Health & Allied TPA Gateway' };
       case 'hospital': return { name: user?.name || 'Hospital Administrator', title: 'Chief Operating Officer', department: 'Executive Hospital Administration', email: user?.email || 'admin@medionhealth.org', phone: '+91 98765 00005', facility: 'Coimbatore Medical Center Network' };

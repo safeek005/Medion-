@@ -35,10 +35,10 @@ export const PatientAppointmentsView: React.FC<PatientAppointmentsViewProps> = (
   const activePatient =
     (user?.id ? patients.find((p) => p.patient_id.toUpperCase() === user.id.toUpperCase()) : null) ||
     (user?.email ? patients.find((p) => p.email?.toLowerCase() === user.email.toLowerCase()) : null) ||
-    patients.find((p) => p.patient_id === 'PAT-1025') ||
+    patients[0] ||
     null;
 
-  const mrn = user?.id || activePatient?.patient_id || 'PAT-1025';
+  const mrn = user?.id || activePatient?.patient_id || 'PAT-1001';
   const patientDisplayName = user?.name || (activePatient ? `${activePatient.first_name} ${activePatient.last_name}` : 'Patient');
 
   // Strict Patient Isolation: Filter ONLY this patient's appointments

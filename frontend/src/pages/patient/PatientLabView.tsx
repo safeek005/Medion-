@@ -28,14 +28,13 @@ export const PatientLabView: React.FC<PatientLabViewProps> = ({ onTraceGenerated
   const patients = useSharedPatients();
   const labReports = useSharedLabReports();
 
-  // Scope strictly to authenticated patient
   const activePatient =
     (user?.id ? patients.find((p) => p.patient_id.toUpperCase() === user.id.toUpperCase()) : null) ||
     (user?.email ? patients.find((p) => p.email?.toLowerCase() === user.email.toLowerCase()) : null) ||
-    patients.find((p) => p.patient_id === 'PAT-1025') ||
+    patients[0] ||
     null;
 
-  const mrn = user?.id || activePatient?.patient_id || 'PAT-1025';
+  const mrn = user?.id || activePatient?.patient_id || 'PAT-1001';
 
   // Filter lab reports strictly for this patient
   const patientLabReports = labReports.filter(

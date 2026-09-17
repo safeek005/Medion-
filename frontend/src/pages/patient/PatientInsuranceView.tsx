@@ -31,10 +31,10 @@ export const PatientInsuranceView: React.FC<PatientInsuranceViewProps> = ({ onTr
   const activePatient =
     (user?.id ? patients.find((p) => p.patient_id.toUpperCase() === user.id.toUpperCase()) : null) ||
     (user?.email ? patients.find((p) => p.email?.toLowerCase() === user.email.toLowerCase()) : null) ||
-    patients.find((p) => p.patient_id === 'PAT-1025') ||
+    patients[0] ||
     null;
 
-  const mrn = user?.id || activePatient?.patient_id || 'PAT-1025';
+  const mrn = user?.id || activePatient?.patient_id || 'PAT-1001';
 
   // Retrieve ONLY this patient's policy
   const patientPolicy =

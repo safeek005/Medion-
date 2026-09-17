@@ -32,10 +32,10 @@ export const PatientRecordsView: React.FC<PatientRecordsViewProps> = () => {
   const activePatient =
     (user?.id ? patients.find((p) => p.patient_id.toUpperCase() === user.id.toUpperCase()) : null) ||
     (user?.email ? patients.find((p) => p.email?.toLowerCase() === user.email.toLowerCase()) : null) ||
-    patients.find((p) => p.patient_id === 'PAT-1025') ||
+    patients[0] ||
     null;
 
-  const mrn = user?.id || activePatient?.patient_id || 'PAT-1025';
+  const mrn = user?.id || activePatient?.patient_id || 'PAT-1001';
   const attendingDoctor = doctors.find((d) => d.doctor_id === activePatient?.primary_doctor_id) || null;
   const patientPolicy =
     policies.find((pol) => pol.patient_id?.toUpperCase() === mrn.toUpperCase()) ||

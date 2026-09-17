@@ -178,13 +178,13 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ onTraceGenerated, on
                       {selectedPatient.first_name} {selectedPatient.last_name}
                     </h1>
                     <span className="badge-ui badge-green tabular-nums" style={{ fontWeight: 600 }}>
-                      MRN: {selectedPatient.patient_id === 'PAT-1001' ? 'PAT-1025' : selectedPatient.patient_id}
+                      MRN: {selectedPatient.patient_id}
                     </span>
                     <span className="badge-ui badge-neutral" style={{ fontWeight: 600 }}>
-                      {selectedPatient.blood_group || 'B+'}
+                      {selectedPatient.blood_group || 'O+'}
                     </span>
                     <span className="badge-ui badge-neutral">
-                      38 yrs • {selectedPatient.gender || 'Male'}
+                      {selectedPatient.dob ? `${new Date().getFullYear() - new Date(selectedPatient.dob).getFullYear()} yrs` : '45 yrs'} • {selectedPatient.gender || 'Male'}
                     </span>
                   </div>
                   <div style={{ display: 'flex', gap: '0.85rem', marginTop: '0.35rem', fontSize: '0.8rem', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>

@@ -362,6 +362,57 @@ const PORTAL_CONFIGS: Record<string, PortalConfig> = {
     ctaText: 'ENTER COMMAND CENTER',
     targetPath: '/hospital',
   },
+  receptionist: {
+    id: 'receptionist',
+    roleName: 'Front Desk & Patient Intake Coordinator',
+    title: 'Receptionist Workspace',
+    subtitle: 'Streamlining patient registration, appointment scheduling, and front desk operations.',
+    badge: 'MEDION HEALTH • FRONT DESK OPERATIONS',
+    accentColor: 'var(--teal-intelligent, #0d9488)',
+    accentBg: 'rgba(13, 148, 136, 0.08)',
+    icon: <Users style={{ width: 34, height: 34, color: 'var(--teal-intelligent, #0d9488)' }} />,
+    description:
+      'The MEDION Receptionist Workspace coordinates patient intake, appointment scheduling, physician availability rosters, and front-desk check-in workflows powered by autonomous AI assistants.',
+    coreAutomations: [
+      {
+        number: 1,
+        name: 'Patient Intake & Document OCR',
+        agent: 'Receptionist Agent',
+        desc: 'Automated document processing and patient profile creation with multi-field identity verification.',
+      },
+      {
+        number: 2,
+        name: 'Appointment Scheduling',
+        agent: 'Appointment Agent',
+        desc: 'Real-time multi-physician schedule matching, slot reservation, and instant cross-portal synchronization.',
+      },
+      {
+        number: 3,
+        name: 'Front Desk AI Operations',
+        agent: 'Receptionist Agent',
+        desc: 'Conversational assistant for rapid patient lookup, clinic queue management, and visit check-ins.',
+      },
+    ],
+    supportingCapabilities: [
+      {
+        title: 'Patient Roster & Index',
+        desc: 'Unified patient index with instant search, identity verification, and registration status.',
+        icon: <Users style={{ width: 20, height: 20, color: 'var(--teal-intelligent, #0d9488)' }} />,
+      },
+      {
+        title: 'Clinic Calendar & Scheduling',
+        desc: 'Master scheduling view across all attending doctors, time slots, and specialty departments.',
+        icon: <Calendar style={{ width: 20, height: 20, color: 'var(--teal-intelligent, #0d9488)' }} />,
+      },
+      {
+        title: 'Ask MEDION Front Desk',
+        desc: 'AI command center for scheduling visits, patient lookups, and clinic workflow automation.',
+        icon: <Sparkles style={{ width: 20, height: 20, color: 'var(--teal-intelligent, #0d9488)' }} />,
+      },
+    ],
+    ctaText: 'ENTER RECEPTIONIST WORKSPACE',
+    targetPath: '/receptionist',
+  },
 };
 
 // Aliases for route mapping

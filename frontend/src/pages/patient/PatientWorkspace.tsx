@@ -81,8 +81,8 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({ onTraceGener
   const activePatient =
     (user?.id ? patients.find((p) => p.patient_id.toUpperCase() === user.id.toUpperCase()) : null) ||
     (user?.email ? patients.find((p) => p.email?.toLowerCase() === user.email.toLowerCase()) : null) ||
-    patients.find((p) => p.patient_id === 'PAT-1025') ||
     patients[0] ||
+    patients.find((p) => p.patient_id === 'PAT-1001') ||
     MOCK_PATIENT;
   const mrn = user?.id || activePatient.patient_id;
   const patientDisplayName = user?.name || `${activePatient.first_name} ${activePatient.last_name}`;
