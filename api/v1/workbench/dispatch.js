@@ -490,6 +490,27 @@ function parseTimeSlot(text, doctor) {
 // 1. APPOINTMENT AGENT HANDLER
 // ----------------------------------------------------
 
+function normalizeDateToIso(rawDate) {
+  if (!rawDate) return new Date().toISOString().split("T")[0];
+  const s = String(rawDate).trim();
+  if (s.toLowerCase() === "today") return new Date().toISOString().split("T")[0];
+  if (s.toLowerCase() === "tomorrow" || s.toLowerCase() === "tmrw") {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split("T")[0];
+  }
+  const isoMatch = s.match(/\b\d{4}-\d{2}-\d{2}\b/);
+  if (isoMatch) return isoMatch[0];
+  const dmyMatch = s.match(/\b(\d{1,2})[./-](\d{1,2})[./-](\d{4})\b/);
+  if (dmyMatch) {
+    const day = dmyMatch[1].padStart(2, "0");
+    const month = dmyMatch[2].padStart(2, "0");
+    const year = dmyMatch[3];
+    return `${year}-${month}-${day}`;
+  }
+  return s;
+}
+
 async function handleAppointmentAgent(action, payload) {
   const doctor = resolveDoctor(payload.doctor_name || payload.doctor_id || "") ||
                  MOCK_DATA.doctors.find(d => d.doctor_id === (payload.doctor_id || "DOC-101")) ||
@@ -498,20 +519,39 @@ async function handleAppointmentAgent(action, payload) {
   const patient = (await resolvePatientAsync(payload.patient_name || payload.patient_id || "", defaultPatId)) ||
                   (payload.patient_id ? { patient_id: payload.patient_id, first_name: payload.patient_name || "Patient", last_name: "" } : null) ||
                   (payload.user_role === "patient" ? MOCK_DATA.patients[0] : null);
-  const date = payload.date || payload.appointment_date || new Date().toISOString().split("T")[0];
+  const rawDate = payload.date || payload.appointment_date || new Date().toISOString().split("T")[0];
+  const date = normalizeDateToIso(rawDate);
+  const userRole = (payload.user_role || payload.portal_source || "").toLowerCase().trim();
+
+  const activeStatuses = ["SCHEDULED", "CONFIRMED", "BOOKED", "IN_CONSULTATION"];
 
   if (action === "get_available_slots" || action === "list_slots") {
     const dayOfWeek = new Date(date).toLocaleDateString("en-US", { weekday: "long" });
     const isDoctorWorking = doctor.available_days.includes(dayOfWeek);
 
     let bookedSlots = MOCK_DATA.appointments
-      .filter(a => a.doctor_id === doctor.doctor_id && (a.appointment_date === date || a.date === date) && a.status !== "CANCELLED")
+      .filter(a => {
+        const aDate = normalizeDateToIso(a.appointment_date || a.date);
+        const aStatus = (a.status || "").toUpperCase();
+        return a.doctor_id === doctor.doctor_id && aDate === date && activeStatuses.includes(aStatus);
+      })
       .map(a => a.time_slot);
 
     try {
-      const sbApts = await supabaseRequest(`appointments?doctor_id=eq.${doctor.doctor_id}&appointment_date=eq.${date}&status=neq.CANCELLED&select=time_slot`, "GET");
+      let docUuid = doctor.doctor_id;
+      const sbDoc = await supabaseRequest(`doctors?doctor_id=eq.${doctor.doctor_id}&select=id`, "GET");
+      if (Array.isArray(sbDoc) && sbDoc.length > 0 && sbDoc[0].id) {
+        docUuid = sbDoc[0].id;
+      }
+      const sbApts = await supabaseRequest(`appointments?doctor_id=eq.${docUuid}&appointment_date=eq.${date}&select=time_slot,start_time,end_time,status`, "GET");
       if (Array.isArray(sbApts)) {
-        sbApts.forEach(a => { if (a.time_slot && !bookedSlots.includes(a.time_slot)) bookedSlots.push(a.time_slot); });
+        sbApts.forEach(a => {
+          const aStatus = (a.status || "").toUpperCase();
+          if (activeStatuses.includes(aStatus)) {
+            const slotStr = a.time_slot || (a.start_time && a.end_time ? `${a.start_time.slice(0, 5)}-${a.end_time.slice(0, 5)}` : null);
+            if (slotStr && !bookedSlots.includes(slotStr)) bookedSlots.push(slotStr);
+          }
+        });
       }
     } catch (e) {}
 
@@ -558,17 +598,28 @@ async function handleAppointmentAgent(action, payload) {
     const timeSlot = payload.time_slot || doctor.available_slots[0] || "10:00-10:30";
 
     // Double Booking Prevention Check
-    const localConflict = MOCK_DATA.appointments.find(a =>
-      a.doctor_id === doctor.doctor_id &&
-      (a.appointment_date === date || a.date === date) &&
-      a.time_slot === timeSlot &&
-      a.status !== "CANCELLED"
-    );
+    const localConflict = MOCK_DATA.appointments.find(a => {
+      const aDate = normalizeDateToIso(a.appointment_date || a.date);
+      const aStatus = (a.status || "").toUpperCase();
+      return (
+        a.doctor_id === doctor.doctor_id &&
+        aDate === date &&
+        (a.time_slot === timeSlot || (timeSlot && a.time_slot && a.time_slot.includes(timeSlot))) &&
+        activeStatuses.includes(aStatus)
+      );
+    });
 
     let remoteConflict = null;
     try {
-      const sbConflict = await supabaseRequest(`appointments?doctor_id=eq.${doctor.doctor_id}&appointment_date=eq.${date}&time_slot=eq.${encodeURIComponent(timeSlot)}&status=neq.CANCELLED&select=*`, "GET");
-      if (Array.isArray(sbConflict) && sbConflict.length > 0) remoteConflict = sbConflict[0];
+      let docUuid = doctor.doctor_id;
+      const sbDoc = await supabaseRequest(`doctors?doctor_id=eq.${doctor.doctor_id}&select=id`, "GET");
+      if (Array.isArray(sbDoc) && sbDoc.length > 0 && sbDoc[0].id) {
+        docUuid = sbDoc[0].id;
+      }
+      const sbConflict = await supabaseRequest(`appointments?doctor_id=eq.${docUuid}&appointment_date=eq.${date}&time_slot=eq.${encodeURIComponent(timeSlot)}&select=*`, "GET");
+      if (Array.isArray(sbConflict) && sbConflict.length > 0) {
+        remoteConflict = sbConflict.find(a => activeStatuses.includes((a.status || "").toUpperCase()));
+      }
     } catch (e) {}
 
     if (localConflict || remoteConflict) {
@@ -580,7 +631,7 @@ async function handleAppointmentAgent(action, payload) {
         result_data: {
           success: false,
           error: "SLOT_UNAVAILABLE",
-          message: `Doctor ${doctor.doctor_id} already has a confirmed appointment at ${timeSlot} on ${date}.`,
+          message: `Selected slot ${timeSlot} is unavailable or conflicts with another appointment. Please choose a different time.`,
           doctor_id: doctor.doctor_id,
           date: date,
           conflicting_time_slot: timeSlot
@@ -597,7 +648,7 @@ async function handleAppointmentAgent(action, payload) {
       doctor_id: doctor.doctor_id,
       doctor_name: `Dr. ${doctor.first_name} ${doctor.last_name}`,
       specialty: doctor.specialty,
-      hospital_id: doctor.hospital_id,
+      hospital_id: doctor.hospital_id || "HOSP-001",
       appointment_date: date,
       date: date,
       time_slot: timeSlot,
@@ -615,8 +666,11 @@ async function handleAppointmentAgent(action, payload) {
       agent_name: "Appointment Agent",
       agent_type: "domain_expert",
       summary: `Appointment ${appointmentId} successfully confirmed for ${newApt.patient_name} with Dr. ${doctor.first_name} ${doctor.last_name} (${doctor.specialty}) on ${date} at ${timeSlot}.`,
+      appointment_id: appointmentId,
+      appointment: newApt,
       result_data: {
         success: true,
+        appointment_id: appointmentId,
         appointment: newApt,
         doctor: doctor,
         patient: patient
@@ -657,7 +711,9 @@ async function handleAppointmentAgent(action, payload) {
       agent_name: "Appointment Agent",
       agent_type: "domain_expert",
       summary: `Appointment ${apt.appointment_id}: Patient ${apt.patient_name || apt.patient_id} with Dr. ${apt.doctor_name || apt.doctor_id} on ${apt.appointment_date || apt.date} at ${apt.time_slot} (Status: ${apt.status}).`,
-      result_data: { success: true, appointment: apt }
+      appointment_id: apt.appointment_id,
+      appointment: apt,
+      result_data: { success: true, appointment_id: apt.appointment_id, appointment: apt }
     };
   }
 
@@ -671,7 +727,7 @@ async function handleAppointmentAgent(action, payload) {
       } catch (e) {}
     }
     if (!apt && patient) {
-      apt = MOCK_DATA.appointments.find(a => a.patient_id === patient.patient_id && a.status !== "CANCELLED");
+      apt = MOCK_DATA.appointments.find(a => a.patient_id === patient.patient_id && !["CANCELLED", "CANCELLED_BY_DOCTOR", "CANCELLED_BY_PATIENT"].includes((a.status || "").toUpperCase()));
     }
     if (!apt) {
       return {
@@ -682,15 +738,39 @@ async function handleAppointmentAgent(action, payload) {
         result_data: { success: false, error: "APPOINTMENT_NOT_FOUND" }
       };
     }
-    apt.status = "CANCELLED";
-    await supabaseRequest(`appointments?appointment_id=eq.${apt.appointment_id}`, "PATCH", { status: "CANCELLED" });
+
+    const cancellationReason = payload.reason || payload.cancellation_reason || "Cancelled per clinical/patient request";
+    const cancelledBy = payload.cancelled_by || (userRole in ["doctor", "physician"] ? (doctor.doctor_id || "doctor") : (payload.patient_id || "patient"));
+    const isDoctorCancel = userRole in ["doctor", "physician"] || payload.cancelled_by === "doctor" || payload.status === "CANCELLED_BY_DOCTOR";
+    const newStatus = isDoctorCancel ? "CANCELLED_BY_DOCTOR" : "CANCELLED";
+
+    apt.status = newStatus;
+    apt.cancelled_by = cancelledBy;
+    apt.cancelled_at = new Date().toISOString();
+    apt.cancellation_reason = cancellationReason;
+    apt.updated_at = new Date().toISOString();
+
+    await supabaseRequest(`appointments?appointment_id=eq.${apt.appointment_id}`, "PATCH", {
+      status: newStatus,
+      cancelled_by: cancelledBy,
+      cancelled_at: apt.cancelled_at,
+      cancellation_reason: cancellationReason,
+      updated_at: apt.updated_at
+    });
 
     return {
       agent_id: "AGT-APT-001",
       agent_name: "Appointment Agent",
       agent_type: "domain_expert",
-      summary: `Appointment ${apt.appointment_id} has been cancelled successfully. Any allocated clinic slot has been freed.`,
-      result_data: { success: true, appointment_id: apt.appointment_id, status: "CANCELLED" }
+      summary: `Appointment ${apt.appointment_id} has been cancelled successfully (${newStatus}). The slot has been released.`,
+      appointment_id: apt.appointment_id,
+      appointment: apt,
+      result_data: {
+        success: true,
+        appointment_id: apt.appointment_id,
+        status: newStatus,
+        appointment: apt
+      }
     };
   }
 
@@ -704,7 +784,7 @@ async function handleAppointmentAgent(action, payload) {
       } catch (e) {}
     }
     if (!apt && patient) {
-      apt = MOCK_DATA.appointments.find(a => a.patient_id === patient.patient_id && a.status !== "CANCELLED");
+      apt = MOCK_DATA.appointments.find(a => a.patient_id === patient.patient_id && !["CANCELLED", "CANCELLED_BY_DOCTOR", "CANCELLED_BY_PATIENT"].includes((a.status || "").toUpperCase()));
     }
     if (!apt) {
       return {
@@ -715,18 +795,48 @@ async function handleAppointmentAgent(action, payload) {
         result_data: { success: false, error: "APPOINTMENT_NOT_FOUND" }
       };
     }
-    const newDate = payload.new_date || payload.date || "2026-09-11";
+    const newDate = normalizeDateToIso(payload.new_date || payload.date || "2026-09-11");
     const newTime = payload.new_time_slot || payload.time_slot || "11:00-11:30";
+
+    // Check conflict on new slot
+    const localConflict = MOCK_DATA.appointments.find(a => {
+      if (a.appointment_id === apt.appointment_id) return false;
+      const aDate = normalizeDateToIso(a.appointment_date || a.date);
+      const aStatus = (a.status || "").toUpperCase();
+      return (
+        a.doctor_id === (apt.doctor_id || doctor.doctor_id) &&
+        aDate === newDate &&
+        (a.time_slot === newTime || (newTime && a.time_slot && a.time_slot.includes(newTime))) &&
+        activeStatuses.includes(aStatus)
+      );
+    });
+
+    if (localConflict) {
+      return {
+        agent_id: "AGT-APT-001",
+        agent_name: "Appointment Agent",
+        agent_type: "domain_expert",
+        summary: `Slot conflict: Dr. ${doctor.first_name} ${doctor.last_name} is already booked on ${newDate} at ${newTime}.`,
+        result_data: {
+          success: false,
+          error: "SLOT_UNAVAILABLE",
+          message: `Slot ${newTime} on ${newDate} is already occupied.`
+        }
+      };
+    }
 
     apt.appointment_date = newDate;
     apt.date = newDate;
     apt.time_slot = newTime;
     apt.status = "RESCHEDULED";
+    apt.updated_at = new Date().toISOString();
+
     await supabaseRequest(`appointments?appointment_id=eq.${apt.appointment_id}`, "PATCH", {
       appointment_date: newDate,
       date: newDate,
       time_slot: newTime,
-      status: "RESCHEDULED"
+      status: "RESCHEDULED",
+      updated_at: apt.updated_at
     });
 
     return {
@@ -734,7 +844,9 @@ async function handleAppointmentAgent(action, payload) {
       agent_name: "Appointment Agent",
       agent_type: "domain_expert",
       summary: `Appointment ${apt.appointment_id} successfully rescheduled to ${newDate} at ${newTime}.`,
-      result_data: { success: true, appointment: apt }
+      appointment_id: apt.appointment_id,
+      appointment: apt,
+      result_data: { success: true, appointment_id: apt.appointment_id, appointment: apt }
     };
   }
 

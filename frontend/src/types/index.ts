@@ -73,7 +73,7 @@ export interface AppointmentItem {
   hospital_id: string;
   date: string;
   time_slot: string;
-  status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' | 'RESCHEDULED' | 'IN_CONSULTATION' | string;
+  status: 'SCHEDULED' | 'CONFIRMED' | 'BOOKED' | 'COMPLETED' | 'CANCELLED' | 'CANCELLED_BY_DOCTOR' | 'CANCELLED_BY_PATIENT' | 'RESCHEDULED' | 'IN_CONSULTATION' | string;
   reason: string;
   doctor_name?: string;
   patient_name?: string;
@@ -81,6 +81,9 @@ export interface AppointmentItem {
   start_time?: string;
   end_time?: string;
   reason_for_visit?: string;
+  cancelled_by?: string;
+  cancelled_at?: string;
+  cancellation_reason?: string;
 }
 
 export interface WorkbenchRequest {

@@ -158,12 +158,15 @@ class AppointmentService:
                 time_slot = f"{time_slot}-10:30"
 
         # Check for slot conflict
+        active_statuses = {"BOOKED", "CONFIRMED", "SCHEDULED", "IN_CONSULTATION"}
         existing_apts = mock_db.find_many("appointments", "doctor_id", doctor_id)
         for apt in existing_apts:
-            if (apt.get("appointment_date") == date and
-                (apt.get("time_slot") == time_slot or time_slot in apt.get("time_slot", "")) and
-                apt.get("status") in ["BOOKED", "CONFIRMED", "SCHEDULED"]):
-                raise ValueError(f"Slot '{time_slot}' on {date} is already booked for Dr. {doctor.get('last_name')}.")
+            apt_date = apt.get("appointment_date") or apt.get("date")
+            apt_status = (apt.get("status") or "").upper()
+            apt_slot = apt.get("time_slot") or ""
+            if apt_date == date and apt_status in active_statuses:
+                if apt_slot == time_slot or (time_slot and time_slot in apt_slot):
+                    raise ValueError(f"Slot '{time_slot}' on {date} is already booked for Dr. {doctor.get('last_name')}.")
 
         appointment_id = mock_db.generate_appointment_id()
 
@@ -251,7 +254,7 @@ class AppointmentService:
     def cancel_appointment(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """
         Action: cancel_appointment
-        Transitions status to CANCELLED while preserving record history.
+        Transitions status to CANCELLED or CANCELLED_BY_DOCTOR while preserving record history.
         """
         appointment_id = payload.get("appointment_id")
         if not appointment_id:
@@ -267,24 +270,37 @@ class AppointmentService:
             if str(caller_id).strip().upper() != str(apt.get("patient_id")).strip().upper():
                 raise ValueError(f"Access Denied: You are not authorized to view or modify appointments for other patients.")
 
-        if apt.get("status") == "CANCELLED":
+        reason = payload.get("reason") or payload.get("cancellation_reason") or "Appointment cancelled"
+        cancelled_by = payload.get("cancelled_by") or (payload.get("doctor_id") if user_role in ["doctor", "physician"] else ("patient" if user_role == "patient" else "system"))
+        
+        is_doctor_cancel = user_role in ["doctor", "physician"] or payload.get("cancelled_by") == "doctor" or payload.get("status") == "CANCELLED_BY_DOCTOR"
+        status = "CANCELLED_BY_DOCTOR" if is_doctor_cancel else "CANCELLED"
+
+        if (apt.get("status") or "").upper() in ["CANCELLED", "CANCELLED_BY_DOCTOR", "CANCELLED_BY_PATIENT"]:
             return {
                 "success": True,
                 "appointment_id": appointment_id,
-                "status": "CANCELLED",
+                "status": apt.get("status"),
                 "message": f"Appointment {appointment_id} was already cancelled.",
                 "appointment": apt,
                 "summary": f"Appointment {appointment_id} is already cancelled."
             }
 
-        updated = mock_db.update_appointment(appointment_id, {"status": "CANCELLED"})
+        updates = {
+            "status": status,
+            "cancelled_by": cancelled_by,
+            "cancelled_at": datetime.now(timezone.utc).isoformat(),
+            "cancellation_reason": reason,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        updated = mock_db.update_appointment(appointment_id, updates)
 
         return {
             "success": True,
             "appointment_id": appointment_id,
-            "status": "CANCELLED",
+            "status": status,
             "appointment": updated,
-            "summary": f"Cancelled appointment {appointment_id} successfully."
+            "summary": f"Cancelled appointment {appointment_id} successfully ({status})."
         }
 
     def reschedule_appointment(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -328,13 +344,16 @@ class AppointmentService:
                 new_time_slot = f"{new_time_slot}-11:30"
 
         # Check conflict on new slot
+        active_statuses = {"BOOKED", "CONFIRMED", "SCHEDULED", "IN_CONSULTATION"}
         existing_apts = mock_db.find_many("appointments", "doctor_id", doctor_id)
         for other in existing_apts:
             if other.get("appointment_id") != appointment_id:
-                if (other.get("appointment_date") == new_date and
-                    (other.get("time_slot") == new_time_slot or new_time_slot in other.get("time_slot", "")) and
-                    other.get("status") in ["BOOKED", "CONFIRMED", "SCHEDULED"]):
-                    raise ValueError(f"New slot '{new_time_slot}' on {new_date} is already occupied.")
+                other_date = other.get("appointment_date") or other.get("date")
+                other_status = (other.get("status") or "").upper()
+                other_slot = other.get("time_slot") or ""
+                if other_date == new_date and other_status in active_statuses:
+                    if other_slot == new_time_slot or (new_time_slot and new_time_slot in other_slot):
+                        raise ValueError(f"New slot '{new_time_slot}' on {new_date} is already occupied.")
 
         updates = {
             "appointment_date": new_date,

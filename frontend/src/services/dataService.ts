@@ -534,6 +534,9 @@ class SharedDataService {
           time_slot: a.time_slot || '',
           status: a.status || 'SCHEDULED',
           reason: a.reason || a.reason_for_visit || '',
+          cancelled_by: a.cancelled_by || undefined,
+          cancelled_at: a.cancelled_at || undefined,
+          cancellation_reason: a.cancellation_reason || undefined,
         }));
         setStorageItem(STORAGE_KEYS.APPOINTMENTS, normalizedApts);
         emitDbChange({ table: 'appointments', action: 'create' });
@@ -925,12 +928,26 @@ class SharedDataService {
     return newApt;
   }
 
-  cancelAppointment(appointmentId: string): AppointmentItem | null {
+  cancelAppointment(
+    appointmentId: string,
+    options?: { status?: string; cancelled_by?: string; cancellation_reason?: string }
+  ): AppointmentItem | null {
     const list = this.getAppointments();
     const idx = list.findIndex((a) => a.appointment_id.toUpperCase() === appointmentId.toUpperCase());
     if (idx === -1) return null;
 
-    list[idx] = { ...list[idx], status: 'CANCELLED' };
+    const newStatus = options?.status || 'CANCELLED';
+    const cancelledBy = options?.cancelled_by || 'patient';
+    const cancellationReason = options?.cancellation_reason || 'Cancelled by user';
+    const cancelledAt = new Date().toISOString();
+
+    list[idx] = {
+      ...list[idx],
+      status: newStatus,
+      cancelled_by: cancelledBy,
+      cancelled_at: cancelledAt,
+      cancellation_reason: cancellationReason,
+    };
     setStorageItem(STORAGE_KEYS.APPOINTMENTS, list);
     emitDbChange({ table: 'appointments', action: 'update', data: list[idx] });
 
@@ -938,8 +955,11 @@ class SharedDataService {
     const sb = getSupabaseClient();
     if (sb) {
       sb.from('appointments').update({
-        status: 'CANCELLED',
-        updated_at: new Date().toISOString(),
+        status: newStatus,
+        cancelled_by: cancelledBy,
+        cancelled_at: cancelledAt,
+        cancellation_reason: cancellationReason,
+        updated_at: cancelledAt,
       }).eq('appointment_id', appointmentId).then(({ error }) => {
         if (error) console.warn('[MEDION Supabase] Appointment cancel failed:', error.message);
       });

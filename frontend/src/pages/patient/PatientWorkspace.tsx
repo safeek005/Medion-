@@ -289,9 +289,9 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({ onTraceGener
       response: res,
     });
 
-    if (res.success && (res.result?.appointment || res.result?.appointment_id)) {
-      const confirmedApt = res.result.appointment || {
-        appointment_id: res.result.appointment_id || `APT-${Date.now().toString().slice(-4)}`,
+    if (res.success && (res.result?.appointment || res.result?.result_data?.appointment || res.result?.appointment_id || res.result?.result_data?.appointment_id)) {
+      const confirmedApt = res.result?.appointment || res.result?.result_data?.appointment || {
+        appointment_id: res.result?.appointment_id || res.result?.result_data?.appointment_id || `APT-${Date.now().toString().slice(-4)}`,
         patient_id: mrn,
         doctor_id: bookDoctor,
         hospital_id: 'HOSP-001',

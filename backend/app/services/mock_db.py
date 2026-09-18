@@ -291,7 +291,7 @@ class MockDatabaseService:
         apt = self.find_one("appointments", "appointment_id", appointment_id, skip_remote=True)
         if not apt:
             return None
-        allowed_fields = {"status", "appointment_date", "time_slot", "reason_for_visit"}
+        allowed_fields = {"status", "appointment_date", "date", "time_slot", "reason_for_visit", "reason", "cancelled_by", "cancelled_at", "cancellation_reason", "updated_at"}
         for field, val in updates.items():
             if field in allowed_fields and val is not None:
                 apt[field] = val
@@ -323,9 +323,10 @@ class MockDatabaseService:
         master_slots = doctor.get("available_slots", [])
         existing_apts = self.find_many("appointments", "doctor_id", doctor_id)
         
+        active_statuses = {"BOOKED", "CONFIRMED", "SCHEDULED", "IN_CONSULTATION"}
         booked_slots = {
             apt.get("time_slot") for apt in existing_apts
-            if (apt.get("appointment_date") == date or apt.get("date") == date) and apt.get("status") in ["BOOKED", "CONFIRMED", "SCHEDULED"]
+            if (apt.get("appointment_date") == date or apt.get("date") == date) and (apt.get("status") or "").upper() in active_statuses
         }
 
         available = []

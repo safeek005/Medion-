@@ -41,6 +41,7 @@ import {
   ShieldAlert,
   ArrowUpRight,
   ClipboardList,
+  X,
 } from 'lucide-react';
 
 interface DoctorWorkspaceProps {
@@ -59,6 +60,55 @@ export const DoctorWorkspace: React.FC<DoctorWorkspaceProps> = ({ onTraceGenerat
   const [loading, setLoading] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [approvalStatus, setApprovalStatus] = useState<'pending' | 'approved' | 'rejected'>('pending');
+
+  // Doctor Cancellation Modal State
+  const [cancelModalApt, setCancelModalApt] = useState<any | null>(null);
+  const [cancellationReasonInput, setCancellationReasonInput] = useState('');
+  const [cancellationError, setCancellationError] = useState<string | null>(null);
+  const [cancellationSubmitting, setCancellationSubmitting] = useState(false);
+
+  const handleDoctorCancelAppointment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cancellationReasonInput.trim()) {
+      setCancellationError('Mandatory cancellation reason required.');
+      return;
+    }
+    if (!cancelModalApt) return;
+
+    setCancellationSubmitting(true);
+    setCancellationError(null);
+
+    try {
+      const aptId = cancelModalApt.appointment_id || cancelModalApt.id;
+      await dispatchToWorkbench({
+        workflow_id: `wf-doc-cancel-${Date.now()}`,
+        agent_target: 'appointment',
+        action: 'cancel_appointment',
+        portal_source: 'doctor',
+        payload: {
+          appointment_id: aptId,
+          cancelled_by: 'DOC-101',
+          user_role: 'doctor',
+          status: 'CANCELLED_BY_DOCTOR',
+          reason: cancellationReasonInput.trim(),
+          cancellation_reason: cancellationReasonInput.trim(),
+        },
+      });
+
+      dataService.cancelAppointment(aptId, {
+        status: 'CANCELLED_BY_DOCTOR',
+        cancelled_by: 'DOC-101',
+        cancellation_reason: cancellationReasonInput.trim(),
+      });
+
+      setCancelModalApt(null);
+      setCancellationReasonInput('');
+    } catch (err: any) {
+      setCancellationError(err.message || 'Failed to cancel appointment.');
+    } finally {
+      setCancellationSubmitting(false);
+    }
+  };
 
   const activePatient =
     patients.find((p) => p.patient_id.toUpperCase() === selectedPatientId.toUpperCase()) ||
@@ -677,6 +727,29 @@ export const DoctorWorkspace: React.FC<DoctorWorkspaceProps> = ({ onTraceGenerat
                       <Sparkles style={{ width: 12, height: 12 }} /> {item.unreadAction} Requires Sign-Off
                     </div>
                   )}
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCancelModalApt(item);
+                        setCancellationReasonInput('');
+                        setCancellationError(null);
+                      }}
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid #fca5a5',
+                        borderRadius: 4,
+                        padding: '0.2rem 0.55rem',
+                        fontSize: '0.72rem',
+                        fontWeight: 600,
+                        color: '#dc2626',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Cancel Visit
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -1526,6 +1599,68 @@ export const DoctorWorkspace: React.FC<DoctorWorkspaceProps> = ({ onTraceGenerat
           onApprove={handleApproveProposal}
           onReject={handleRejectProposal}
         />
+      )}
+
+      {/* DOCTOR APPOINTMENT CANCELLATION MODAL */}
+      {cancelModalApt && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 110 }}>
+          <div style={{ backgroundColor: '#ffffff', borderRadius: 'var(--radius-lg, 16px)', maxWidth: 480, width: '100%', padding: '1.75rem', boxShadow: 'var(--shadow-xl)', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.85rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Cancel Clinical Appointment</h3>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Appointment {cancelModalApt.appointment_id || cancelModalApt.id} • Patient {cancelModalApt.name || cancelModalApt.id}</span>
+              </div>
+              <button
+                onClick={() => setCancelModalApt(null)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                <X style={{ width: 18, height: 18 }} />
+              </button>
+            </div>
+
+            {cancellationError && (
+              <div style={{ padding: '0.65rem 0.85rem', borderRadius: 6, backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', fontSize: '0.8rem' }}>
+                {cancellationError}
+              </div>
+            )}
+
+            <form onSubmit={handleDoctorCancelAppointment} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+                  Cancellation Reason <span style={{ color: '#dc2626' }}>* (Mandatory)</span>
+                </label>
+                <textarea
+                  value={cancellationReasonInput}
+                  onChange={(e) => setCancellationReasonInput(e.target.value)}
+                  placeholder="e.g. Physician emergency procedure, schedule adjustment, patient request"
+                  rows={3}
+                  required
+                  style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: 8, border: '1px solid var(--border-subtle)', fontSize: '0.85rem', color: 'var(--text-primary)', backgroundColor: 'var(--bg-surface)', fontFamily: 'inherit' }}
+                />
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.25rem', display: 'block' }}>
+                  This appointment record will be preserved with status CANCELLED_BY_DOCTOR and the slot released for booking.
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem', paddingTop: '0.85rem', borderTop: '1px solid var(--border-subtle)' }}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setCancelModalApt(null)}
+                >
+                  Keep Appointment
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={cancellationSubmitting}
+                  style={{ backgroundColor: '#dc2626', color: '#ffffff' }}
+                >
+                  {cancellationSubmitting ? 'Cancelling...' : 'Confirm Cancellation'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

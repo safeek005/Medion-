@@ -374,7 +374,8 @@ class SupabaseDatabaseService:
 
         booked_slots = set()
         for apt in existing_apts:
-            if apt.get("status") not in ["CANCELLED", "COMPLETED", "REJECTED"]:
+            status_upper = str(apt.get("status") or "").upper()
+            if status_upper not in ["CANCELLED", "CANCELLED_BY_DOCTOR", "CANCELLED_BY_PATIENT", "REJECTED"]:
                 if apt.get("time_slot"):
                     booked_slots.add(apt.get("time_slot"))
                 elif apt.get("start_time") and apt.get("end_time"):

@@ -86,8 +86,25 @@ export async function dispatchToWorkbench(request: WorkbenchRequest): Promise<Wo
       // Normalize potential response wrapper structures (e.g. rawData.body, rawData.output, rawData.result)
       const data = rawData.body ? (typeof rawData.body === 'string' ? JSON.parse(rawData.body) : rawData.body) : rawData;
 
-      const isSuccess = data.success !== false && data.status !== 'FAILED';
       const extractedResult = data.result || data.output || data.data || data;
+      const innerResultSuccess =
+        extractedResult?.result_data?.success !== false &&
+        extractedResult?.success !== false &&
+        extractedResult?.status !== 'FAILED';
+
+      const isSuccess = data.success !== false && data.status !== 'FAILED' && innerResultSuccess;
+
+      let extractedErrors = data.errors || (data.error ? [data.error] : undefined);
+      if (!extractedErrors && !innerResultSuccess) {
+        const errMsg =
+          extractedResult?.result_data?.message ||
+          extractedResult?.result_data?.error ||
+          extractedResult?.message ||
+          extractedResult?.error ||
+          extractedResult?.summary;
+        if (errMsg) extractedErrors = [errMsg];
+      }
+
       const providerInfo =
         data.provider_info ||
         data.output?.result_data?.provider_info ||
@@ -106,7 +123,7 @@ export async function dispatchToWorkbench(request: WorkbenchRequest): Promise<Wo
         target_agent: data.target_agent || data.agent || finalPayload.agent_target,
         action_performed: data.action_performed || data.action || finalPayload.action,
         result: extractedResult,
-        errors: data.errors || (data.error ? [data.error] : undefined),
+        errors: extractedErrors,
         execution_trace: data.execution_trace || undefined,
         provider_info: providerInfo,
         timestamp: new Date().toLocaleTimeString(),

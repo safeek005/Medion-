@@ -86,20 +86,24 @@ export const PatientAppointmentsView: React.FC<PatientAppointmentsViewProps> = (
             user_role: 'patient',
           },
         });
-        if (isMounted && res.success && res.result?.available_slots) {
-          const slots: string[] = res.result.available_slots.map((s: any) =>
-            typeof s === 'string' ? s : s.time_slot || s.slot_id
-          );
-          if (slots.length > 0) {
-            setAvailableSlots(slots);
-            setBookTimeSlot((prev) => (slots.includes(prev) ? prev : slots[0]));
+        if (isMounted && res.success) {
+          const rawSlots = res.result?.available_slots || res.result?.result_data?.available_slots || [];
+          const openSlots: string[] = rawSlots
+            .filter((s: any) => (typeof s === 'object' ? s.status === 'AVAILABLE' : true))
+            .map((s: any) => (typeof s === 'string' ? s : s.time_slot || s.slot_id));
+
+          if (openSlots.length > 0) {
+            setAvailableSlots(openSlots);
+            setBookTimeSlot(openSlots[0]);
           } else {
-            setAvailableSlots(['09:00-09:30', '10:00-10:30', '11:00-11:30', '14:00-14:30']);
+            setAvailableSlots([]);
+            setBookTimeSlot('');
           }
         }
       } catch (err) {
         if (isMounted) {
           setAvailableSlots(['09:00-09:30', '10:00-10:30', '11:00-11:30', '14:00-14:30']);
+          setBookTimeSlot('09:00-09:30');
         }
       } finally {
         if (isMounted) setLoadingSlots(false);
@@ -117,6 +121,10 @@ export const PatientAppointmentsView: React.FC<PatientAppointmentsViewProps> = (
   // Handle Book Appointment
   const handleBookSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!bookTimeSlot) {
+      setBookingError('No available time slots for the selected date. Please choose another date or doctor.');
+      return;
+    }
     setBookingLoading(true);
     setBookingError(null);
 
@@ -158,16 +166,18 @@ export const PatientAppointmentsView: React.FC<PatientAppointmentsViewProps> = (
       }
 
       if (res.success) {
-        const confirmedApt: AppointmentItem = res.result?.appointment || {
-          appointment_id: res.result?.appointment_id || `APT-${Date.now().toString().slice(-4)}`,
-          patient_id: mrn,
-          doctor_id: bookDoctorId,
-          hospital_id: 'HOSP-001',
-          date: bookDate,
-          time_slot: bookTimeSlot,
-          status: 'SCHEDULED',
-          reason: bookReason,
-        };
+        const confirmedApt: AppointmentItem =
+          res.result?.appointment ||
+          res.result?.result_data?.appointment || {
+            appointment_id: res.result?.appointment_id || res.result?.result_data?.appointment_id || `APT-${Date.now().toString().slice(-4)}`,
+            patient_id: mrn,
+            doctor_id: bookDoctorId,
+            hospital_id: 'HOSP-001',
+            date: bookDate,
+            time_slot: bookTimeSlot,
+            status: 'SCHEDULED',
+            reason: bookReason,
+          };
 
         // Sync confirmed booking into persistent client database
         dataService.bookAppointment(confirmedApt);
@@ -294,13 +304,14 @@ export const PatientAppointmentsView: React.FC<PatientAppointmentsViewProps> = (
         {patientAppointments.length > 0 ? (
           patientAppointments.map((apt) => {
             const doc = doctors.find((d) => d.doctor_id === apt.doctor_id) || doctors[0];
+            const isDoctorCancelled = apt.status === 'CANCELLED_BY_DOCTOR';
             return (
               <div
                 key={apt.appointment_id}
                 style={{
                   backgroundColor: '#ffffff',
                   borderRadius: 'var(--radius-lg, 16px)',
-                  border: '1px solid var(--border-subtle)',
+                  border: isDoctorCancelled ? '1px solid #fca5a5' : '1px solid var(--border-subtle)',
                   padding: '1.5rem',
                   boxShadow: 'var(--shadow-xs)',
                   display: 'flex',
@@ -313,15 +324,15 @@ export const PatientAppointmentsView: React.FC<PatientAppointmentsViewProps> = (
                     {/* Date Block */}
                     <div
                       style={{
-                        backgroundColor: 'var(--teal-subtle)',
-                        border: '1px solid var(--teal-border)',
+                        backgroundColor: isDoctorCancelled ? '#fef2f2' : 'var(--teal-subtle)',
+                        border: isDoctorCancelled ? '1px solid #fecaca' : '1px solid var(--teal-border)',
                         borderRadius: 'var(--radius-md, 10px)',
                         padding: '0.75rem 1rem',
                         textAlign: 'center',
                         minWidth: 80,
                       }}
                     >
-                      <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--teal-intelligent)', textTransform: 'uppercase' }}>
+                      <div style={{ fontSize: '0.7rem', fontWeight: 700, color: isDoctorCancelled ? '#dc2626' : 'var(--teal-intelligent)', textTransform: 'uppercase' }}>
                         {new Date(apt.date).toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}
                       </div>
                       <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
@@ -338,8 +349,15 @@ export const PatientAppointmentsView: React.FC<PatientAppointmentsViewProps> = (
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                           {apt.reason || 'Clinical Consultation'}
                         </h3>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 600, padding: '0.15rem 0.5rem', borderRadius: 4, backgroundColor: '#dcfce7', color: '#15803d' }}>
-                          {apt.status || 'CONFIRMED'}
+                        <span style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 600,
+                          padding: '0.15rem 0.5rem',
+                          borderRadius: 4,
+                          backgroundColor: isDoctorCancelled ? '#fee2e2' : '#dcfce7',
+                          color: isDoctorCancelled ? '#b91c1c' : '#15803d'
+                        }}>
+                          {isDoctorCancelled ? 'CANCELLED BY DOCTOR' : (apt.status || 'CONFIRMED')}
                         </span>
                       </div>
                       <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -351,6 +369,11 @@ export const PatientAppointmentsView: React.FC<PatientAppointmentsViewProps> = (
                         <span>Facility: <strong style={{ color: 'var(--text-primary)' }}>Coimbatore Medical Center (HOSP-001)</strong></span>
                         <span>Appointment ID: <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{apt.appointment_id}</strong></span>
                       </div>
+                      {isDoctorCancelled && (
+                        <div style={{ marginTop: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: 6, backgroundColor: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b', fontSize: '0.8rem' }}>
+                          <strong>Cancellation Reason:</strong> {apt.cancellation_reason || 'Cancelled per physician notice.'}
+                        </div>
+                      )}
                     </div>
                   </div>
 
