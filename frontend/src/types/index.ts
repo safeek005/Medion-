@@ -139,3 +139,22 @@ export interface ExecutionTraceStep {
   response: WorkbenchResponse;
   providerInfo?: ProviderInfo;
 }
+
+export interface NotificationItem {
+  notification_id: string;
+  id?: string;
+  recipient_type?: string;
+  recipient_id: string;
+  patient_id?: string;
+  appointment_id?: string;
+  type?: string;
+  title: string;
+  message: string;
+  cancellation_reason?: string;
+  channel?: string;
+  status?: string;
+  is_read?: boolean;
+  created_at?: string;
+  sent_at?: string;
+}
+

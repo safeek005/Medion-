@@ -25,6 +25,7 @@ const STORAGE_KEYS = {
   POLICIES: 'medion_db_policies',
   CLAIMS: 'medion_db_claims',
   DOCTORS: 'medion_db_doctors',
+  NOTIFICATIONS: 'medion_db_notifications',
   CONTEXT: 'medion_conversation_context',
 };
 
@@ -410,7 +411,7 @@ function setStorageItem<T>(key: string, value: T): void {
 
 // Event Dispatcher for cross-component and cross-tab UI synchronization
 export type DBChangeEvent = {
-  table: 'patients' | 'appointments' | 'lab_reports' | 'insurance' | 'claims' | 'prescriptions' | 'context' | 'doctors' | 'policies';
+  table: 'patients' | 'appointments' | 'lab_reports' | 'insurance' | 'claims' | 'prescriptions' | 'context' | 'doctors' | 'policies' | 'notifications';
   action: 'create' | 'update' | 'delete' | 'reset';
   data?: any;
 };
@@ -965,7 +966,130 @@ class SharedDataService {
       });
     }
 
+    // Trigger patient notification if cancelled by doctor
+    if (newStatus === 'CANCELLED_BY_DOCTOR' || cancelledBy === 'doctor' || cancelledBy === 'DOC-101') {
+      this.notifyAppointmentCancelledByDoctor(list[idx], cancellationReason);
+    }
+
     return list[idx];
+  }
+
+  // ----------------------------------------------------
+  // NOTIFICATIONS & ALERTS
+  // ----------------------------------------------------
+
+  getNotifications(patientId?: string): NotificationItem[] {
+    const list = getStorageItem<NotificationItem[]>(STORAGE_KEYS.NOTIFICATIONS, MOCK_NOTIFICATIONS);
+    if (patientId) {
+      const pidUpper = patientId.toUpperCase();
+      return list.filter(
+        (n) =>
+          (n.recipient_id && n.recipient_id.toUpperCase() === pidUpper) ||
+          (n.patient_id && n.patient_id.toUpperCase() === pidUpper)
+      );
+    }
+    return list;
+  }
+
+  createNotification(notifData: Partial<NotificationItem>): NotificationItem {
+    const list = getStorageItem<NotificationItem[]>(STORAGE_KEYS.NOTIFICATIONS, MOCK_NOTIFICATIONS);
+
+    // Idempotency check: avoid duplicate notifications for the same appointment cancellation
+    if (notifData.appointment_id && (notifData.type === 'APPOINTMENT_CANCELLED' || notifData.title === 'Appointment Cancelled')) {
+      const existing = list.find(
+        (n) => n.appointment_id === notifData.appointment_id && (n.type === 'APPOINTMENT_CANCELLED' || n.title === 'Appointment Cancelled')
+      );
+      if (existing) return existing;
+    }
+
+    const notifId = notifData.notification_id || notifData.id || `NOTIF-${Date.now()}`;
+    const newNotif: NotificationItem = {
+      notification_id: notifId,
+      id: notifId,
+      recipient_type: notifData.recipient_type || 'PATIENT',
+      recipient_id: notifData.recipient_id || notifData.patient_id || 'PAT-1001',
+      patient_id: notifData.patient_id || notifData.recipient_id || 'PAT-1001',
+      appointment_id: notifData.appointment_id,
+      type: notifData.type || 'APPOINTMENT_CANCELLED',
+      title: notifData.title || 'Appointment Cancelled',
+      message: notifData.message || '',
+      cancellation_reason: notifData.cancellation_reason,
+      channel: notifData.channel || 'IN_APP',
+      status: notifData.status || 'UNREAD',
+      is_read: notifData.is_read !== undefined ? notifData.is_read : false,
+      created_at: notifData.created_at || new Date().toISOString(),
+      sent_at: notifData.sent_at || new Date().toISOString(),
+    };
+
+    const updatedList = [newNotif, ...list];
+    setStorageItem(STORAGE_KEYS.NOTIFICATIONS, updatedList);
+    emitDbChange({ table: 'notifications', action: 'create', data: newNotif });
+
+    const sb = getSupabaseClient();
+    if (sb) {
+      sb.from('notifications').upsert(newNotif).then(({ error }) => {
+        if (error) console.warn('[MEDION Supabase] Notification insert failed:', error.message);
+      });
+    }
+
+    return newNotif;
+  }
+
+  markNotificationAsRead(notificationId: string): NotificationItem | null {
+    const list = getStorageItem<NotificationItem[]>(STORAGE_KEYS.NOTIFICATIONS, MOCK_NOTIFICATIONS);
+    const idx = list.findIndex((n) => (n.notification_id || n.id) === notificationId);
+    if (idx === -1) return null;
+
+    const updatedItem: NotificationItem = {
+      ...list[idx],
+      is_read: true,
+      status: 'READ',
+    };
+    list[idx] = updatedItem;
+
+    setStorageItem(STORAGE_KEYS.NOTIFICATIONS, list);
+    emitDbChange({ table: 'notifications', action: 'update', data: updatedItem });
+
+    const sb = getSupabaseClient();
+    if (sb) {
+      sb.from('notifications')
+        .update({ is_read: true, status: 'READ' })
+        .eq('notification_id', notificationId)
+        .then(({ error }) => {
+          if (error) console.warn('[MEDION Supabase] Notification update failed:', error.message);
+        });
+    }
+
+    return updatedItem;
+  }
+
+  notifyAppointmentCancelledByDoctor(apt: AppointmentItem, cancellationReason?: string): NotificationItem | null {
+    if (!apt || !apt.patient_id) return null;
+
+    const docName = apt.doctor_name || 'Rajesh Mehta';
+    const aptDate = apt.date || '';
+    const aptTime = apt.time_slot || apt.start_time || '';
+    const reasonText = cancellationReason || apt.cancellation_reason || '';
+
+    let msg = `Your appointment with Dr. ${docName} on ${aptDate} at ${aptTime} has been cancelled by the doctor.`;
+    if (reasonText) {
+      msg += `\nReason: ${reasonText}`;
+    }
+
+    return this.createNotification({
+      notification_id: `NOTIF-CANCEL-${apt.appointment_id}`,
+      recipient_type: 'PATIENT',
+      recipient_id: apt.patient_id,
+      patient_id: apt.patient_id,
+      appointment_id: apt.appointment_id,
+      type: 'APPOINTMENT_CANCELLED',
+      title: 'Appointment Cancelled',
+      message: msg,
+      cancellation_reason: reasonText,
+      channel: 'IN_APP',
+      status: 'UNREAD',
+      is_read: false,
+    });
   }
 
   rescheduleAppointment(appointmentId: string, newDate: string, newTimeSlot: string): AppointmentItem | null {
@@ -1378,4 +1502,21 @@ export function useSharedPrescriptions() {
 
   return prescriptions;
 }
+
+export function useSharedNotifications(patientId?: string) {
+  const [notifications, setNotifications] = useState<NotificationItem[]>(() => dataService.getNotifications(patientId));
+
+  useEffect(() => {
+    setNotifications(dataService.getNotifications(patientId));
+    const unsubscribe = dataService.subscribe((event) => {
+      if (event.table === 'notifications' || event.table === 'appointments' || event.action === 'reset') {
+        setNotifications(dataService.getNotifications(patientId));
+      }
+    });
+    return unsubscribe;
+  }, [patientId]);
+
+  return notifications;
+}
+
 

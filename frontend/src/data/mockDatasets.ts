@@ -17,13 +17,20 @@ export interface PrescriptionItem {
 
 export interface NotificationItem {
   notification_id: string;
-  recipient_type: string;
+  id?: string;
+  recipient_type?: string;
   recipient_id: string;
+  patient_id?: string;
+  appointment_id?: string;
+  type?: string;
   title: string;
   message: string;
-  channel: string;
-  status: string;
-  sent_at: string;
+  cancellation_reason?: string;
+  channel?: string;
+  status?: string;
+  is_read?: boolean;
+  created_at?: string;
+  sent_at?: string;
 }
 
 export interface InpatientBedItem {

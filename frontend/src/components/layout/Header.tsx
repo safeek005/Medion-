@@ -14,8 +14,9 @@ import {
   Activity,
   Layers,
 } from 'lucide-react';
-import { UserRole } from '../../types';
+import { UserRole, NotificationItem } from '../../types';
 import { useAuth, ENTERPRISE_FACILITIES } from '../../services/authService';
+import { useSharedNotifications, dataService } from '../../services/dataService';
 
 interface HeaderProps {
   role: UserRole;
@@ -35,6 +36,34 @@ export const Header: React.FC<HeaderProps> = ({
   const { user, updateFacility } = useAuth();
   const [isFacilityMenuOpen, setIsFacilityMenuOpen] = useState(false);
   const facilityRef = useRef<HTMLDivElement>(null);
+
+  // Real-time notifications for active session / patient
+  const userPatientId = user?.id || (user?.role === 'patient' ? 'PAT-1001' : undefined);
+  const notifications = useSharedNotifications(userPatientId);
+  const unreadCount = notifications.filter((n) => !n.is_read && n.status !== 'READ').length;
+
+  // Real-time Toast alert state
+  const [toastNotif, setToastNotif] = useState<NotificationItem | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = dataService.subscribe((event) => {
+      if (event.table === 'notifications' && event.action === 'create') {
+        const notif = event.data as NotificationItem;
+        if (
+          notif &&
+          (notif.recipient_id?.toUpperCase() === userPatientId?.toUpperCase() ||
+           notif.patient_id?.toUpperCase() === userPatientId?.toUpperCase() ||
+           role === 'patient') &&
+          (notif.type === 'APPOINTMENT_CANCELLED' || notif.title === 'Appointment Cancelled')
+        ) {
+          setToastNotif(notif);
+          const timer = setTimeout(() => setToastNotif(null), 6000);
+          return () => clearTimeout(timer);
+        }
+      }
+    });
+    return unsubscribe;
+  }, [userPatientId, role]);
 
   // Close facility menu on outside click
   useEffect(() => {
@@ -304,21 +333,40 @@ export const Header: React.FC<HeaderProps> = ({
               navigate(`/${role}/notifications`);
             }
           }}
-          style={{ padding: '0.4rem', position: 'relative', color: 'var(--text-secondary)' }}
+          style={{ padding: '0.35rem 0.55rem', position: 'relative', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
           title="Notifications & Alerts"
         >
           <Bell style={{ width: 16, height: 16 }} />
-          <span
-            style={{
-              position: 'absolute',
-              top: 4,
-              right: 4,
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: 'var(--danger-red)',
-            }}
-          />
+          {unreadCount > 0 ? (
+            <span
+              style={{
+                backgroundColor: '#dc2626',
+                color: '#ffffff',
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                borderRadius: 10,
+                padding: '0.05rem 0.4rem',
+                minWidth: 16,
+                textAlign: 'center',
+                lineHeight: 1.2,
+                fontFamily: 'var(--font-mono)',
+              }}
+            >
+              {unreadCount}
+            </span>
+          ) : (
+            <span
+              style={{
+                position: 'absolute',
+                top: 4,
+                right: 4,
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: 'var(--border-subtle)',
+              }}
+            />
+          )}
         </button>
 
         {/* User Identity Pill */}
@@ -358,6 +406,68 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
         </div>
       </div>
+
+      {/* Immediate Realtime Toast Feedback overlay */}
+      {toastNotif && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            zIndex: 9999,
+            backgroundColor: '#ffffff',
+            borderLeft: '4px solid #dc2626',
+            borderRadius: 'var(--radius-md, 10px)',
+            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.2), 0 8px 10px -6px rgba(0,0,0,0.1)',
+            padding: '1rem 1.25rem',
+            maxWidth: 400,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.4rem',
+            animation: 'fadeIn 0.3s ease-out',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Bell style={{ width: 16, height: 16, color: '#dc2626' }} />
+              <strong style={{ fontSize: '0.92rem', color: '#dc2626' }}>{toastNotif.title}</strong>
+            </div>
+            <button
+              onClick={() => setToastNotif(null)}
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.9rem' }}
+            >
+              ✕
+            </button>
+          </div>
+          <div style={{ fontSize: '0.84rem', color: 'var(--text-primary)', lineHeight: 1.45, whiteSpace: 'pre-line' }}>
+            {toastNotif.message}
+          </div>
+          <div style={{ marginTop: '0.4rem', display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => {
+                setToastNotif(null);
+                if (toastNotif.appointment_id) {
+                  navigate(`/${role}/appointments?aptId=${toastNotif.appointment_id}`);
+                } else {
+                  navigate(`/${role}/notifications`);
+                }
+              }}
+              style={{
+                background: 'var(--teal-subtle)',
+                border: '1px solid var(--teal-border)',
+                color: 'var(--teal-intelligent)',
+                padding: '0.25rem 0.65rem',
+                borderRadius: 6,
+                fontSize: '0.76rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              View Appointment
+            </button>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

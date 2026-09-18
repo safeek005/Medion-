@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Calendar,
   FileText,
@@ -49,6 +50,7 @@ interface PatientWorkspaceProps {
 }
 
 export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({ onTraceGenerated }) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [output, setOutput] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -402,6 +404,51 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({ onTraceGener
           </Button>
         </div>
       </div>
+
+      {/* Doctor Cancellation Alert Banner */}
+      {patientApts.some((a) => a.status === 'CANCELLED_BY_DOCTOR') && (
+        <div
+          style={{
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fca5a5',
+            borderLeft: '5px solid #dc2626',
+            borderRadius: 'var(--radius-md, 10px)',
+            padding: '1rem 1.25rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1rem',
+            boxShadow: '0 2px 8px rgba(220, 38, 38, 0.06)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            <AlertTriangle style={{ width: 22, height: 22, color: '#dc2626', flexShrink: 0 }} />
+            <div>
+              <strong style={{ fontSize: '0.98rem', color: '#b91c1c' }}>Appointment Cancelled by Doctor</strong>
+              <div style={{ fontSize: '0.84rem', color: '#7f1d1d', marginTop: '0.2rem', lineHeight: 1.4 }}>
+                {(() => {
+                  const cancelled = patientApts.find((a) => a.status === 'CANCELLED_BY_DOCTOR');
+                  const docObj = doctors.find((d) => d.doctor_id === cancelled?.doctor_id);
+                  const docName = docObj ? `Dr. ${docObj.first_name} ${docObj.last_name}` : 'Dr. Rajesh Mehta';
+                  return `Your appointment with ${docName} on ${cancelled?.date} at ${cancelled?.time_slot} was cancelled by the doctor.${cancelled?.cancellation_reason ? ` Reason: ${cancelled.cancellation_reason}` : ''}`;
+                })()}
+              </div>
+            </div>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              const cancelled = patientApts.find((a) => a.status === 'CANCELLED_BY_DOCTOR');
+              navigate(`/patient/appointments?aptId=${cancelled?.appointment_id || ''}`);
+            }}
+            style={{ backgroundColor: '#ffffff', borderColor: '#fca5a5', color: '#b91c1c', fontSize: '0.78rem', fontWeight: 600 }}
+          >
+            View Details
+          </Button>
+        </div>
+      )}
 
       {/* 2. YOUR HEALTH AT A GLANCE (Requirement 6) */}
       <section>
@@ -814,19 +861,30 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({ onTraceGener
                 action: 'Verified and filed in your diagnostic medical record.',
                 icon: <FlaskConical style={{ width: 16, height: 16, color: 'var(--warning-amber)' }} />,
                 tag: lr.status || 'VERIFIED',
+                aptId: null as string | null,
+                isDoctorCancelled: false,
               })),
-              ...patientApts.map((a) => ({
-                date: a.date,
-                type: 'Clinical visit',
-                title: a.reason || 'Clinical Consultation',
-                doctor: doctors.find((d) => d.doctor_id === a.doctor_id)
-                  ? `Attending: Dr. ${doctors.find((d) => d.doctor_id === a.doctor_id)?.first_name} ${doctors.find((d) => d.doctor_id === a.doctor_id)?.last_name}, MD`
-                  : 'Clinical Staff',
-                details: `Outpatient visit scheduled at Coimbatore Medical Center • Time: ${a.time_slot}.`,
-                action: 'Confirmed on clinical schedule.',
-                icon: <Stethoscope style={{ width: 16, height: 16, color: 'var(--teal-intelligent)' }} />,
-                tag: a.status || 'SCHEDULED',
-              })),
+              ...patientApts.map((a) => {
+                const isDoctorCancelled = a.status === 'CANCELLED_BY_DOCTOR';
+                const docObj = doctors.find((d) => d.doctor_id === a.doctor_id);
+                const docName = docObj ? `Dr. ${docObj.first_name} ${docObj.last_name}` : 'Dr. Rajesh Mehta';
+                return {
+                  date: a.date,
+                  type: isDoctorCancelled ? 'Appointment Cancelled' : 'Clinical visit',
+                  title: isDoctorCancelled ? 'Appointment Cancelled' : (a.reason || 'Clinical Consultation'),
+                  doctor: isDoctorCancelled ? `Cancelled by: ${docName}, MD` : `Attending: ${docName}, MD`,
+                  details: isDoctorCancelled
+                    ? `Appointment on ${a.date} at ${a.time_slot} was cancelled by the doctor.${a.cancellation_reason ? ` Reason: ${a.cancellation_reason}` : ''}`
+                    : `Outpatient visit scheduled at Coimbatore Medical Center • Time: ${a.time_slot}.`,
+                  action: isDoctorCancelled ? 'Cancelled by doctor' : 'Confirmed on clinical schedule.',
+                  icon: isDoctorCancelled
+                    ? <AlertTriangle style={{ width: 16, height: 16, color: '#dc2626' }} />
+                    : <Stethoscope style={{ width: 16, height: 16, color: 'var(--teal-intelligent)' }} />,
+                  tag: isDoctorCancelled ? 'CANCELLED BY DOCTOR' : (a.status || 'SCHEDULED'),
+                  aptId: a.appointment_id,
+                  isDoctorCancelled,
+                };
+              }),
               ...patientPrescriptions.map((rx) => ({
                 date: rx.issued_date || 'Recent',
                 type: 'Prescription',
@@ -838,6 +896,8 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({ onTraceGener
                 action: `${rx.refills_remaining !== undefined ? `${rx.refills_remaining} refills remaining` : 'Active therapy'}.`,
                 icon: <Pill style={{ width: 16, height: 16, color: 'var(--medical-emerald)' }} />,
                 tag: 'ACTIVE RX',
+                aptId: null,
+                isDoctorCancelled: false,
               })),
             ];
 
@@ -859,8 +919,8 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({ onTraceGener
                           width: 32,
                           height: 32,
                           borderRadius: '50%',
-                          background: 'var(--bg-surface-secondary)',
-                          border: '1px solid var(--border-subtle)',
+                          background: item.isDoctorCancelled ? '#fef2f2' : 'var(--bg-surface-secondary)',
+                          border: item.isDoctorCancelled ? '1px solid #fecaca' : '1px solid var(--border-subtle)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -881,7 +941,7 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({ onTraceGener
                             {item.date}
                           </span>
                           <span style={{ color: 'var(--border-strong)' }}>•</span>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--teal-intelligent)' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: item.isDoctorCancelled ? '#dc2626' : 'var(--teal-intelligent)' }}>
                             {item.type}
                           </span>
                         </div>
@@ -891,16 +951,16 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({ onTraceGener
                             fontWeight: 700,
                             padding: '0.1rem 0.4rem',
                             borderRadius: 4,
-                            background: 'var(--bg-surface-secondary)',
-                            color: 'var(--text-secondary)',
-                            border: '1px solid var(--border-subtle)',
+                            background: item.isDoctorCancelled ? '#fee2e2' : 'var(--bg-surface-secondary)',
+                            color: item.isDoctorCancelled ? '#b91c1c' : 'var(--text-secondary)',
+                            border: item.isDoctorCancelled ? '1px solid #fca5a5' : '1px solid var(--border-subtle)',
                           }}
                         >
                           {item.tag}
                         </span>
                       </div>
 
-                      <div style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '0.2rem' }}>
+                      <div style={{ fontSize: '0.92rem', fontWeight: 700, color: item.isDoctorCancelled ? '#991b1b' : 'var(--text-primary)', marginTop: '0.2rem' }}>
                         {item.title}
                       </div>
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
@@ -909,8 +969,29 @@ export const PatientWorkspace: React.FC<PatientWorkspaceProps> = ({ onTraceGener
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                         {item.details}
                       </div>
-                      <div style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--teal-intelligent)', marginTop: '0.2rem' }}>
-                        {item.action}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginTop: '0.35rem' }}>
+                        <span style={{ fontSize: '0.76rem', fontWeight: 600, color: item.isDoctorCancelled ? '#dc2626' : 'var(--teal-intelligent)' }}>
+                          {item.action}
+                        </span>
+                        {item.aptId && (
+                          <button
+                            onClick={() => navigate(`/patient/appointments?aptId=${item.aptId}`)}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: item.isDoctorCancelled ? '#dc2626' : 'var(--teal-intelligent)',
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              padding: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.2rem',
+                            }}
+                          >
+                            View Details <ChevronRight style={{ width: 12, height: 12 }} />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

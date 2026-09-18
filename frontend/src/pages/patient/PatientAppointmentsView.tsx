@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -13,6 +14,7 @@ import {
   RotateCcw,
   Sparkles,
   Info,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -67,6 +69,19 @@ export const PatientAppointmentsView: React.FC<PatientAppointmentsViewProps> = (
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
   const [prepAdvice, setPrepAdvice] = useState<{ aptId: string; advice: string } | null>(null);
+  const [selectedDetailApt, setSelectedDetailApt] = useState<AppointmentItem | null>(null);
+
+  const [searchParams] = useSearchParams();
+  const highlightedAptId = searchParams.get('aptId');
+
+  useEffect(() => {
+    if (highlightedAptId) {
+      const targetEl = document.getElementById(`apt-card-${highlightedAptId}`);
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [highlightedAptId, patientAppointments]);
 
   // Dynamic slot lookup from Appointment Agent
   useEffect(() => {
@@ -308,15 +323,17 @@ export const PatientAppointmentsView: React.FC<PatientAppointmentsViewProps> = (
             return (
               <div
                 key={apt.appointment_id}
+                id={`apt-card-${apt.appointment_id}`}
                 style={{
-                  backgroundColor: '#ffffff',
+                  backgroundColor: isDoctorCancelled ? '#fff5f5' : '#ffffff',
                   borderRadius: 'var(--radius-lg, 16px)',
-                  border: isDoctorCancelled ? '1px solid #fca5a5' : '1px solid var(--border-subtle)',
+                  border: isDoctorCancelled ? '2px solid #f87171' : '1px solid var(--border-subtle)',
                   padding: '1.5rem',
-                  boxShadow: 'var(--shadow-xs)',
+                  boxShadow: isDoctorCancelled ? '0 4px 12px rgba(220, 38, 38, 0.08)' : 'var(--shadow-xs)',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '1rem',
+                  transition: 'all 0.2s ease-in-out',
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
@@ -335,33 +352,35 @@ export const PatientAppointmentsView: React.FC<PatientAppointmentsViewProps> = (
                       <div style={{ fontSize: '0.7rem', fontWeight: 700, color: isDoctorCancelled ? '#dc2626' : 'var(--teal-intelligent)', textTransform: 'uppercase' }}>
                         {new Date(apt.date).toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}
                       </div>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: isDoctorCancelled ? '#991b1b' : 'var(--text-primary)', lineHeight: 1.1 }}>
                         {new Date(apt.date).getDate() || 18}
                       </div>
-                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                      <div style={{ fontSize: '0.68rem', color: isDoctorCancelled ? '#991b1b' : 'var(--text-muted)' }}>
                         {new Date(apt.date).getFullYear() || 2026}
                       </div>
                     </div>
 
                     {/* Details */}
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: isDoctorCancelled ? '#991b1b' : 'var(--text-primary)', margin: 0 }}>
                           {apt.reason || 'Clinical Consultation'}
                         </h3>
                         <span style={{
-                          fontSize: '0.72rem',
-                          fontWeight: 600,
-                          padding: '0.15rem 0.5rem',
-                          borderRadius: 4,
+                          fontSize: '0.74rem',
+                          fontWeight: 700,
+                          padding: '0.2rem 0.6rem',
+                          borderRadius: 6,
                           backgroundColor: isDoctorCancelled ? '#fee2e2' : '#dcfce7',
-                          color: isDoctorCancelled ? '#b91c1c' : '#15803d'
+                          color: isDoctorCancelled ? '#b91c1c' : '#15803d',
+                          border: isDoctorCancelled ? '1px solid #fca5a5' : '1px solid #86efac',
+                          letterSpacing: '0.02em',
                         }}>
                           {isDoctorCancelled ? 'CANCELLED BY DOCTOR' : (apt.status || 'CONFIRMED')}
                         </span>
                       </div>
                       <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Stethoscope style={{ width: 14, height: 14, color: 'var(--teal-intelligent)' }} />
+                        <Stethoscope style={{ width: 14, height: 14, color: isDoctorCancelled ? '#dc2626' : 'var(--teal-intelligent)' }} />
                         <span>Dr. {doc?.first_name} {doc?.last_name}, MD • {doc?.specialty || 'Cardiology'}</span>
                       </div>
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
@@ -369,9 +388,20 @@ export const PatientAppointmentsView: React.FC<PatientAppointmentsViewProps> = (
                         <span>Facility: <strong style={{ color: 'var(--text-primary)' }}>Coimbatore Medical Center (HOSP-001)</strong></span>
                         <span>Appointment ID: <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{apt.appointment_id}</strong></span>
                       </div>
+
                       {isDoctorCancelled && (
-                        <div style={{ marginTop: '0.5rem', padding: '0.5rem 0.75rem', borderRadius: 6, backgroundColor: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b', fontSize: '0.8rem' }}>
-                          <strong>Cancellation Reason:</strong> {apt.cancellation_reason || 'Cancelled per physician notice.'}
+                        <div style={{ marginTop: '0.65rem', padding: '0.6rem 0.85rem', borderRadius: 8, backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', fontSize: '0.84rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, color: '#b91c1c' }}>
+                            <AlertTriangle style={{ width: 14, height: 14 }} /> Cancellation Reason:
+                          </div>
+                          <div style={{ marginTop: '0.2rem', color: '#7f1d1d' }}>
+                            {apt.cancellation_reason || 'Doctor unavailable'}
+                          </div>
+                          {apt.cancelled_at && (
+                            <div style={{ fontSize: '0.75rem', color: '#991b1b', marginTop: '0.35rem', fontStyle: 'italic' }}>
+                              Cancelled: {new Date(apt.cancelled_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}, {new Date(apt.cancelled_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -379,22 +409,35 @@ export const PatientAppointmentsView: React.FC<PatientAppointmentsViewProps> = (
 
                   {/* Actions */}
                   <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => handleGetPreparationAdvice(apt)}
-                      style={{ fontSize: '0.78rem' }}
-                    >
-                      <Sparkles style={{ width: 14, height: 14, marginRight: 6, color: 'var(--teal-intelligent)' }} /> Preparation Advice
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => handleCancelApt(apt.appointment_id)}
-                      style={{ fontSize: '0.78rem', color: '#dc2626' }}
-                    >
-                      Cancel
-                    </Button>
+                    {isDoctorCancelled ? (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setSelectedDetailApt(apt)}
+                        style={{ fontSize: '0.78rem' }}
+                      >
+                        <Info style={{ width: 14, height: 14, marginRight: 4, color: '#dc2626' }} /> View Details
+                      </Button>
+                    ) : (
+                      <>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleGetPreparationAdvice(apt)}
+                          style={{ fontSize: '0.78rem' }}
+                        >
+                          <Sparkles style={{ width: 14, height: 14, marginRight: 6, color: 'var(--teal-intelligent)' }} /> Preparation Advice
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleCancelApt(apt.appointment_id)}
+                          style={{ fontSize: '0.78rem', color: '#dc2626' }}
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -555,6 +598,114 @@ export const PatientAppointmentsView: React.FC<PatientAppointmentsViewProps> = (
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Appointment Details Modal */}
+      {selectedDetailApt && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem',
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: 'var(--radius-lg, 16px)',
+              maxWidth: 520,
+              width: '100%',
+              padding: '1.75rem',
+              boxShadow: 'var(--shadow-xl)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                  {selectedDetailApt.reason || 'Clinical Consultation'}
+                </h3>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: '0.15rem' }}>
+                  ID: {selectedDetailApt.appointment_id}
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedDetailApt(null)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                <X style={{ width: 18, height: 18 }} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', fontSize: '0.88rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <strong style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', minWidth: 100 }}>Status:</strong>
+                <span style={{
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  padding: '0.2rem 0.6rem',
+                  borderRadius: 6,
+                  backgroundColor: selectedDetailApt.status === 'CANCELLED_BY_DOCTOR' ? '#fee2e2' : '#dcfce7',
+                  color: selectedDetailApt.status === 'CANCELLED_BY_DOCTOR' ? '#b91c1c' : '#15803d',
+                  border: selectedDetailApt.status === 'CANCELLED_BY_DOCTOR' ? '1px solid #fca5a5' : '1px solid #86efac',
+                }}>
+                  {selectedDetailApt.status === 'CANCELLED_BY_DOCTOR' ? 'CANCELLED BY DOCTOR' : selectedDetailApt.status}
+                </span>
+              </div>
+
+              {selectedDetailApt.status === 'CANCELLED_BY_DOCTOR' && (
+                <div style={{ padding: '0.85rem 1rem', borderRadius: 8, backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b' }}>
+                  <div style={{ fontWeight: 700, color: '#b91c1c', marginBottom: '0.25rem' }}>
+                    Reason for Cancellation:
+                  </div>
+                  <div style={{ fontSize: '0.88rem', color: '#7f1d1d', lineHeight: 1.4 }}>
+                    {selectedDetailApt.cancellation_reason || 'Doctor unavailable'}
+                  </div>
+                  {selectedDetailApt.cancelled_at && (
+                    <div style={{ fontSize: '0.76rem', color: '#991b1b', marginTop: '0.5rem', fontStyle: 'italic', borderTop: '1px dashed #fca5a5', paddingTop: '0.35rem' }}>
+                      Cancelled on: {new Date(selectedDetailApt.cancelled_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}, {new Date(selectedDetailApt.cancelled_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', backgroundColor: 'var(--bg-app)', padding: '0.85rem', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                <div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Date</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginTop: '0.1rem' }}>{selectedDetailApt.date}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Time Slot</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginTop: '0.1rem' }}>{selectedDetailApt.time_slot}</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Attending Physician</div>
+                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                  Dr. Rajesh Mehta, MD (Cardiology)
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Facility</div>
+                <div style={{ color: 'var(--text-primary)' }}>
+                  Coimbatore Medical Center (Main Campus, Suite 302)
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle)' }}>
+              <Button onClick={() => setSelectedDetailApt(null)}>
+                Close
+              </Button>
+            </div>
           </div>
         </div>
       )}

@@ -758,6 +758,41 @@ async function handleAppointmentAgent(action, payload) {
       updated_at: apt.updated_at
     });
 
+    if (isDoctorCancel && apt.patient_id) {
+      if (!MOCK_DATA.notifications) MOCK_DATA.notifications = [];
+      const existingNotif = MOCK_DATA.notifications.find(
+        n => n.appointment_id === apt.appointment_id && (n.type === "APPOINTMENT_CANCELLED" || n.title === "Appointment Cancelled")
+      );
+      if (!existingNotif) {
+        const docName = payload.doctor_name || apt.doctor_name || "Rajesh Mehta";
+        const aptDate = apt.date || "";
+        const aptTime = apt.time_slot || apt.start_time || "";
+        let msg = `Your appointment with Dr. ${docName} on ${aptDate} at ${aptTime} has been cancelled by the doctor.`;
+        if (cancellationReason) {
+          msg += `\nReason: ${cancellationReason}`;
+        }
+        const notifRecord = {
+          notification_id: `NOTIF-CANCEL-${apt.appointment_id}`,
+          id: `NOTIF-CANCEL-${apt.appointment_id}`,
+          recipient_type: "PATIENT",
+          recipient_id: apt.patient_id,
+          patient_id: apt.patient_id,
+          appointment_id: apt.appointment_id,
+          type: "APPOINTMENT_CANCELLED",
+          title: "Appointment Cancelled",
+          message: msg,
+          cancellation_reason: cancellationReason,
+          channel: "IN_APP",
+          status: "UNREAD",
+          is_read: false,
+          created_at: new Date().toISOString(),
+          sent_at: new Date().toISOString()
+        };
+        MOCK_DATA.notifications.unshift(notifRecord);
+        await supabaseRequest("notifications", "POST", notifRecord).catch(() => {});
+      }
+    }
+
     return {
       agent_id: "AGT-APT-001",
       agent_name: "Appointment Agent",

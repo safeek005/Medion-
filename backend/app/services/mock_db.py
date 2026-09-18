@@ -523,4 +523,19 @@ class MockDatabaseService:
         self._cache["audit_logs"].append(log)
         return log
 
+    def add_notification(self, notif: Dict[str, Any]) -> Dict[str, Any]:
+        mode = get_database_mode()
+        if mode == "supabase":
+            if not supabase_db.is_configured():
+                raise RuntimeError("Database unavailable: DATABASE_MODE is 'supabase' but Supabase credentials are not configured.")
+            res = supabase_db.create_notification(notif)
+            if "notifications" in self._cache:
+                self._cache["notifications"].insert(0, res)
+            return res
+
+        if "notifications" not in self._cache:
+            self._cache["notifications"] = []
+        self._cache["notifications"].insert(0, notif)
+        return notif
+
 mock_db = MockDatabaseService()

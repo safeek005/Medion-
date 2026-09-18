@@ -157,3 +157,34 @@ def test_update_appointment_status_and_complete():
     })
     assert res_complete["success"] is True
     assert res_complete["status"] == "COMPLETED"
+
+def test_cancel_appointment_by_doctor_creates_patient_notification():
+    agent = AppointmentAgent()
+    payload = {
+        "appointment_id": "APT-1001",
+        "user_role": "doctor",
+        "cancelled_by": "DOC-101",
+        "status": "CANCELLED_BY_DOCTOR",
+        "reason": "Doctor unavailable due to emergency duty"
+    }
+    result = agent.execute("cancel_appointment", payload)
+    assert result["success"] is True
+    assert result["status"] == "CANCELLED_BY_DOCTOR"
+
+    # Verify notification created for patient PAT-1001
+    notifs = mock_db.find_many("notifications", "recipient_id", "PAT-1001")
+    cancel_notifs = [n for n in notifs if n.get("appointment_id") == "APT-1001" and n.get("type") == "APPOINTMENT_CANCELLED"]
+    assert len(cancel_notifs) == 1
+    notif = cancel_notifs[0]
+    assert notif["title"] == "Appointment Cancelled"
+    assert "cancelled by the doctor" in notif["message"]
+    assert "Doctor unavailable due to emergency duty" in notif["message"]
+    assert notif["is_read"] is False
+
+    # Execute cancellation again to verify idempotency (no duplicate notification)
+    result_dup = agent.execute("cancel_appointment", payload)
+    assert result_dup["success"] is True
+    notifs_dup = mock_db.find_many("notifications", "recipient_id", "PAT-1001")
+    cancel_notifs_dup = [n for n in notifs_dup if n.get("appointment_id") == "APT-1001" and n.get("type") == "APPOINTMENT_CANCELLED"]
+    assert len(cancel_notifs_dup) == 1
+

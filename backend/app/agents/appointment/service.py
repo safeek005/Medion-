@@ -295,6 +295,39 @@ class AppointmentService:
         }
         updated = mock_db.update_appointment(appointment_id, updates)
 
+        if is_doctor_cancel and apt.get("patient_id"):
+            patient_id = apt.get("patient_id")
+            existing_notifs = mock_db.find_many("notifications", "recipient_id", patient_id)
+            already_notified = any(
+                n.get("appointment_id") == appointment_id and (n.get("type") == "APPOINTMENT_CANCELLED" or n.get("title") == "Appointment Cancelled")
+                for n in existing_notifs
+            )
+            if not already_notified:
+                doc_name = payload.get("doctor_name") or apt.get("doctor_name") or "Rajesh Mehta"
+                apt_date = apt.get("date") or ""
+                apt_time = apt.get("time_slot") or apt.get("start_time") or ""
+                msg = f"Your appointment with Dr. {doc_name} on {apt_date} at {apt_time} has been cancelled by the doctor."
+                if reason:
+                    msg += f"\nReason: {reason}"
+                notif_record = {
+                    "notification_id": f"NOTIF-CANCEL-{appointment_id}",
+                    "id": f"NOTIF-CANCEL-{appointment_id}",
+                    "recipient_type": "PATIENT",
+                    "recipient_id": patient_id,
+                    "patient_id": patient_id,
+                    "appointment_id": appointment_id,
+                    "type": "APPOINTMENT_CANCELLED",
+                    "title": "Appointment Cancelled",
+                    "message": msg,
+                    "cancellation_reason": reason,
+                    "channel": "IN_APP",
+                    "status": "UNREAD",
+                    "is_read": False,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "sent_at": datetime.now(timezone.utc).isoformat()
+                }
+                mock_db.add_notification(notif_record)
+
         return {
             "success": True,
             "appointment_id": appointment_id,
